@@ -6,7 +6,6 @@ EE 471: Vision-Based Robotic Manipulation
 import numpy as np
 import cv2
 from time import time, sleep
-
 from AprilTags import AprilTags
 
 
