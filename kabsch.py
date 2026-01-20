@@ -75,29 +75,35 @@ def main():
     cap = cv2.VideoCapture(1, cv2.CAP_MSMF)
 
     # TODO: fix camera settings
+    focus = 535
+    print(f"Focus: {focus}")
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     cap.set(cv2.CAP_PROP_FPS, 60)
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+    cap.set(cv2.CAP_PROP_FOCUS, focus)
 
-    detector = AprilTags()
+    if not cap.isOpened():
+        print('Failed to open camera')
+        exit()
+
+    detector = AprilTags.AprilTags()
     
     # TODO: Camera Intrinsics
-    fx = 1
-    fy = 1
-    ppx = 1
-    ppy = 1
+    fx = 487.42056093
+    fy = 487.42053388
+    ppx = 317.3216121
+    ppy = 248.73120265
 
     intrinsics = np.array([
                 [fx, 0, ppx],
                 [0, fy, ppy],
                 [0, 0, 1]])
-    print(intrinsics)
+    print(f"Intrinsics: {intrinsics}")
     
-    # TODO: Set AprilTag physical size in millimeters
     # IMPORTANT: Measure your actual tags!
-    TAG_SIZE = 40.0  # Update this value if needed
+    TAG_SIZE = 96.5  # Update this value if needed
     print(f"Tag size: {TAG_SIZE} mm")
     
     # =====================================================================
@@ -109,54 +115,40 @@ def main():
     # IMPORTANT: Replace these with YOUR measured coordinates!
     # Measure each tag center position relative to workspace base origin
     # Store in order: Tag ID 0, 1, 2, ..., 11 (left-to-right, top-to-bottom)
-    # TODO: find tag measurements
+    ztag=np.array([0, 0])      # position of center of tag 0 in workspace frame
+    xspace0 = 48 + TAG_SIZE    # x spacing between pairs
+    xspace1 = 30 + TAG_SIZE    # x spacing between papers
+    yspace = 119.5 + TAG_SIZE  # y spacing between papers
+
     workspace_points_array = np.array([
         # [X, Y, Z] coordinates in mm for each tag
-        # Paper 1 (tags 0-3)
-        [79,  -90, 0],   # Tag 0
-        [79,  -30, 0],   # Tag 1
-        [79,   30, 0],   # Tag 2
-        [79,   90, 0],   # Tag 3
-        # Paper 2 (tags 4-7)
-        [139, -90, 0],   # Tag 4
-        [139, -30, 0],   # Tag 5
-        [139,  30, 0],   # Tag 6
-        [139,  90, 0],   # Tag 7
-        # Paper 3 (tags 8-11)
-        [199, -90, 0],   # Tag 8
-        [199, -30, 0],   # Tag 9
-        [199,  30, 0],   # Tag 10
-        [199,  90, 0],   # Tag 11
-        # Paper 4 (tags 12-15)
-        [199, -90, 0],   # Tag 12
-        [199, -30, 0],   # Tag 13
-        [199,  30, 0],   # Tag 14
-        [199,  90, 0],   # Tag 15
-        # Paper 5 (tags 16-19)
-        [199, -90, 0],   # Tag 16
-        [199, -30, 0],   # Tag 17
-        [199,  30, 0],   # Tag 18
-        [199,  90, 0],   # Tag 19
-        # Paper 6 (tags 20-23)
-        [199, -90, 0],   # Tag 20
-        [199, -30, 0],   # Tag 21
-        [199,  30, 0],   # Tag 22
-        [199,  90, 0],   # Tag 23
-        # Paper 7 (tags 24-27)
-        [199, -90, 0],   # Tag 24
-        [199, -30, 0],   # Tag 25
-        [199,  30, 0],   # Tag 26
-        [199,  90, 0],   # Tag 27
-        # Paper 8 (tags 28-31)
-        [199, -90, 0],   # Tag 28
-        [199, -30, 0],   # Tag 29
-        [199,  30, 0],   # Tag 30
-        [199,  90, 0],   # Tag 31
-        # Paper 9 (tags 32-35)
-        [199, -90, 0],   # Tag 32
-        [199, -30, 0],   # Tag 33
-        [199,  30, 0],   # Tag 34
-        [199,  90, 0],   # Tag 35
+        # Paper 1 (tags 0-1)
+        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] + (0*yspace), 0],      # Tag 0
+        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] + (0*yspace), 0],      # Tag 1
+        # Paper 2 (tags 2-3)
+        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] + (0*yspace), 0],      # Tag 2
+        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] + (0*yspace), 0],      # Tag 3
+        # Paper 3 (tags 4-5)
+        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] + (0*yspace), 0],      # Tag 4
+        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] + (0*yspace), 0],      # Tag 5
+        # Paper 4 (tags 6-7)
+        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] + (1*yspace), 0],      # Tag 6
+        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] + (1*yspace), 0],      # Tag 7
+        # Paper 5 (tags 8-9)
+        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] + (1*yspace), 0],      # Tag 8
+        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] + (1*yspace), 0],      # Tag 9
+        # Paper 6 (tags 10-11)
+        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] + (1*yspace), 0],      # Tag 10
+        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] + (1*yspace), 0],      # Tag 11
+        # Paper 7 (tags 12-13)
+        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] + (2*yspace), 0],      # Tag 12
+        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] + (2*yspace), 0],      # Tag 13
+        # Paper 8 (tags 14-15)
+        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] + (2*yspace), 0],      # Tag 14
+        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] + (2*yspace), 0],      # Tag 15
+        # Paper 9 (tags 16-17)
+        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] + (2*yspace), 0],      # Tag 16
+        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] + (2*yspace), 0],      # Tag 17
     ])
     
     # Convert to 3xN format (transpose)
