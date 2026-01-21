@@ -102,11 +102,13 @@ def main():
         # STEP 3: PROCESS DETECTED TAGS
         # -----------------------------------------------------------------
         
-        # Check if any tags were detected
-        if len(tags) > 0:
+        # # Check if any tags were detected
+        # if len(tags) > 0:
+        for tag in tags:
+
             
-            # Use the first detected tag
-            tag = tags[0]
+            # # Use the first detected tag
+            # tag = tags[0]
             
             # Hint: Use detector.get_tag_pose(tag.corners, intrinsics, TAG_SIZE)
             # Returns: (rotation_matrix, translation_vector)
@@ -140,23 +142,71 @@ def main():
                 # Hint: Use np.linalg.norm()
                 distance = np.linalg.norm(pos_workspace)  # Replace with distance
                 
+                # # Draw detection on image
+                # # Hint: Use detector.draw_tags(color_frame, tag)
+                # detector.draw_tags(color_frame, tag)
+
+                # # Add coordinate overlay on image
+                # y_offset = 60
+                # cv2.putText(color_frame, f"Tag ID: {tag.tag_id}", 
+                #             (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 
+                #             0.6, (0, 255, 0), 2)
+                # y_offset += 30
+                # cv2.putText(color_frame, f"Cam: ({pos_camera[0]:.1f}, {pos_camera[1]:.1f}, {pos_camera[2]:.1f}) mm", 
+                #             (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 
+                #             0.5, (255, 255, 0), 2)
+                # y_offset += 25
+                # cv2.putText(color_frame, f"workspace: ({pos_workspace[0]:.1f}, {pos_workspace[1]:.1f}, {pos_workspace[2]:.1f}) mm", 
+                #             (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 
+                #             0.5, (0, 255, 255), 2)
+
                 # Draw detection on image
-                # Hint: Use detector.draw_tags(color_frame, tag)
                 detector.draw_tags(color_frame, tag)
 
-                # Add coordinate overlay on image
-                y_offset = 60
-                cv2.putText(color_frame, f"Tag ID: {tag.tag_id}", 
-                            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.6, (0, 255, 0), 2)
-                y_offset += 30
-                cv2.putText(color_frame, f"Cam: ({pos_camera[0]:.1f}, {pos_camera[1]:.1f}, {pos_camera[2]:.1f}) mm", 
-                            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.5, (255, 255, 0), 2)
-                y_offset += 25
-                cv2.putText(color_frame, f"workspace: ({pos_workspace[0]:.1f}, {pos_workspace[1]:.1f}, {pos_workspace[2]:.1f}) mm", 
-                            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.5, (0, 255, 255), 2)
+                corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
+
+                # --- Robust "bottom-left-ish" corner under perspective ---
+                # 1) find the max y (lowest point)
+                max_y = float(np.max(corners[:, 1]))
+
+                # 2) allow a tolerance so rotated tags still get both bottom corners
+                tol = 6.0  # pixels; increase if needed
+                bottom = corners[corners[:, 1] >= max_y - tol]
+
+                # 3) among bottom candidates, pick the left-most (min x)
+                bl = bottom[np.argmin(bottom[:, 0])]
+
+                # Anchor position (start under that corner)
+                x = int(bl[0])
+                y = int(bl[1] + 5)  # padding below tag
+
+                # Keep on-screen (we'll draw 1 line for ID + 3 lines for xyz)
+                h, w = color_frame.shape[:2]
+                line_h = 12
+                num_lines = 1 + 3
+                x = max(5, min(x, w - 120))                  # 120 is a rough text width clamp
+                y = max(line_h, min(y, h - num_lines*line_h))
+
+                # Font settings
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                id_scale = 0.30
+                xyz_scale = 0.23
+                thickness = 1
+
+                # --- Draw Tag ID first ---
+                cv2.putText(color_frame, f"Tag ID: {tag.tag_id}",
+                            (x, y), font, id_scale, (0, 255, 0), thickness, cv2.LINE_AA)
+
+                # --- Start xyz BELOW the Tag ID to avoid overlap ---
+                start_y = y + line_h
+
+                labels = ["x", "y", "z"]
+                for i, lab in enumerate(labels):
+                    cv2.putText(color_frame, f"{lab}: {pos_workspace[i]:.1f} mm",
+                                (x, start_y + i*line_h),
+                                font, xyz_scale, (0, 255, 255), thickness, cv2.LINE_AA)
+
+
                 
                 # Print coordinates periodically to terminal
                 if counter % PRINT_INTERVAL == 0:
