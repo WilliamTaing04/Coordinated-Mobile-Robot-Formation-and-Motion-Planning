@@ -42,7 +42,15 @@ def main():
         ret, frame = cap.read()
         if not ret:
             break
+
+        status_text = f"Measurements: {count}/{20}"
+        cv2.putText(frame, status_text, (10, 30), 
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        cv2.putText(frame, "Ready! Press 'q' to capture", (10, 60),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         cv2.imshow("MSMF Camera", frame)
+
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             images.append(frame)
             count += 1

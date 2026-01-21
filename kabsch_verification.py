@@ -44,10 +44,14 @@ def main():
     detector = AprilTags()  # Replace with actual detector
     
     # TODO: Camera Intrinsics
-    fx = 487.42056093
-    fy = 487.42053388
-    ppx = 317.3216121
-    ppy = 248.73120265
+    # fx = 487.42056093
+    # fy = 487.42053388
+    # ppx = 317.3216121
+    # ppy = 248.73120265
+    fx = 494.92190304
+    fy = 495.97656125
+    ppx = 306.67284992
+    ppy = 225.64661362
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -62,7 +66,9 @@ def main():
     
     # Set the validation tag size in millimeters
     # IMPORTANT: Measure your validation tag!
-    TAG_SIZE = 96.5  # Update this value
+    # TAG_SIZE = 96.5  # Update this value
+    TAG_SIZE = 65  # Update this value
+
     print(f"\nValidation tag size: {TAG_SIZE} mm")
     
     # Display settings
