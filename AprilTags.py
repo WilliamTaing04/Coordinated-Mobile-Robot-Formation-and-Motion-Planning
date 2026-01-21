@@ -132,17 +132,17 @@ class AprilTags:
             # Reshape image points for PnP
             image_points = corners.reshape((4, 2))
             
-            # Construct camera matrix from intrinsics
-            camera_matrix = np.array([
-                [intrinsics.fx, 0, intrinsics.ppx],
-                [0, intrinsics.fy, intrinsics.ppy],
-                [0, 0, 1]
-            ])
+            # # Construct camera matrix from intrinsics
+            # camera_matrix = np.array([
+            #     [intrinsics.fx, 0, intrinsics.ppx],
+            #     [0, intrinsics.fy, intrinsics.ppy],
+            #     [0, 0, 1]
+            # ])
             
             # Solve PnP to get tag pose
             _, rvec, tvec = cv2.solvePnP(object_points, 
                                         image_points, 
-                                        camera_matrix, 
+                                        intrinsics, 
                                         None)
             
             # Convert rotation vector to matrix

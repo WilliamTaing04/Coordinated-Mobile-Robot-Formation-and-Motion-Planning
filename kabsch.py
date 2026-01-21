@@ -74,7 +74,7 @@ def main():
     print("\nInitializing camera and AprilTag detector...")
     cap = cv2.VideoCapture(1, cv2.CAP_MSMF)
 
-    # TODO: fix camera settings
+    # TODO: Fix camera settings
     focus = 535
     print(f"Focus: {focus}")
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -88,7 +88,7 @@ def main():
         print('Failed to open camera')
         exit()
 
-    detector = AprilTags.AprilTags()
+    detector = AprilTags()
     
     # TODO: Camera Intrinsics
     fx = 487.42056093
@@ -123,32 +123,32 @@ def main():
     workspace_points_array = np.array([
         # [X, Y, Z] coordinates in mm for each tag
         # Paper 1 (tags 0-1)
-        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] + (0*yspace), 0],      # Tag 0
-        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] + (0*yspace), 0],      # Tag 1
+        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] - (0*yspace), 0],      # Tag 0
+        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] - (0*yspace), 0],      # Tag 1
         # Paper 2 (tags 2-3)
-        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] + (0*yspace), 0],      # Tag 2
-        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] + (0*yspace), 0],      # Tag 3
+        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] - (0*yspace), 0],      # Tag 2
+        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] - (0*yspace), 0],      # Tag 3
         # Paper 3 (tags 4-5)
-        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] + (0*yspace), 0],      # Tag 4
-        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] + (0*yspace), 0],      # Tag 5
+        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] - (0*yspace), 0],      # Tag 4
+        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] - (0*yspace), 0],      # Tag 5
         # Paper 4 (tags 6-7)
-        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] + (1*yspace), 0],      # Tag 6
-        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] + (1*yspace), 0],      # Tag 7
+        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] - (1*yspace), 0],      # Tag 6
+        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] - (1*yspace), 0],      # Tag 7
         # Paper 5 (tags 8-9)
-        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] + (1*yspace), 0],      # Tag 8
-        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] + (1*yspace), 0],      # Tag 9
+        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] - (1*yspace), 0],      # Tag 8
+        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] - (1*yspace), 0],      # Tag 9
         # Paper 6 (tags 10-11)
-        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] + (1*yspace), 0],      # Tag 10
-        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] + (1*yspace), 0],      # Tag 11
+        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] - (1*yspace), 0],      # Tag 10
+        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] - (1*yspace), 0],      # Tag 11
         # Paper 7 (tags 12-13)
-        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] + (2*yspace), 0],      # Tag 12
-        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] + (2*yspace), 0],      # Tag 13
+        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] - (2*yspace), 0],      # Tag 12
+        [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] - (2*yspace), 0],      # Tag 13
         # Paper 8 (tags 14-15)
-        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] + (2*yspace), 0],      # Tag 14
-        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] + (2*yspace), 0],      # Tag 15
+        [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] - (2*yspace), 0],      # Tag 14
+        [ztag[0] + (2*xspace0) + (1*xspace1), ztag[1] - (2*yspace), 0],      # Tag 15
         # Paper 9 (tags 16-17)
-        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] + (2*yspace), 0],      # Tag 16
-        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] + (2*yspace), 0],      # Tag 17
+        [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] - (2*yspace), 0],      # Tag 16
+        [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] - (2*yspace), 0],      # Tag 17
     ])
     
     # Convert to 3xN format (transpose)
@@ -374,7 +374,7 @@ def main():
     
     print("\nCleaning up...")
     # Stop camera and close windows
-    cap.stop()
+    cap.release()
     cv2.destroyAllWindows()
 
     print("Done!")
