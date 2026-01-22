@@ -24,20 +24,20 @@ def load_from_pickle(filename: str):
 
 def record():
     """
-    Main validation routine - tracks a tag and displays its position
+    Main tracking and recording routine
     """
     # =====================================================================
     # INITIALIZATION
     # =====================================================================
     print("="*60)
-    print("Camera-workspace Calibration Validation")
+    print("Workspace AprilTag Tracking")
     print("="*60)
     
     print("\nInitializing camera and detector...")
     # Initialize camera and detector
     cap = cv2.VideoCapture(1, cv2.CAP_MSMF)
 
-    # TODO: Fix camera settings
+    # TODO: Update camera settings
     focus = 535
     print(f"Focus: {focus}")
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -74,23 +74,22 @@ def record():
     print("\nLoaded camera-to-workspace transformation matrix:")
     print(T_cam_to_workspace)
     
-    # Set the validation tag size in millimeters
+    # TODO: Set the validation tag size in millimeters
     # IMPORTANT: Measure your validation tag!
     TAG_SIZE = 65  # Update this value
 
     print(f"\nValidation tag size: {TAG_SIZE} mm")
     
-    # Display settings
-    PRINT_INTERVAL = 10  # Print every N frames to reduce clutter
     
     print("\n" + "="*60)
-    print("Starting validation...")
+    print("Starting tracking...")
     print("Move the tag around the workspace")
     print("Press 'q' to quit")
     print("="*60 + "\n")
     
     # Define control timestep
     dt = 0.01  # Control loop period in seconds
+
     # Pre-allocate arrays for data collection (over-allocate for safety)
     max_samples = 7200     # 60Hz => 60(samples/s)*120s = 7200samples
     data_time = np.zeros(max_samples)                 # Time (s)
@@ -99,11 +98,11 @@ def record():
 
     begining_time = time.time()  # Record start time for data colleciton
 
-    
     # =====================================================================
     # MAIN TRACKING LOOP
     # =====================================================================
     while True:
+        # Record start time of the loop
         start_time = time.time()  # Replace with actual time
 
         # -----------------------------------------------------------------
@@ -120,7 +119,7 @@ def record():
         # STEP 2: DETECT APRILTAGS
         # -----------------------------------------------------------------
         
-        # Hint: Use detector.detect_tags(color_frame)
+        # Use detector.detect_tags(color_frame)
         tags = detector.detect_tags(color_frame)  # Replace with detected tags
         
         # -----------------------------------------------------------------
@@ -129,7 +128,6 @@ def record():
         
         # Check if any tags were detected
         if len(tags) > 0:
-
             
             # Use the first detected tag
             tag = tags[0]
@@ -158,9 +156,6 @@ def record():
                 # Extract position and orientation in workspace frame
                 pos_workspace = T_tag_to_workspace[:3, 3]
                 rot_workspace = T_tag_to_workspace[:3, :3]
-
-                # Could convert rotation to Euler angles for display
-                euler_workspace = cv2.RQDecomp3x3(rot_workspace)[0]
                 
                 # Calculate distance from camera
                 distance = np.linalg.norm(pos_workspace)  # Replace with distance
@@ -168,9 +163,8 @@ def record():
                 # Collect Data-----------------------------------------------------
                 if count < max_samples:
                     data_time[count] = time.perf_counter() - begining_time  # Time stamps (s)
-                    data_ee_pos[count, :] = pos_workspace                  # End-effector pose [x,y,z] (mm)
+                    data_ee_pos[count, :] = pos_workspace                   # End-effector pose [x,y,z] (mm)
                     count += 1
-
 
                 # Draw detection on image
                 detector.draw_tags(color_frame, tag)
@@ -180,38 +174,30 @@ def record():
                 # --- Robust "bottom-left-ish" corner under perspective ---
                 # 1) find the max y (lowest point)
                 max_y = float(np.max(corners[:, 1]))
-
                 # 2) allow a tolerance so rotated tags still get both bottom corners
                 tol = 6.0  # pixels; increase if needed
                 bottom = corners[corners[:, 1] >= max_y - tol]
-
                 # 3) among bottom candidates, pick the left-most (min x)
                 bl = bottom[np.argmin(bottom[:, 0])]
-
                 # Anchor position (start under that corner)
                 x = int(bl[0])
                 y = int(bl[1] + 5)  # padding below tag
-
                 # Keep on-screen (we'll draw 1 line for ID + 3 lines for xyz)
                 h, w = color_frame.shape[:2]
                 line_h = 12
                 num_lines = 1 + 3
                 x = max(5, min(x, w - 120))                  # 120 is a rough text width clamp
                 y = max(line_h, min(y, h - num_lines*line_h))
-
                 # Font settings
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 id_scale = 0.30
                 xyz_scale = 0.23
                 thickness = 1
-
                 # --- Draw Tag ID first ---
                 cv2.putText(color_frame, f"Tag ID: {tag.tag_id}",
                             (x, y), font, id_scale, (0, 255, 0), thickness, cv2.LINE_AA)
-
                 # --- Start xyz BELOW the Tag ID to avoid overlap ---
                 start_y = y + line_h
-
                 labels = ["x", "y", "z"]
                 for i, lab in enumerate(labels):
                     cv2.putText(color_frame, f"{lab}: {pos_workspace[i]:.1f} mm",
@@ -220,8 +206,7 @@ def record():
             
         else:
             # No tags detected
-            if counter % PRINT_INTERVAL == 0:
-                print("\nNo tag detected - move tag into view")
+            print("\nNo tag detected - move tag into view")
             
             cv2.putText(color_frame, "No tag detected", 
                         (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
@@ -249,7 +234,7 @@ def record():
             break
 
         # -----------------------------------------------------------------
-        # MAINTAIN FIXED TIMESTEP (CRITICAL!)
+        # MAINTAIN FIXED TIMESTEP
         # -----------------------------------------------------------------
         
         # Enforce consistent loop timing
@@ -272,7 +257,7 @@ def record():
     data_time = data_time[:count]
     data_ee_pos = data_ee_pos[:count, :]
 
-    # TODO: Save all data to pickle file
+    # Save all data to pickle file
     filename='Camera_Tag_Tracking.pkl'
     # Create dictionary with all collected data and control parameters
     print(f"\nSaving data to {filename}...")
@@ -281,7 +266,7 @@ def record():
     'pos_current': data_ee_pos, # Current EE position [x,y,z] (mm)
     }
 
-    # TODO: Write dictionary to pickle file
+    # Write dictionary to pickle file
     save_to_pickle(data_dict, filename)
     print("Data saved successfully!")
 
@@ -365,7 +350,6 @@ def ploting():
 
     plot_3D_trajectory_list(ee_pose_pkl, "3D Trajectory")
     plot_xyz_posvelacc_list(time_pkl_, ee_pose_pkl, "Position, Velocity, Acceleration")
-
 
 
 if __name__ == "__main__":
