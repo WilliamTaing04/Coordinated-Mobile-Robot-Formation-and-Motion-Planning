@@ -95,10 +95,10 @@ def main():
     # fy = 487.42053388
     # ppx = 317.3216121
     # ppy = 248.73120265
-    fx = 494.92190304
-    fy = 495.97656125
-    ppx = 306.67284992
-    ppy = 225.64661362
+    fx = 490.00332243
+    fy = 489.5556459
+    ppx = 315.8040739
+    ppy = 268.93739803
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -107,7 +107,7 @@ def main():
     print(f"Intrinsics: {intrinsics}")
     
     # IMPORTANT: Measure your actual tags!
-    TAG_SIZE = 96.5  # Update this value if needed
+    TAG_SIZE = 96.5  # Default tag size
     print(f"Tag size: {TAG_SIZE} mm")
     
     # =====================================================================

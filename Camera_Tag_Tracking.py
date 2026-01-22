@@ -51,17 +51,17 @@ def record():
         print('Failed to open camera')
         exit()
     
-    detector = AprilTags()  # Replace with actual detector
+    detector = AprilTags.AprilTags()
     
     # TODO: Camera Intrinsics
     # fx = 487.42056093
     # fy = 487.42053388
     # ppx = 317.3216121
     # ppy = 248.73120265
-    fx = 494.92190304
-    fy = 495.97656125
-    ppx = 306.67284992
-    ppy = 225.64661362
+    fx = 490.00332243
+    fy = 489.5556459
+    ppx = 315.8040739
+    ppy = 268.93739803
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -225,8 +225,6 @@ def record():
         # Display frame
         cv2.imshow('Calibration Validation', color_frame)
         
-        # Increment counter
-        counter += 1
         
         # Check for exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
