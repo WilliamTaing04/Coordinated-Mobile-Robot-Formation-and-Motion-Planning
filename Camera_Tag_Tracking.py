@@ -88,7 +88,7 @@ def record():
     print("="*60 + "\n")
     
     # Define control timestep
-    dt = 0.01  # Control loop period in seconds
+    dt = 0.01667  # Control loop period in seconds
 
     # Pre-allocate arrays for data collection (over-allocate for safety)
     max_samples = 7200     # 60Hz => 60(samples/s)*120s = 7200samples
