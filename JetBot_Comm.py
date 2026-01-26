@@ -242,7 +242,7 @@ def main():
         # -----------------------------------------------------------------
         
         # Send UDP package
-        t_sent = time.perf_counter()
+        t_sent = time.time()
         n = min(len(tag_packet), 255)
 
         buf = bytearray()
@@ -410,7 +410,7 @@ def main():
                     drops_malformed += 1
                 else:
                     seq, t_sent, tags = parsed
-                    now = time.perf_counter()
+                    now = time.time()
                     age = now - t_sent
 
                     # Drop stale packets (kills backlog delay)
