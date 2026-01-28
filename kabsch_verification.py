@@ -34,12 +34,14 @@ def main():
     # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     cap.set(cv2.CAP_PROP_FPS, 60)
-    cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    cap.set(cv2.CAP_PROP_FOCUS, focus)
+    #cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+    #cap.set(cv2.CAP_PROP_FOCUS, focus)
 
     if not cap.isOpened():
         print('Failed to open camera')
         exit()
+
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
     
     detector = AprilTags()  # Replace with actual detector
     
@@ -48,10 +50,15 @@ def main():
     # fy = 487.42053388
     # ppx = 317.3216121
     # ppy = 248.73120265
-    fx = 490.00332243
-    fy = 489.5556459
-    ppx = 315.8040739
-    ppy = 268.93739803
+    #fx = 490.00332243
+    #fy = 489.5556459
+    #ppx = 315.8040739
+    #ppy = 268.93739803
+
+    fx = 1.10441618e+03
+    fy = 1.10859945e+03
+    ppx = 3.99400765e+02
+    ppy = 3.18234174e+02
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -60,7 +67,7 @@ def main():
     print(f"Intrinsics: {intrinsics}")
     
     # Load the calibration transformation matrix
-    T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
+    T_cam_to_workspace = np.load('C:/Users/cmcgarit/Desktop/SP_Code/camera_workspace_transform.npy')  # Replace with loaded transformation
     print("\nLoaded camera-to-workspace transformation matrix:")
     print(T_cam_to_workspace)
     

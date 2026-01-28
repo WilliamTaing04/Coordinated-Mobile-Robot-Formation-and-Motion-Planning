@@ -16,7 +16,7 @@ def setup():
         print("Failed to open camera with MSMF")
         exit()
 
-    #fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
 
     return cap
 
