@@ -38,18 +38,21 @@ def record():
     cap = cv2.VideoCapture(1, cv2.CAP_MSMF)
 
     # TODO: Update camera settings
-    focus = 535
-    print(f"Focus: {focus}")
+    #focus = 535
+    #print(f"Focus: {focus}")
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    cap.set(cv2.CAP_PROP_FPS, 60)
-    cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    cap.set(cv2.CAP_PROP_FOCUS, focus)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv2.CAP_PROP_FPS, 120)
+    #cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+    #cap.set(cv2.CAP_PROP_FOCUS, focus)
 
     if not cap.isOpened():
         print('Failed to open camera')
         exit()
+
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+    print("FOURCC:", "".join([chr((fourcc >> 8*i) & 0xFF) for i in range(4)]))
     
     detector = AprilTags.AprilTags()
     
@@ -142,7 +145,7 @@ def record():
                 
                 # Extract position in camera frame (already in mm)
                 # Flatten trans_vector to get a 1D array of shape (3,)
-                pos_camera = trans_vector.flatten()  # Replace with position array
+                #pos_camera = trans_vector.flatten()  # Replace with position array
 
                 # Create full 4x4 pose transformation from tag to camera
                 T_tag_to_cam = np.eye(4)
@@ -155,10 +158,10 @@ def record():
                 
                 # Extract position and orientation in workspace frame
                 pos_workspace = T_tag_to_workspace[:3, 3]
-                rot_workspace = T_tag_to_workspace[:3, :3]
+                #rot_workspace = T_tag_to_workspace[:3, :3]
                 
                 # Calculate distance from camera
-                distance = np.linalg.norm(pos_workspace)  # Replace with distance
+                #distance = np.linalg.norm(pos_workspace)  # Replace with distance
 
                 # Collect Data-----------------------------------------------------
                 if count < max_samples:

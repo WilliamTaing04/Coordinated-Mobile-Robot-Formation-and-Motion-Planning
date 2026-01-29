@@ -95,10 +95,18 @@ def main():
     # fy = 487.42053388
     # ppx = 317.3216121
     # ppy = 248.73120265
-    fx = 490.00332243
-    fy = 489.5556459
-    ppx = 315.8040739
-    ppy = 268.93739803
+    #fx = 490.00332243
+    #fy = 489.5556459
+    #ppx = 315.8040739
+    #ppy = 268.93739803
+
+    fx = 1.10969638e+03
+    fy = 1.10833553e+03
+    ppx = 2.96502099e+02
+    ppy = 2.92449425e+02
+
+
+    
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -124,10 +132,13 @@ def main():
     xspace1 = 30 + TAG_SIZE    # x spacing between papers
     yspace = 119.5 + TAG_SIZE  # y spacing between papers
 
+    ztag[0] = (0*xspace0) + (0*xspace1)
+    ztag[1] = (0*yspace)
     workspace_points_array = np.array([
         # [X, Y, Z] coordinates in mm for each tag
         # Paper 1 (tags 0-1)
-        [ztag[0] + (0*xspace0) + (0*xspace1), ztag[1] - (0*yspace), 0],      # Tag 0
+        
+        [(0*xspace0) + (0*xspace1),(0*yspace), 0],      # Tag 0
         [ztag[0] + (1*xspace0) + (0*xspace1), ztag[1] - (0*yspace), 0],      # Tag 1
         # Paper 2 (tags 2-3)
         [ztag[0] + (1*xspace0) + (1*xspace1), ztag[1] - (0*yspace), 0],      # Tag 2
