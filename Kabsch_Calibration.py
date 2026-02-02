@@ -91,14 +91,10 @@ def main():
     detector = AprilTags()
     
     # TODO: Camera Intrinsics
-    # fx = 487.42056093
-    # fy = 487.42053388
-    # ppx = 317.3216121
-    # ppy = 248.73120265
-    fx = 490.00332243
-    fy = 489.5556459
-    ppx = 315.8040739
-    ppy = 268.93739803
+    fx = 1072.4901458628578
+    fy = 1073.7979403880388
+    ppx = 322.7882541144218
+    ppy = 227.4953665183797
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -121,8 +117,10 @@ def main():
     # Store in order: Tag ID 0, 1, 2, ..., 11 (left-to-right, top-to-bottom)
     ztag=np.array([0, 0])      # position of center of tag 0 in workspace frame
     xspace0 = 48 + TAG_SIZE    # x spacing between pairs
-    xspace1 = 30 + TAG_SIZE    # x spacing between papers
+    xspace1 = 38 + TAG_SIZE    # x spacing between papers
     yspace = 119.5 + TAG_SIZE  # y spacing between papers
+    # x = 0, 144.5 , 279.0 , 423.5 , 558.0, 702.5
+    # y = 0, -216.0 , -432,0 
 
     workspace_points_array = np.array([
         # [X, Y, Z] coordinates in mm for each tag
@@ -154,7 +152,9 @@ def main():
         [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] - (2*yspace), 0],      # Tag 16
         [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] - (2*yspace), 0],      # Tag 17
     ])
-    
+    print("testing: ")
+    print(workspace_points_array)
+
     # Convert to 3xN format (transpose)
     points_workspace = workspace_points_array.T  # Shape: (3, 36)
     num_tags = points_workspace.shape[1]
