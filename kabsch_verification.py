@@ -77,6 +77,8 @@ def main():
     print("Move the tag around the workspace")
     print("Press 'q' to quit")
     print("="*60 + "\n")
+
+    print("\nx = 0, 144.5 , 279.0 , 423.5 , 558.0, 702.5 \ny = 0, -216.0 , -432,0 ")
     
     counter = 0
     
@@ -192,29 +194,29 @@ def main():
                                 font, xyz_scale, (0, 255, 255), thickness, cv2.LINE_AA)
 
 
-                # Print coordinates periodically to terminal
-                if counter % PRINT_INTERVAL == 0:
-                    print("\n" + "-"*50)
-                    print(f"Tag ID: {tag.tag_id}")
-                    print(f"Distance from camera: {distance:.1f} mm")
-                    print("\nTag Orientation:")
-                    # Print Tag Orientation in workspace Frame
-                    print(euler_workspace)
+                # # Print coordinates periodically to terminal
+                # if counter % PRINT_INTERVAL == 0:
+                #     print("\n" + "-"*50)
+                #     print(f"Tag ID: {tag.tag_id}")
+                #     print(f"Distance from camera: {distance:.1f} mm")
+                #     print("\nTag Orientation:")
+                #     # Print Tag Orientation in workspace Frame
+                #     print(euler_workspace)
                     
-                    print("\nCamera Frame (mm):")
-                    # Print 3D positions in Camera Frame
-                    print(pos_camera)
+                #     print("\nCamera Frame (mm):")
+                #     # Print 3D positions in Camera Frame
+                #     print(pos_camera)
 
-                    print("\nworkspace Frame (mm):")
-                    # Print 3D positions in workspace Frame
-                    print(pos_workspace)
+                #     print("\nworkspace Frame (mm):")
+                #     # Print 3D positions in workspace Frame
+                #     print(pos_workspace)
 
-                    print("-"*50)
+                #     print("-"*50)
             
-        else:
+        if len(tags) <= 0:
             # No tags detected
-            if counter % PRINT_INTERVAL == 0:
-                print("\nNo tag detected - move tag into view")
+            # if counter % PRINT_INTERVAL == 0:
+            #     print("\nNo tag detected - move tag into view")
             
             cv2.putText(color_frame, "No tag detected", 
                         (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 

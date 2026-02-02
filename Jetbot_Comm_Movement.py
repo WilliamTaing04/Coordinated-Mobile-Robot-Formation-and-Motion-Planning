@@ -65,7 +65,7 @@ def main():
     detector = AprilTags.AprilTags()
 
     # Controller
-    controller = Simple_Controller.control(25,1.5,100)    # max vel[mm/s] max angvel[rad/s] deadzone[mm]
+    controller = Simple_Controller.control(0.3, 0.5 , 130)    # max vel[mm/s] max angvel[rad/s] deadzone[mm]
     # Latest poses: [x, y, yaw] in workspace, yaw radians
     leader = None
     follower1 = None
