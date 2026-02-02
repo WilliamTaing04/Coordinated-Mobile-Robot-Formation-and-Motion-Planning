@@ -73,8 +73,8 @@ def main():
     
     # Set the validation tag size in millimeters
     # IMPORTANT: Measure your validation tag!
-    # TAG_SIZE = 96.5  # Update this value
-    TAG_SIZE = 65  # Update this value
+    TAG_SIZE = 96.5  # Update this value
+    # TAG_SIZE = 65  # Update this value
 
     print(f"\nValidation tag size: {TAG_SIZE} mm")
     
