@@ -8,17 +8,21 @@ class control():
         self.w_max = w_max          # max angvel [rad/s]
         self.deadzone = deadzone    # deadzone [mm]
         self.motor_max = 0.2       # left motor max speed [0,1]
-        self.motor_min = 0.01        # left motor min speed [0,1]
+        self.motor_min = 0.02        # left motor min speed [0,1]
     
     # ORIENTATION X forward, Y left, THETA CCW
     def controller(self, pose, goal):
+        # extract x y theta
+        x, y, theta = pose
+        xg, yg, thetag = goal
+
         # Compute dx, dy, dw
-        dx = goal[0] - pose[0]
-        dy = goal[1] - pose[1]
-        dtheta  = goal[2] - pose[2]
+        dx = xg - x
+        dy = yg - y
+        dtheta  = thetag - theta
 
         # Find absolute distance to goal
-        dist = np.sqrt(dx ** 2 + dy ** 2)
+        dist = np.hypot(dx, dy)
 
         # If within deadzone then stop
         if dist < self.deadzone:
@@ -27,9 +31,9 @@ class control():
         # If dist > deadzone
         else:
             # errors
-            ex = dx * np.cos(pose[2]) + dy * np.sin(pose[2])
-            ey = -dx * np.sin(pose[2]) + dy * np.cos(pose[2])
-            etheta = np.atan2(np.sin(pose[2]), np.cos(pose[2])) # Wrap to -pi,pi
+            ex = dx * np.cos(theta) + dy * np.sin(theta)
+            ey = -dx * np.sin(theta) + dy * np.cos(theta)
+            etheta = np.atan2(np.sin(dtheta), np.cos(dtheta)) # Wrap to -pi,pi
             
             # Gains
             kx = 0.3
@@ -51,6 +55,10 @@ class control():
             print(f"etheta:{etheta}")
             print(f"v:{v}")
             print(f"w:{w}")
+
+            # Clamp speeds
+            v = max(-self.v_max, min(v, self.v_max))
+            w = max(-self.w_max, min(w, self.w_max))
 
             return v, w
     

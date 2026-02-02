@@ -65,7 +65,7 @@ def main():
     detector = AprilTags.AprilTags()
 
     # Controller
-    controller = Simple_Controller.control(25,1.5,10)    # max vel[mm/s] max angvel[rad/s] deadzone[mm]
+    controller = Simple_Controller.control(25,1.5,100)    # max vel[mm/s] max angvel[rad/s] deadzone[mm]
     # Latest poses: [x, y, yaw] in workspace, yaw radians
     leader = None
     follower1 = None
@@ -73,14 +73,10 @@ def main():
     FOLLOWER_ID = 26
     
     # TODO: Camera Intrinsics
-    # fx = 487.42056093
-    # fy = 487.42053388
-    # ppx = 317.3216121
-    # ppy = 248.73120265
-    fx = 1.08126363e+03
-    fy = 1.08178387e+03
-    ppx = 3.71507713e+02
-    ppy = 3.92122407e+02
+    fx = 1072.4901458628578
+    fy = 1073.7979403880388
+    ppx = 322.7882541144218
+    ppy = 227.4953665183797
 
     intrinsics = np.array([
                 [fx, 0, ppx],
