@@ -46,10 +46,10 @@ def main():
     detector = AprilTags()  # Replace with actual detector
     
     # TODO: Camera Intrinsics
-    fx = 1072.4901458628578
-    fy = 1073.7979403880388
-    ppx = 322.7882541144218
-    ppy = 227.4953665183797
+    fx = 1014.7877227030419
+    fy = 1015.5790339720445
+    ppx = 426.0549465833697
+    ppy = 269.5657379492221
 
     intrinsics = np.array([
                 [fx, 0, ppx],
