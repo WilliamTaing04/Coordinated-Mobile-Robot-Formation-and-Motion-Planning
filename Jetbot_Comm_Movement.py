@@ -278,6 +278,9 @@ def main():
 
         # -------------------------------------------------------------
         # Draw follower velocity readout (bottom-right) - stable
+        # - fixed sign column (always + or -)
+        # - fixed decimal places
+        # - fixed box size (template)
         # -------------------------------------------------------------
         h, w_img = color_frame.shape[:2]
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -287,26 +290,33 @@ def main():
         gap = 6
         pad = 8  # padding inside the box
 
-        # Fixed-width formatted lines (strings stay same length)
-        line1 = f"Follower v: {f1_v:8.1f} mm/s"
-        line2 = f"Follower w: {f1_w:8.2f} rad/s"
+        # Fixed-width formatted lines:
+        #  +  => always show sign so the sign column never appears/disappears
+        #  8.1f / 8.2f => fixed field width + fixed decimals => decimal point stays in same place
+        line1 = f"Follower v: {f1_v:+8.1f} mm/s"
+        line2 = f"Follower w: {f1_w:+8.2f} rad/s"
 
-        # Use a fixed "worst case" template to size the box so it never jitters
-        # (Choose digits/signs that cover your expected range)
-        tmpl1 = "Follower v: -9999.999 mm/s"
-        tmpl2 = "Follower w: -9999.999 rad/s"
+        # Fixed "worst case" templates to lock the box size (match sign + decimals)
+        tmpl1 = "Follower v: +9999.9 mm/s"
+        tmpl2 = "Follower w: +9999.99 rad/s"
 
         (tw1, th1), _ = cv2.getTextSize(tmpl1, font, scale, thickness)
         (tw2, th2), _ = cv2.getTextSize(tmpl2, font, scale, thickness)
         tw = max(tw1, tw2)
         th = th1 + th2 + gap
 
-        # Anchor box bottom-right using w_img/h (not w/h)
+        # Anchor box bottom-right using w_img/h
         x = w_img - margin - (tw + 2 * pad)
         y = h     - margin - (th + 2 * pad)
 
         # Background rectangle
-        cv2.rectangle(color_frame, (x, y), (x + tw + 2 * pad, y + th + 2 * pad), (0, 0, 0), -1)
+        cv2.rectangle(
+            color_frame,
+            (x, y),
+            (x + tw + 2 * pad, y + th + 2 * pad),
+            (0, 0, 0),
+            -1
+        )
 
         # Text baselines
         y1 = y + pad + th1
@@ -317,7 +327,6 @@ def main():
 
 
 
-        
 
         # Send UDP package
         t_sent = time.time()  # wall time so JetBot can compute age
