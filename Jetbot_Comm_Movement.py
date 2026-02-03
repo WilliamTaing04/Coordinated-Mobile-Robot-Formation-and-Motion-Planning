@@ -71,6 +71,12 @@ def main():
     follower1 = None
     LEADER_ID = 9
     FOLLOWER_ID = 26
+
+    # Follower v and w
+    f1_pose_prev = None
+    f1_t_prev = None
+    f1_v = 0.0
+    f1_w = 0.0
     
     # TODO: Camera Intrinsics
     fx = 1072.4901458628578
@@ -240,6 +246,78 @@ def main():
         else:
             left, right = 0.0, 0.0
 
+        # -------------------------------------------------------------
+        # Compute follower linear speed (mm/s) and angular vel (rad/s)
+        # -------------------------------------------------------------
+        
+        f1_t_now = time.perf_counter()
+        if follower1 is not None:
+            # Slice x, y, yaw
+            x, y, yaw = follower1
+
+            # Check for first dt
+            if f1_pose_prev is not None and f1_t_prev is not None:
+                dt = f1_t_now - f1_t_prev   # Calc dt
+
+                # Calc deltas
+                dx = x - f1_pose_prev[0]
+                dy = y - f1_pose_prev[1]
+                dyaw = (yaw - f1_pose_prev[2] + math.pi) % (2*math.pi) - math.pi
+
+                # Calc v and w
+                f1_v = np.hypot(dx, dy) / dt
+                f1_w = dyaw / dt
+
+            # Update prev
+            f1_pose_prev = [x, y, yaw]
+            f1_t_prev = f1_t_now
+
+        else: 
+            f1_v = f1_w = 0.0
+            
+
+        # -------------------------------------------------------------
+        # Draw follower velocity readout (bottom-right) - stable
+        # -------------------------------------------------------------
+        h, w_img = color_frame.shape[:2]
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        scale = 0.6
+        thickness = 2
+        margin = 10
+        gap = 6
+        pad = 8  # padding inside the box
+
+        # Fixed-width formatted lines (strings stay same length)
+        line1 = f"Follower v: {f1_v:8.1f} mm/s"
+        line2 = f"Follower w: {f1_w:8.2f} rad/s"
+
+        # Use a fixed "worst case" template to size the box so it never jitters
+        # (Choose digits/signs that cover your expected range)
+        tmpl1 = "Follower v: -9999.999 mm/s"
+        tmpl2 = "Follower w: -9999.999 rad/s"
+
+        (tw1, th1), _ = cv2.getTextSize(tmpl1, font, scale, thickness)
+        (tw2, th2), _ = cv2.getTextSize(tmpl2, font, scale, thickness)
+        tw = max(tw1, tw2)
+        th = th1 + th2 + gap
+
+        # Anchor box bottom-right using w_img/h (not w/h)
+        x = w_img - margin - (tw + 2 * pad)
+        y = h     - margin - (th + 2 * pad)
+
+        # Background rectangle
+        cv2.rectangle(color_frame, (x, y), (x + tw + 2 * pad, y + th + 2 * pad), (0, 0, 0), -1)
+
+        # Text baselines
+        y1 = y + pad + th1
+        y2 = y1 + gap + th2
+
+        cv2.putText(color_frame, line1, (x + pad, y1), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
+        cv2.putText(color_frame, line2, (x + pad, y2), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
+
+
+
+        
 
         # Send UDP package
         t_sent = time.time()  # wall time so JetBot can compute age
