@@ -34,29 +34,22 @@ def main():
     # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     cap.set(cv2.CAP_PROP_FPS, 60)
-    cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    cap.set(cv2.CAP_PROP_FOCUS, focus)
+    #cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+    #cap.set(cv2.CAP_PROP_FOCUS, focus)
 
     if not cap.isOpened():
         print('Failed to open camera')
         exit()
+
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
     
     detector = AprilTags()  # Replace with actual detector
     
     # TODO: Camera Intrinsics
-    # fx = 487.42056093
-    # fy = 487.42053388
-    # ppx = 317.3216121
-    # ppy = 248.73120265
-    #fx = 490.00332243
-    #fy = 489.5556459
-    #ppx = 315.8040739
-    #ppy = 268.93739803
-
-    fx = 1.10969638e+03
-    fy = 1.10833553e+03
-    ppx = 2.96502099e+02
-    ppy = 2.92449425e+02
+    fx = 1014.7877227030419
+    fy = 1015.5790339720445
+    ppx = 426.0549465833697
+    ppy = 269.5657379492221
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -65,7 +58,7 @@ def main():
     print(f"Intrinsics: {intrinsics}")
     
     # Load the calibration transformation matrix
-    T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
+    T_cam_to_workspace = np.load('C:/Users/cmcgarit/Desktop/SP_Code/camera_workspace_transform.npy')  # Replace with loaded transformation
     print("\nLoaded camera-to-workspace transformation matrix:")
     print(T_cam_to_workspace)
     
@@ -84,6 +77,8 @@ def main():
     print("Move the tag around the workspace")
     print("Press 'q' to quit")
     print("="*60 + "\n")
+
+    print("\nx = 0, 144.5 , 279.0 , 423.5 , 558.0, 702.5 \ny = 0, -216.0 , -432,0 ")
     
     counter = 0
     
@@ -199,29 +194,29 @@ def main():
                                 font, xyz_scale, (0, 255, 255), thickness, cv2.LINE_AA)
 
 
-                # Print coordinates periodically to terminal
-                if counter % PRINT_INTERVAL == 0:
-                    print("\n" + "-"*50)
-                    print(f"Tag ID: {tag.tag_id}")
-                    print(f"Distance from camera: {distance:.1f} mm")
-                    print("\nTag Orientation:")
-                    # Print Tag Orientation in workspace Frame
-                    print(euler_workspace)
+                # # Print coordinates periodically to terminal
+                # if counter % PRINT_INTERVAL == 0:
+                #     print("\n" + "-"*50)
+                #     print(f"Tag ID: {tag.tag_id}")
+                #     print(f"Distance from camera: {distance:.1f} mm")
+                #     print("\nTag Orientation:")
+                #     # Print Tag Orientation in workspace Frame
+                #     print(euler_workspace)
                     
-                    print("\nCamera Frame (mm):")
-                    # Print 3D positions in Camera Frame
-                    print(pos_camera)
+                #     print("\nCamera Frame (mm):")
+                #     # Print 3D positions in Camera Frame
+                #     print(pos_camera)
 
-                    print("\nworkspace Frame (mm):")
-                    # Print 3D positions in workspace Frame
-                    print(pos_workspace)
+                #     print("\nworkspace Frame (mm):")
+                #     # Print 3D positions in workspace Frame
+                #     print(pos_workspace)
 
-                    print("-"*50)
+                #     print("-"*50)
             
-        else:
+        if len(tags) <= 0:
             # No tags detected
-            if counter % PRINT_INTERVAL == 0:
-                print("\nNo tag detected - move tag into view")
+            # if counter % PRINT_INTERVAL == 0:
+            #     print("\nNo tag detected - move tag into view")
             
             cv2.putText(color_frame, "No tag detected", 
                         (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 

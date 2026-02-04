@@ -67,10 +67,10 @@ def main():
     # fy = 487.42053388
     # ppx = 317.3216121
     # ppy = 248.73120265
-    fx = 490.00332243
-    fy = 489.5556459
-    ppx = 315.8040739
-    ppy = 268.93739803
+    fx = 1.08126363e+03
+    fy = 1.08178387e+03
+    ppx = 3.71507713e+02
+    ppy = 3.92122407e+02
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -95,7 +95,8 @@ def main():
     print("="*60 + "\n")
         
     # TODO: Change UDP settings
-    JETBOT_IP = "172.20.10.6"
+    JETBOT_IP = "172.20.10.6" # wills
+    # JETBOT_IP = "172.20.10.8"   # kyles
     PORT = 5005
     SEND_HZ = 50
     period = 1.0 / SEND_HZ

@@ -91,22 +91,10 @@ def main():
     detector = AprilTags()
     
     # TODO: Camera Intrinsics
-    # fx = 487.42056093
-    # fy = 487.42053388
-    # ppx = 317.3216121
-    # ppy = 248.73120265
-    #fx = 490.00332243
-    #fy = 489.5556459
-    #ppx = 315.8040739
-    #ppy = 268.93739803
-
-    fx = 1.10969638e+03
-    fy = 1.10833553e+03
-    ppx = 2.96502099e+02
-    ppy = 2.92449425e+02
-
-
-    
+    fx = 1014.7877227030419
+    fy = 1015.5790339720445
+    ppx = 426.0549465833697
+    ppy = 269.5657379492221
 
     intrinsics = np.array([
                 [fx, 0, ppx],
@@ -129,8 +117,10 @@ def main():
     # Store in order: Tag ID 0, 1, 2, ..., 11 (left-to-right, top-to-bottom)
     ztag=np.array([0, 0])      # position of center of tag 0 in workspace frame
     xspace0 = 48 + TAG_SIZE    # x spacing between pairs
-    xspace1 = 30 + TAG_SIZE    # x spacing between papers
+    xspace1 = 38 + TAG_SIZE    # x spacing between papers
     yspace = 119.5 + TAG_SIZE  # y spacing between papers
+    # x = 0, 144.5 , 279.0 , 423.5 , 558.0, 702.5
+    # y = 0, -216.0 , -432,0 
 
     ztag[0] = (0*xspace0) + (0*xspace1)
     ztag[1] = (0*yspace)
@@ -165,7 +155,9 @@ def main():
         [ztag[0] + (2*xspace0) + (2*xspace1), ztag[1] - (2*yspace), 0],      # Tag 16
         [ztag[0] + (3*xspace0) + (2*xspace1), ztag[1] - (2*yspace), 0],      # Tag 17
     ])
-    
+    print("testing: ")
+    print(workspace_points_array)
+
     # Convert to 3xN format (transpose)
     points_workspace = workspace_points_array.T  # Shape: (3, 36)
     num_tags = points_workspace.shape[1]
@@ -259,7 +251,7 @@ def main():
                     # Note: We only need translation_vector (tag position) for calibration
                     # YOUR CODE HERE
                     rot_matrix, trans_vector = detector.get_tag_pose(tag.corners, intrinsics, TAG_SIZE)
-                    
+                    print(trans_vector)
                     
                     # Store the translation vector (position in camera frame)
                     # Hint: Flatten trans_vector and append to temp_measurements
@@ -300,7 +292,8 @@ def main():
             print(f"  Tag {idx}: {len(tag_measurements)} measurements averaged")
         else:
             print(f"  Warning: No measurements for tag {idx}!")
-    
+    print(points_camera)
+    print(points_workspace)
     # =====================================================================
     # COMPUTE TRANSFORMATION
     # =====================================================================
@@ -379,7 +372,7 @@ def main():
     print("\n" + "="*60)
     
     # Save transformation matrix to file
-    filename = 'camera_workspace_transform.npy'
+    filename = 'C:/Users/cmcgarit/Desktop/SP_Code/camera_workspace_transform.npy'
     # YOUR CODE HERE
     np.save(filename, T_cam_to_workspace)
     

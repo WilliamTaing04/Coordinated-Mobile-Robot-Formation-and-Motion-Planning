@@ -16,7 +16,7 @@ def setup():
         print("Failed to open camera with MSMF")
         exit()
 
-    #fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
 
     return cap
 
@@ -94,9 +94,15 @@ def main():
         None,
         None
     )
-
+    
+    np.set_printoptions(precision=5, suppress=1)    # set print precision and suppression
     print("K:\n", K)
     print("Dist:\n", dist)
+
+    print("\nfx =", K[0,0])
+    print("fy =", K[1,1])
+    print("ppx =", K[0,2])
+    print("ppy =", K[1,2])
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()

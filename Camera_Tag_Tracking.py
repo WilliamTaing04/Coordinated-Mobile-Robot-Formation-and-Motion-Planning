@@ -73,7 +73,7 @@ def record():
     print(f"Intrinsics: {intrinsics}")
     
     # Load the calibration transformation matrix
-    T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
+    T_cam_to_workspace = np.load('C:/Users/cmcgarit/Desktop/SP_Code/camera_workspace_transform.npy')  # Replace with loaded transformation
     print("\nLoaded camera-to-workspace transformation matrix:")
     print(T_cam_to_workspace)
     
@@ -289,6 +289,9 @@ def plot_3D_trajectory_list(ee_pose_list, title):
         ax.set_xlabel('x (mm)')
         ax.set_ylabel('y (mm)')
         ax.set_zlabel('z (mm)')
+        ax.set_xlim([-1000,1000])
+        ax.set_ylim([-1000,1000])
+        ax.set_zlim([-1000,1000])
         plt.show()
     
 
