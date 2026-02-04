@@ -26,6 +26,7 @@ prev = time.time()
 while True:
     
     cap.set(cv2.CAP_PROP_FOCUS, i)
+    start_time = time.perf_counter()
     ret, frame = cap.read()
     if not ret:
         break
@@ -37,11 +38,13 @@ while True:
     cv2.putText(frame, f"FPS: {fps:.1f}",
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
                 1, (0, 255, 0), 2)
-    
     cv2.putText(frame,f"Focus level = {i}", (20,40), cv2.FONT_HERSHEY_COMPLEX, 1, (255,255,255), 2)
     
 
     tags = detector.detect_tags(frame)  # Replace with detected tags
+    # if len(tags) > 0:
+        # print(f"hz: {1.0/(time.perf_counter()-start_time)}")
+
     for tag in tags:
         detector.draw_tags(frame, tag)
         #y_offset = 60
