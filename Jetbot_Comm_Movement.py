@@ -54,8 +54,8 @@ def main():
     # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     cap.set(cv2.CAP_PROP_FPS, 60)
-    cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    cap.set(cv2.CAP_PROP_FOCUS, focus)
+    # cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+    # cap.set(cv2.CAP_PROP_FOCUS, focus)
 
     if not cap.isOpened():
         print('Failed to open camera')
@@ -107,9 +107,9 @@ def main():
     print("="*60 + "\n")
         
     # TODO: Change UDP settings
-    JETBOT_IP = "172.20.10.6"
+    JETBOT_IP = "10.40.109.62"
     PORT = 5005
-    SEND_HZ = 50
+    SEND_HZ = 120
     period = 1.0 / SEND_HZ
     seq=0
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -122,12 +122,26 @@ def main():
     print(f"[START] Sending to {JETBOT_IP}:{PORT} Pack_FMT={PACK_FMT}")
     print("Ctrl+C to quit.\n")
 
+    # TESTING
+    prev_loop_start = time.perf_counter()
+    last_print = prev_loop_start
+    PRINT_HZ = 2.0
+
+
     # =====================================================================
     # MAIN TRACKING LOOP
     # =====================================================================
     while True:
+        # TESTING
+        loop_start = time.perf_counter()
+        loop_dt = loop_start - prev_loop_start
+        prev_loop_start = loop_start   # <-- move this HERE
+        compute_start = loop_start
+
+
+
         # Record start time of the loop
-        start_time = time.perf_counter()  # Replace with actual time
+        start_time = time.perf_counter()
         # Reset each frame; we’ll set if seen
         leader = None
         follower1 = None
@@ -159,6 +173,7 @@ def main():
             cv2.putText(color_frame, "No tag detected", 
                         (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
                         0.7, (0, 0, 255), 2)
+            
 
         else: 
             for tag in tags:
@@ -276,54 +291,54 @@ def main():
             f1_v = f1_w = 0.0
             
 
-        # -------------------------------------------------------------
-        # Draw follower velocity readout (bottom-right) - stable
-        # - fixed sign column (always + or -)
-        # - fixed decimal places
-        # - fixed box size (template)
-        # -------------------------------------------------------------
-        h, w_img = color_frame.shape[:2]
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        scale = 0.6
-        thickness = 2
-        margin = 10
-        gap = 6
-        pad = 8  # padding inside the box
+        # # -------------------------------------------------------------
+        # # Draw follower velocity readout (bottom-right) - stable
+        # # - fixed sign column (always + or -)
+        # # - fixed decimal places
+        # # - fixed box size (template)
+        # # -------------------------------------------------------------
+        # h, w_img = color_frame.shape[:2]
+        # font = cv2.FONT_HERSHEY_SIMPLEX
+        # scale = 0.6
+        # thickness = 2
+        # margin = 10
+        # gap = 6
+        # pad = 8  # padding inside the box
 
-        # Fixed-width formatted lines:
-        #  +  => always show sign so the sign column never appears/disappears
-        #  8.1f / 8.2f => fixed field width + fixed decimals => decimal point stays in same place
-        line1 = f"Follower v: {f1_v:+8.1f} mm/s"
-        line2 = f"Follower w: {f1_w:+8.2f} rad/s"
+        # # Fixed-width formatted lines:
+        # #  +  => always show sign so the sign column never appears/disappears
+        # #  8.1f / 8.2f => fixed field width + fixed decimals => decimal point stays in same place
+        # line1 = f"Follower v: {f1_v:+8.1f} mm/s"
+        # line2 = f"Follower w: {f1_w:+8.2f} rad/s"
 
-        # Fixed "worst case" templates to lock the box size (match sign + decimals)
-        tmpl1 = "Follower v: +9999.9 mm/s"
-        tmpl2 = "Follower w: +9999.99 rad/s"
+        # # Fixed "worst case" templates to lock the box size (match sign + decimals)
+        # tmpl1 = "Follower v: +9999.9 mm/s"
+        # tmpl2 = "Follower w: +9999.99 rad/s"
 
-        (tw1, th1), _ = cv2.getTextSize(tmpl1, font, scale, thickness)
-        (tw2, th2), _ = cv2.getTextSize(tmpl2, font, scale, thickness)
-        tw = max(tw1, tw2)
-        th = th1 + th2 + gap
+        # (tw1, th1), _ = cv2.getTextSize(tmpl1, font, scale, thickness)
+        # (tw2, th2), _ = cv2.getTextSize(tmpl2, font, scale, thickness)
+        # tw = max(tw1, tw2)
+        # th = th1 + th2 + gap
 
-        # Anchor box bottom-right using w_img/h
-        x = w_img - margin - (tw + 2 * pad)
-        y = h     - margin - (th + 2 * pad)
+        # # Anchor box bottom-right using w_img/h
+        # x = w_img - margin - (tw + 2 * pad)
+        # y = h     - margin - (th + 2 * pad)
 
-        # Background rectangle
-        cv2.rectangle(
-            color_frame,
-            (x, y),
-            (x + tw + 2 * pad, y + th + 2 * pad),
-            (0, 0, 0),
-            -1
-        )
+        # # Background rectangle
+        # cv2.rectangle(
+        #     color_frame,
+        #     (x, y),
+        #     (x + tw + 2 * pad, y + th + 2 * pad),
+        #     (0, 0, 0),
+        #     -1
+        # )
 
-        # Text baselines
-        y1 = y + pad + th1
-        y2 = y1 + gap + th2
+        # # Text baselines
+        # y1 = y + pad + th1
+        # y2 = y1 + gap + th2
 
-        cv2.putText(color_frame, line1, (x + pad, y1), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
-        cv2.putText(color_frame, line2, (x + pad, y2), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
+        # cv2.putText(color_frame, line1, (x + pad, y1), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
+        # cv2.putText(color_frame, line2, (x + pad, y2), font, scale, (255, 255, 255), thickness, cv2.LINE_AA)
 
 
 
@@ -360,10 +375,26 @@ def main():
         # MAINTAIN FIXED TIMESTEP
         # -----------------------------------------------------------------
         
+        #TESTING
+        compute_time = time.perf_counter() - compute_start
+        if compute_time < period:
+            time.sleep(period - compute_time)
+
         # Enforce consistent loop timing
-        elapsed = time.perf_counter() - start_time
-        if elapsed < period:
-            time.sleep(period - elapsed)
+        # elapsed = time.perf_counter() - start_time
+        # if elapsed < period:
+            # time.sleep(period - elapsed)
+
+        #TESTING
+        now = time.perf_counter()
+        if now - last_print >= 1.0 / PRINT_HZ:
+            loop_hz = 1.0 / loop_dt if loop_dt > 0 else 0.0
+            print(
+                f"loop: {loop_dt*1000:7.3f} ms ({loop_hz:6.1f} Hz) | "
+                f"compute: {compute_time*1000:7.3f} ms ({1.0 / compute_time} Hz)"
+            )
+            last_print = now
+
     
 
 
