@@ -372,7 +372,7 @@ def main():
     print("\n" + "="*60)
     
     # Save transformation matrix to file
-    filename = 'C:/Users/cmcgarit/Desktop/SP_Code/camera_workspace_transform.npy'
+    filename = 'camera_workspace_transform.npy'
     # YOUR CODE HERE
     np.save(filename, T_cam_to_workspace)
     

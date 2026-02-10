@@ -58,7 +58,7 @@ def main():
     print(f"Intrinsics: {intrinsics}")
     
     # Load the calibration transformation matrix
-    T_cam_to_workspace = np.load('C:/Users/cmcgarit/Desktop/SP_Code/camera_workspace_transform.npy')  # Replace with loaded transformation
+    T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
     print("\nLoaded camera-to-workspace transformation matrix:")
     print(T_cam_to_workspace)
     

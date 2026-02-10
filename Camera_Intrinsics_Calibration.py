@@ -104,6 +104,11 @@ def main():
     print("ppx =", K[0,2])
     print("ppy =", K[1,2])
 
+    # filename = 'camera_intrinsics.npy'
+    # np.save(filename, K)
+
+    # print(K[0,0], K[1,1], K[0,2], K[1,2])
+
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
