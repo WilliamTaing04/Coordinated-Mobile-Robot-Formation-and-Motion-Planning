@@ -6,23 +6,27 @@ import cv2
 import math
 import AprilTags
 
-def camera_setup(width=0, height=0, fps=60):
+def camera_setup(width=1280, height=720, fps=100):
     print("\nInitializing camera and detector...")
     # Initialize camera and detector
-    cap = cv2.VideoCapture(1, cv2.CAP_MSMF)
+
+    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    if width != 0 and height != 0:
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    if fps != 60:
-        cap.set(cv2.CAP_PROP_FPS, fps)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)    # 1280 x 720
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    cap.set(cv2.CAP_PROP_FPS, fps)
+    # Latency / buffering
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    # Lock exposure/focus (DSHOW + this camera usually respect these)
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
+    # set a short exposure (value is camera/driver-dependent; try negative or small positive)
+    cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+    cap.set(cv2.CAP_PROP_GAIN, 0)
     if not cap.isOpened():
         print('Failed to open camera')
         exit()
-    focus = 0
-    print(f"Focus: {focus}")
-    # cap.set(cv2.CAP_PROP_FOCUS, focus)
+        
     return cap
 
 class UDP():

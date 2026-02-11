@@ -72,17 +72,19 @@ def main():
     
     # Initialize camera and detector
     print("\nInitializing camera and AprilTag detector...")
-    cap = cv2.VideoCapture(1, cv2.CAP_MSMF)
-
-    # TODO: Fix camera settings
-    focus = 535
-    print(f"Focus: {focus}")
+    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    cap.set(cv2.CAP_PROP_FPS, 60)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 1280/720
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv2.CAP_PROP_FPS, 100)   # Max FPS
+    # Latency / buffering
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    # Lock exposure/focus (DSHOW + this camera usually respect these)
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    cap.set(cv2.CAP_PROP_FOCUS, focus)
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
+    # set a short exposure (value is camera/driver-dependent; try negative or small positive)
+    cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+    cap.set(cv2.CAP_PROP_GAIN, 0)
 
     if not cap.isOpened():
         print('Failed to open camera')
@@ -91,15 +93,17 @@ def main():
     detector = AprilTags()
     
     # TODO: Camera Intrinsics
-    fx = 1014.7877227030419
-    fy = 1015.5790339720445
-    ppx = 426.0549465833697
-    ppy = 269.5657379492221
+    # fx = 1014.7877227030419
+    # fy = 1015.5790339720445
+    # ppx = 426.0549465833697
+    # ppy = 269.5657379492221
 
-    intrinsics = np.array([
-                [fx, 0, ppx],
-                [0, fy, ppy],
-                [0, 0, 1]])
+    # intrinsics = np.array([
+    #             [fx, 0, ppx],
+    #             [0, fy, ppy],
+    #             [0, 0, 1]])
+    intrinsics = np.load('camera_intrinsics.npy')
+
     print(f"Intrinsics: {intrinsics}")
     
     # IMPORTANT: Measure your actual tags!
@@ -187,7 +191,7 @@ def main():
         # -----------------------------------------------------------------
         
         # Get camera frame
-        ret, color_frame = cap.read()
+        ret, color_frame = cap.retrieve()
         
         if ret is None:
             continue
