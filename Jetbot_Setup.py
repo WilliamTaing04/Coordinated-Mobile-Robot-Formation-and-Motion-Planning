@@ -6,6 +6,93 @@ import cv2
 import math
 import AprilTags
 
+class Jetbot():
+    def __init__(self, id, role=0):
+        self.id = id
+        self.role = role                # 0-follower 1-leader
+        self.visible = 0                # 0-not seen 1-seen
+        self.time_meas = None           # time of measurement
+        self.prev_time_meas = None      # time of previous measurement
+        self.pose = None                # [x, y, theta]
+        self.prev_pose = None           # [x, y, theta]
+        self.lin_vel = None             # mm/s
+        self._prev_lin_vel = 0          # mm/s
+        self.ang_vel = None             # rad/s
+        self._prev_ang_vel = 0          # rad/s
+        self.lin_acc = None             # mm/s^2
+        self.prev_lin_acc = 0           # mm/s^2
+        self.ang_acc = None             # rad/s^2
+        self.prev_ang_acc = 0           # rad/s^2
+
+    def update_meas(self, pose, time_meas):
+        pose = np.asarray(pose, dtype=float).copy()
+        time_meas = float(time_meas)
+        # Check for first update
+        if self.pose is None or self.time_meas is None:
+            self.pose = pose
+            self.prev_pose = pose.copy()
+            self.time_meas = time_meas
+            self.prev_time_meas = time_meas
+
+            self.lin_vel = 0.0
+            self.ang_vel = 0.0
+            self.lin_acc = 0.0
+            self.ang_acc = 0.0
+            return
+        
+        # Update time measured
+        self.prev_time_meas = self.time_meas
+        self.time_meas = time_meas
+        dt = self.time_meas - self.prev_time_meas
+
+        # Check for dt contraints
+        if dt <= 1e-6:
+            return
+        if dt > 0.2:   # ignore dt > 200ms 
+            # Update pose/time
+            self.prev_pose = self.pose
+            self.pose = pose
+            self.prev_time_meas = self.time_meas
+            return
+        
+
+        # Update pose
+        self.prev_pose = self.pose
+        self.pose = pose
+        
+        # Update velocities
+        self._prev_lin_vel = self.lin_vel
+        self._prev_ang_vel = self.ang_vel
+        dx = (self.pose[0] - self.prev_pose[0])
+        dy = (self.pose[1] - self.prev_pose[1])
+        self.lin_vel = v_forward = (dx*np.cos(self.prev_pose[2]) + dy*np.sin(self.prev_pose[2])) / dt
+        self.ang_vel = self.wrap_to_pi((self.pose[2] - self.prev_pose[2])) / dt
+
+        # Update accelerations
+        self.prev_lin_acc = self.lin_acc
+        self.prev_ang_acc = self.ang_acc
+        self.lin_acc = (self.lin_vel - self._prev_lin_vel) / dt
+        self.ang_acc = (self.ang_vel - self._prev_ang_vel) / dt
+
+    def reset(self):
+        self.time_meas = None
+        self.prev_time_meas = None
+        self.pose = None
+        self.prev_pose = None
+        self.lin_vel = None
+        self._prev_lin_vel = 0
+        self.ang_vel = None
+        self._prev_ang_vel = 0
+        self.lin_acc = None  
+        self.prev_lin_acc = 0
+        self.ang_acc = None
+        self.prev_ang_acc = 0
+
+    def wrap_to_pi(self, a: float) -> float:
+        # Wrap angle to [-pi, pi]
+        return (a + np.pi) % (2 * np.pi) - np.pi
+        
+
 def camera_setup(width=1280, height=720, fps=100):
     print("\nInitializing camera and detector...")
     # Initialize camera and detector
@@ -26,12 +113,12 @@ def camera_setup(width=1280, height=720, fps=100):
     if not cap.isOpened():
         print('Failed to open camera')
         exit()
-        
+
     return cap
 
 class UDP():
     def __init__(self, IP="10.40.109.62", Freq=60):
-        self.JETBOT_IP = "{IP}"
+        self.JETBOT_IP = IP
         self.PORT = 5005
         self.SEND_HZ = Freq
         self.period = 1.0 / self.SEND_HZ
@@ -40,9 +127,9 @@ class UDP():
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1 << 16)
 
         # seq(uint32), t_sent(double), left(float), right(float)
-        PACK_FMT = "<Idff"
-        PACK_SIZE = struct.calcsize(PACK_FMT)
-        print(f"[START] Sending to {self.JETBOT_IP}:{self.PORT} Pack_FMT={PACK_FMT}")
+        self.PACK_FMT = "<Idff"
+        self.PACK_SIZE = struct.calcsize(self.PACK_FMT)
+        print(f"[START] Sending to {self.JETBOT_IP}:{self.PORT} Pack_FMT={self.PACK_FMT}")
 
     def Send(self, left, right):
         t_sent = time.time()  # wall time so JetBot can compute age
