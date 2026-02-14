@@ -65,20 +65,20 @@ def main():
     print(T_cam_to_workspace)
 
     # Setup UDP communication
-    UDP = Jetbot_Setup.UDP()
+    UDP = Jetbot_Setup.UDP(Freq=60)
     #ssh jetbot@10.40.109.62
 
     # Controllers
     # TODO: tune controllers
-    pidv = VW_Controller.PID(0.5,0,0) # PID for V
-    pidw = VW_Controller.PID(0.2,0,0) # PID for w
-    controller = VW_Controller.control(500, 2*np.pi, UDP.SEND_HZ, pidv, pidw)   # max vel[mm/s], max angvel[rad/s], send freq, pids
+    pidv = VW_Controller.PID(0.5,0.1,0) # PID for V
+    pidw = VW_Controller.PID(0.5,0.1,0) # PID for w
+    controller = VW_Controller.control(500, 10, UDP.SEND_HZ, pidv, pidw)   # max vel[mm/s], max angvel[rad/s], send freq, pids
     
     # TODO: Controller goals
     # min=40 max= 500
-    V_GOAL = 0       # mm/s
-    # min=0 max=
-    W_GOAL = 4*np.pi     # rad/s
+    V_GOAL = 100       # mm/s
+    # min=0 max=10
+    W_GOAL = 0     # rad/s
 
     # Jetbots
     follower1 = Jetbot_Setup.Jetbot(26,0)
@@ -277,7 +277,7 @@ def plots():
     ang_acc = data["ang_acc"]
 
 
-    # plot.plot_xy(time, pose)
+    plot.plot_xy(time, pose)
     plot.plot_velocities(time, lin_vel, ang_vel)
     # plot.plot_accelerations(time, lin_acc, ang_acc)
 
