@@ -1,0 +1,13 @@
+4 14
+S 0 0 0 0 0
+S 1 -0.8 -0.5 0 0
+S 2 -0.8 0.5 0 0
+S 3 -1.6 0 0 0
+C 0 2 1.0
+C 1 0 0 0 0.5 0.4 0.3 -15
+C 2 0 0 0 0.5 -0.4 -0.3 -15
+C 3 0 1 2 0.5 0.4 0.3 -15
+
+### Agents T_end
+### S agent_id x y v theta
+### C agent_id controller_type inputs
