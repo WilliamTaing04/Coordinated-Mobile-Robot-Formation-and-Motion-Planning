@@ -93,6 +93,7 @@ followerV = None
 class Agent:
     def __init__(self, state_dot=None, state = None
     ):
+         None
          
          
 
@@ -102,7 +103,6 @@ ds = 0.3 # Desired safety distance
 Eu = 1.4 # Safety bounds
 Eω = 1.4
 
-T = 
 
 dx = leaderX - followerX #verify for direction of camera x and y
 dy = leaderY - followerY
@@ -138,9 +138,13 @@ def state_dynamics(state, control):
     return state_dot
 
 # -------------------------------------------------------------------------------------------
+# INPUT:
 # observation = [d, theta] of leader to follower
 # estimates = [dx_hat, v1x_hat, dy_hat, v1y_hat] all of which are fed back
-# state = [v, w] 
+# self_state = [v, w] 
+#
+# OUTPUT:
+# estimates_dot = [dx_hat_dot, v1x_hat_dot, dy_hat_dot, v1y_hat_dot]
 # -----------------------------------------------------------
 def estimator_dynamics(state, estimates, observation, gains=[6, 8, 2]):
     gd = gains[0]
@@ -169,11 +173,11 @@ def estimator_dynamics(state, estimates, observation, gains=[6, 8, 2]):
     dx_del = dx - dx_hat
     dy_del = dy - dy_hat
 
-    state_dot[0, 0] = v1x_hat - v + d * w * sin(theta) + gd * dx_del
-    state_dot[0, 1] = gv * dx_del + v1y_hat * w + p * w * dy_del
+    state_dot[0] = v1x_hat - v + d * w * sin(theta) + gd * dx_del
+    state_dot[1] = gv * dx_del + v1y_hat * w + p * w * dy_del
 
-    state_dot[0, 2] = v1y_hat - d * w * cos(theta) + gd * dy_del
-    state_dot[0, 3] = gv * dy_del - v1y_hat * w - p * w * dx_del
+    state_dot[2] = v1y_hat - d * w * cos(theta) + gd * dy_del
+    state_dot[3] = gv * dy_del - v1y_hat * w - p * w * dx_del
 
     return state_dot
 
