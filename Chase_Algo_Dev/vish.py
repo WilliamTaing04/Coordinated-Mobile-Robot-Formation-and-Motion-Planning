@@ -1,4 +1,10 @@
+import numpy as np
+from math import *
+
 '''
+Question: For U and W controllers in the paper. Do the variables in each refer to 
+X+ and Y edge predecessor's respectively?
+
 Test scenario for one leader one follower:
 Note 1: The leader will be remote-controlled live or will follow a PID-controlled
 trajectory
@@ -9,11 +15,11 @@ follower which sees the leader as "estimate" and itself as "self"
 
 Step 2: loop:
     Step a: Take measurements of self [x, y, v, theta]
-    Step b: Iterate RK4 on estimates [dxhat, v1xhat, dyhat, v1yhat] of follower
+        Question: Previous implementation did RK4 iterations on state_dynamics, can we avoid this?
+    Step b: Iterate RK4 on estimates [dxhat, v1xhat, dyhat, v1yhat] of leader
     Step c: Calculate control inputs [u, w] and write these to the follower
-    Step d:
+        Question: How do the U and W controllers differ? When do CBF's get enforced?
 '''
-
 
 class Agent:
     def __init__(
@@ -27,20 +33,16 @@ class Agent:
         self.id = _id
         self.n_agents = _n_agents
         self.estimator_gains = _estimator_gains
-
-def self_dynamics(state, control): # Why does self need to be a dynamic state? Can't we measure x, y, v, theta directly?
-    v = state[2]
-    alp = state[3]
-    state_dot = np.zeros((1, 4))
-    state_dot[0, 0] = v * cos(alp)
-    state_dot[0, 1] = v * sin(alp)
-    state_dot[0, 2] = control[0]
-    state_dot[0, 3] = control[1]
-    return state_dot
-
+'''
+Proposed alternative function to self_dynamics
+'''
+def update_self_state():
+    # Get x, y, v, theta from overhead camera
+    x, y, v, theta = None
+    return [x, y, v, theta]
 def estimator_dynamics(state, estimates, control, observation, gains):
     v = state[2] #self v
-    w = control[1] #self w
+    w = control[1] #self w, is this dangerous to
     gd = gains[0]
     gv = gains[1]
     p = gains[2]

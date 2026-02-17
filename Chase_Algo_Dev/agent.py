@@ -26,7 +26,8 @@ color_list = ["r", "g", "b", "k", "c", "p"]
 agent_metadata = [cluster_state, observations, n_agents, id] # 
 
 Estimates = [dxhat, v1xhat, dyhat, v1yhat]  # Predecessor values
-Observation = [d, , ]                       # Size of cluster
+Observation = [d, theta, v]                 # Distance between leader and follower, angle between line of sight 
+                                            # of follower to leader and the follower's heading, follower velocity 
 State = [x, y, v, alp]                      # Self state, alp is sometimes theta
 Control = [u, w]                            # Self linear acceleration, angular velocity
 '''
