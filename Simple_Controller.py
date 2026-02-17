@@ -11,7 +11,7 @@ class control():
         self.motor_min = 0.05        # left motor min speed [0,1]
     
     # ORIENTATION X forward, Y left, THETA CCW
-    def controller(self, pose, goal):
+    def controller_xyt(self, pose, goal):
         # extract x y theta
         x, y, theta = pose
         xg, yg, thetag = goal

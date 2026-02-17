@@ -3,20 +3,23 @@ import cv2
 import numpy as np
 
 def setup():
-    cap = cv2.VideoCapture(1, cv2.CAP_MSMF)
-
+    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    #cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    cap.set(cv2.CAP_PROP_FPS, 60)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 1280/720
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv2.CAP_PROP_FPS, 100)   # Max FPS
+    # Latency / buffering
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    # Lock exposure/focus (DSHOW + this camera usually respect these)
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    cap.set(cv2.CAP_PROP_FOCUS, 535)
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
+    # set a short exposure (value is camera/driver-dependent; try negative or small positive)
+    cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+    cap.set(cv2.CAP_PROP_GAIN, 0)
 
     if not cap.isOpened():
         print("Failed to open camera with MSMF")
         exit()
-
-    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
 
     return cap
 
@@ -103,6 +106,11 @@ def main():
     print("fy =", K[1,1])
     print("ppx =", K[0,2])
     print("ppy =", K[1,2])
+
+    filename = 'camera_intrinsics.npy'
+    np.save(filename, K)
+
+    # print(K[0,0], K[1,1], K[0,2], K[1,2])
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
