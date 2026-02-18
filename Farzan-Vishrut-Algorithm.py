@@ -24,12 +24,12 @@ p = gd/3, gv = -2(gd^2) / 9, r = -2p
 '''
 
 # Assumed available parameters from AprilTag local measurements: #
-relativeAngle = None 
-distance = None
+#relativeAngle = None 
+#distance = None
 
 # Assumed available parameters from overhead or local IMU / Encoder
-u = None # Follower linear acceleration
-w = None # Follower angular velocity
+#u = None # Follower linear acceleration
+#w = None # Follower angular velocity
 
 '''
 Eq(34) u calculation:
@@ -84,78 +84,86 @@ Eω + yc
 
 # The local X-Axis is in the direction of the follower's heading
 # The local Y-Axis is the first 2D orthogonal axis CCW from the X-Axis
-leaderX = None
-followerX = None
-leaderY = None
-followerY = None
-followerV = None
 
 class Agent:
-    def __init__(self, state_dot=None, state = None
+    def __init__(
+        self,
+        _id=0,
+        _n_agents = 1,
+        _estimator_gains=[15, 50, 5], #gd, gv, p (NOW POSITIVE)
+        _agent_safety_gains=[0.3, 1.4, 1.4], #ds, Eu, Ew
+        _extra_parameters=[1,0,0] #T, xc, yc
     ):
-         None
-         
-         
+        self.observed = np.zeros((2,4))
+        self.estimated_state = np.zeros((2, 4)) #store dx, vx, dy, vy hat for each agent (both X and Y edges)
+        self.control = np.zeros(2)
+        self.id = _id
+        self.n_agents = _n_agents
+        self.estimator_gains = _estimator_gains
+        self.agent_safety_gains = _agent_safety_gains
+        self.extra_parameters = _extra_parameters
 
-gd = -15 # Estimator gain
-ds = 0.3 # Desired safety distance
+def run_exp():
+    agent = Agent()
+    state_dot = np.zeros((2,4))
+    
+    agent.observed = None #get from camera [dx, dy, theta, v] for both X and Y edges
 
-Eu = 1.4 # Safety bounds
-Eω = 1.4
+    state_dot[0,:] = agent.estimator_dynamics(agent.control, agent.estimated_state[0,:], agent.observed[0,:])
+    state_dot[1,:] = agent.estimator_dynamics(agent.control, agent.estimated_state[1,:], agent.observed[1,:])
 
+    agent.estimated_state = None #RK4 calculation takes in state_dot
 
-dx = leaderX - followerX #verify for direction of camera x and y
-dy = leaderY - followerY
-theta = np.atan2(dy,dx) # Angle from follower to leader
-
-yc = (abs(ds)/ds)(-gd(dyStar-ds))-Eω
-
-ω = [v1yHat - gd(dy-ds)]/dx - [abs(ds)*(Eω+yc)]/(ds*dx)
-
-
-
-
-xc = -gd(dxStar-ds) - Eu
-h1 = dx - ds - T * followerV
-alpha = -gd*h1
-k = 1/T
-
-u = k(v1xHat - Eu - xc - followerV + dy * w + alpha * h1)
-
-
-robotOffset = None
+    control = agent.u_w_calculation(agent.estimated_state, agent.observed)
 
 
 
-def state_dynamics(state, control):
-    v = state[2]
-    alp = state[3]
-    state_dot = np.zeros((1, 4))
-    state_dot[0, 0] = v * cos(alp)
-    state_dot[0, 1] = v * sin(alp)
-    state_dot[0, 2] = control[0]
-    state_dot[0, 3] = control[1]
-    return state_dot
+def u_w_calculation(self, estimates, observation):
+    gd, gv, p = self.estimator_gains
+    ds, Eu, Ew = self.agent_safety_gains
+    T, dx_star, dy_star = self.extra_parameters
+
+    dx = observation[1,0] # Y edge
+    dy = observation[1,1] # Y edge
+    v = observation[0,3] # X edge
+
+    v1y_hat = estimates[1,3] # Y edge
+    v1x_hat = estimates[0,1] # X edge
+
+    yc = (abs(ds)/ds)(-gd(dy_star-ds))-Ew
+    xc = -gd(dx_star-ds) - Eu
+    h1 = dx - ds - T * v
+    alpha = -gd*h1
+    k = 1/T
+
+    w = [v1y_hat - gd(dy-ds)]/dx - [abs(ds)*(Ew+yc)]/(ds*dx) #Y edge traits
+    u = k(v1x_hat - Eu - xc - v + dy * w + alpha * h1) #X edge traits
+
+    control = [u, w]
+    return control
+
+
 
 # -------------------------------------------------------------------------------------------
 # INPUT:
-# observation = [d, theta] of leader to follower
+# observation = [dx, dy, theta, v] of leader to follower
 # estimates = [dx_hat, v1x_hat, dy_hat, v1y_hat] all of which are fed back
-# self_state = [v, w] 
+# control = [u, w]
 #
 # OUTPUT:
 # estimates_dot = [dx_hat_dot, v1x_hat_dot, dy_hat_dot, v1y_hat_dot]
-# -----------------------------------------------------------
-def estimator_dynamics(state, estimates, observation, gains=[6, 8, 2]):
+# -------------------------------------------------------------------------------------------
+def estimator_dynamics(self, control, estimates, observation):
+    gains = self._estimator_gains
     gd = gains[0]
     gv = gains[1]
     p = gains[2]
 
-    v = state[0]
-    w = state[1]
+    w = control[1]
 
-    d = observation[0]
-    theta = observation[1]
+    dx = observation[0]
+    dy = observation[1]
+    v = observation[3]
 
     dx_hat = estimates[0]
     v1x_hat = estimates[1]
@@ -164,19 +172,13 @@ def estimator_dynamics(state, estimates, observation, gains=[6, 8, 2]):
 
     state_dot = np.zeros((1, 4))
 
-    if d == 0:
-        return state_dot
-    
-    dx = d * cos(theta)
-    dy = d * sin(theta)
-
     dx_del = dx - dx_hat
     dy_del = dy - dy_hat
 
-    state_dot[0] = v1x_hat - v + d * w * sin(theta) + gd * dx_del
+    state_dot[0] = v1x_hat - v + dy * w + gd * dx_del
     state_dot[1] = gv * dx_del + v1y_hat * w + p * w * dy_del
 
-    state_dot[2] = v1y_hat - d * w * cos(theta) + gd * dy_del
+    state_dot[2] = v1y_hat - dx * w + gd * dy_del
     state_dot[3] = gv * dy_del - v1y_hat * w - p * w * dx_del
 
     return state_dot
