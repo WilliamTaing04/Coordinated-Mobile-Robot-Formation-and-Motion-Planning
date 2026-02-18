@@ -64,24 +64,26 @@ def main():
     print("\nLoaded camera-to-workspace transformation matrix:")
     print(T_cam_to_workspace)
 
-    # Setup UDP communication
+    # TODO: Setup UDP communication
     UDP = Jetbot_Setup.UDP(Freq=60)
-    #ssh jetbot@10.40.109.62
+    '''
+    ssh jetbot@10.40.109.62
+    '''
 
     # Controllers
     # TODO: tune controllers
-    pidv = VW_Controller.PID(0.5,0.1,0) # PID for V
-    pidw = VW_Controller.PID(0.5,0.1,0) # PID for w
-    controller = VW_Controller.control(500, 10, UDP.SEND_HZ, pidv, pidw)   # max vel[mm/s], max angvel[rad/s], send freq, pids
+    pidv = VW_Controller.PID(0.75,0.3,0) # PID for V
+    pidw = VW_Controller.PID(0.5,0.2,0) # PID for w
+    controller = VW_Controller.control(450, 8, UDP.SEND_HZ, pidv, pidw)   # max vel[mm/s], max angvel[rad/s], send freq, pids
     
     # TODO: Controller goals
     # min=40 max= 500
-    V_GOAL = 100       # mm/s
+    V_GOAL = 300       # mm/s
     # min=0 max=10
-    W_GOAL = 0     # rad/s
+    W_GOAL = 1.5     # rad/s
 
     # Jetbots
-    follower1 = Jetbot_Setup.Jetbot(26,0)
+    follower1 = Jetbot_Setup.Jetbot(26,0)   # TagID, 0-follower
 
     initial_time = time.perf_counter()
 # =====================================================================
@@ -184,12 +186,14 @@ def main():
                 left, right = controller.motor_controller(v_cmd, w_cmd)
                 at_count += 1 #TESTING
             else:
-                left = right= 0.0
+                left = right = 0.0
 
             # Send UDP package
+            # left = -0.15
+            # right = 0.15
             UDP.Send(left, right)
 
-            if (frame_count % 3) == 0:
+            if (frame_count % 4) == 0:
                 # Show instruction
                 cv2.putText(color_frame, "Press 'q' to quit", 
                             (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
@@ -234,7 +238,7 @@ def main():
         UDP.Close()
         cap.release()
         cv2.destroyAllWindows()
-        print(at_count/frame_count)
+        print(f"%Time Tag visible: {100*at_count/frame_count}%")
 
         if collect_data:
             # Trim unused portions of pre-allocated arrays
@@ -277,9 +281,10 @@ def plots():
     ang_acc = data["ang_acc"]
 
 
-    plot.plot_xy(time, pose)
-    plot.plot_velocities(time, lin_vel, ang_vel)
-    # plot.plot_accelerations(time, lin_acc, ang_acc)
+    plot.plot_xy_trajectory(pose)
+    plot.plot_xy_vs_time(time, pose)
+    plot.plot_velocities(time, lin_vel, ang_vel, v_goal=300, w_goal=1.5)
+    plot.plot_accelerations(time, lin_acc, ang_acc)
 
     t_start = 1.0  # seconds
     mask = time >= t_start
