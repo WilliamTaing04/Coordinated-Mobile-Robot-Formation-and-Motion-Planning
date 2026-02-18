@@ -105,16 +105,10 @@ class Agent:
 
 def run_exp():
     agent = Agent()
-    state_dot = np.zeros((2,4))
-    
-    agent.observed = None #get from camera [dx, dy, theta, v] for both X and Y edges
 
-    state_dot[0,:] = agent.estimator_dynamics(agent.control, agent.estimated_state[0,:], agent.observed[0,:])
-    state_dot[1,:] = agent.estimator_dynamics(agent.control, agent.estimated_state[1,:], agent.observed[1,:])
-
-    agent.estimated_state = None #RK4 calculation takes in state_dot
-
-    control = agent.u_w_calculation(agent.estimated_state, agent.observed)
+    #Run 1000 steps
+    for x in range(1000):
+            agent.RK4_step()
 
 
 
@@ -125,7 +119,7 @@ def u_w_calculation(self, estimates, observation):
 
     dx = observation[1,0] # Y edge
     dy = observation[1,1] # Y edge
-    v = observation[0,3] # X edge
+    v = observation[0,3] # X edge TODO v is the follower velocity, so is the same for both edges?
 
     v1y_hat = estimates[1,3] # Y edge
     v1x_hat = estimates[0,1] # X edge
@@ -183,19 +177,82 @@ def estimator_dynamics(self, control, estimates, observation):
 
     return state_dot
 
-def system_dynamics(self, system_state, controls):
-        dynamics = np.zeros(system_state.shape)
-        state = np.copy(system_state[self.id, :])
-        gains = self.estimator_gains
-        obs = self.observations
-        for idx in range(self.n_agents):
-            if idx == self.id:
-                dynamics[idx, :] = state_dynamics(state, controls)
-                continue
-            dynamics[idx, :] = estimator_dynamics(
-                state, system_state[idx, :], controls, obs[idx, :], gains
-            )
-        return dynamics
+def system_dynamics(self, estimates, control):
+        dynamics = np.zeros((2,4))
+        obs = self.observed
+        for idx in [1,2]:
+            dynamics[idx, :] = estimator_dynamics(control, estimates[idx, :], obs[idx, :])
+            return dynamics
+
+
+'''
+def RK4_step(self, h=0.01)
+
+*Computes one time step of estimated steps.*
+    Input: self.initial_state initial set of estimated states of predecessor for both the X+ and Y edge
+    Output: self.estimated_state is updated to the new set of estimated states of predecessor for both the X+ and Y edge
+    
+Simplified RK4 step model. Runs with a given timestep (0.01s in this case). The control inputs and self-state 
+(x,y,v,theta) of follower are treated as constant. In the simulation implementation, the state_dynamics were used to
+update state with each step. Take "step" to mean operation between k(n+1) and k(n+1). Future iterations could either
+    1) Implement the same state_dynamics to get mathematically extrapolated observed states for use in both the estimator
+    dynamics and potentially control_input calculations if those are added too.
+    2) We can actually measure the observed states. If the RK4 time step is 10ms, we would need to take measurements at 
+    0ms, 5ms, and 10ms for the same calculations listed in (1).
+Now for the control_inputs, if we want to not take them as constant in our RK4 steps, we could
+    1) Simply calculate a new control_input with updated state and estimates 
+    2) Measure the actual linear acceleration and angular velocity of the robot and use these in the intermediate steps.
+    At some point we will need to show the measurements are equivalent to the calculations, and we hope that they will be.
+We may be able to ignore the dynamics of the control and observed state within one time step for either of the following
+reasons:
+    1) May be desirable to RK4 for only the variables of interest to be integrated (estimated_states)
+    2) The change in the control and observed states may be negligible within one time step.
+'''
+def RK4_step(self, h=0.01):
+    # We don't need to update here but I kinda like it
+    self.observed = self.update_self_state()
+
+    initial_state = np.copy(self.estimated_states)
+
+    # Grabs Un
+    control_input = u_w_calculation(self, self.estimated_states, self.observed)
+
+    # We don't need to write here but I kinda like it here
+    self.write_control(control_input)
+
+    # K1 dependent on Kn and Un
+    k1 = self.system_dynamics(initial_state, control_input)
+
+    # Simple updated Xn = S2 for K2 calculation
+    s2 = initial_state + k1 * (h/2)
+
+    # K2 dependent on Xn + K1(h/2) and Un + h/2? Not sure about the step in the input
+    k2 = self.system_dynamics(s2, control_input)
+
+    s3 = initial_state + k2 * (h/2)
+
+    k3 = self.system_dynamics(s3, control_input)
+
+    s4 = initial_state + k3 * h
+
+    k4 = self.system_dynamics(s4, control_input)
+
+    next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+    self.estimated_state = np.copy(next_state)
+
+def write_control(self, control_input):
+    print(control_input)
+    return 0
+
+'''
+Proposed alternative function to self_dynamics
+'''
+def update_self_state(self):
+    # Get observed values from X+ edge and Y edge
+    d_X, v_X, theta_X = None
+    d_Y, v_Y, theta_Y = None
+    self.observed = np.array([[d_X * cos(theta_X), d_X * sin(theta_X), v_X, theta_X],
+                             [d_Y * cos(theta_X), d_Y * sin(theta_X), v_X, theta_X]])
 
 
 
