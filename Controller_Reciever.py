@@ -34,7 +34,7 @@ def main():
     ap.add_argument("--watchdog", type=float, default=0.25,
                     help="Seconds without valid packet -> stop motors")
     ap.add_argument("--print_hz", type=float, default=0.0,
-                    help="Status print rate (Hz). 0 disables printing.")
+                    help="Status print rate (Hz). 0 disables periodic printing.")
     args = ap.parse_args()
 
     if Robot is None:
@@ -47,19 +47,21 @@ def main():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((args.bind, args.port))
-
     sock.setblocking(False)
 
     print(f"[START] Listening on {args.bind}:{args.port}")
     print(f"        PACK_FMT={PACK_FMT} PACK_SIZE={PACK_SIZE}")
-    print(f"        watchdog={args.watchdog:.3f}s (t_sent ignored)")
+    print(f"        watchdog={args.watchdog:.3f}s")
     print("Ctrl+C to quit.\n")
 
     last_rx_time = 0.0
     last_seq = None
-    last_addr = None  
+    last_addr = None
     last_left = 0.0
     last_right = 0.0
+
+    # For dt between received packets
+    last_rx_perf = None  # high resolution time
 
     # Stats
     pkts_ok = pkts_bad = pkts_ooo = 0
@@ -71,21 +73,22 @@ def main():
         robot.right_motor.value = 0.0
         last_left, last_right = 0.0, 0.0
 
-    # Ensure stopped at start
     stop()
 
     try:
         while True:
-            now = time.time()
+            now_wall = time.time()
+            now_perf = time.perf_counter()
 
+            # Drain socket (newest packet wins)
             data = None
             addr = None
             while True:
                 try:
                     d, a = sock.recvfrom(2048)
-                    data, addr = d, a  # overwrite => newest packet wins
+                    data, addr = d, a
                 except BlockingIOError:
-                    break  # no more packets queued
+                    break
 
             if data:
                 if len(data) != PACK_SIZE:
@@ -96,20 +99,28 @@ def main():
                     except struct.error:
                         pkts_bad += 1
                     else:
-                        # treat as new session and reset sequencing.
+                        # New sender detection
                         if last_addr is None or addr != last_addr:
                             print(f"[INFO] New sender {addr}, resetting sequence tracking.")
                             last_addr = addr
                             last_seq = None
+                            last_rx_perf = None
 
-                        # sequencing: drop out-of-order / duplicates
+                        # Sequence check
                         if not is_seq_newer(seq, last_seq):
                             pkts_ooo += 1
                         else:
                             last_seq = seq
-                            last_rx_time = now
+                            last_rx_time = now_wall
 
-                            # NaN check: NaN != NaN
+                            # Compute dt between received packets
+                            if last_rx_perf is None:
+                                dt_recv = 0.0
+                            else:
+                                dt_recv = now_perf - last_rx_perf
+                            last_rx_perf = now_perf
+
+                            # NaN guard
                             if not (left == left and right == right):
                                 pkts_bad += 1
                             else:
@@ -117,42 +128,43 @@ def main():
                                 right = float(right)
 
                                 # Clamp to safe range
-                                if left > 1.0:
-                                    left = 1.0
-                                elif left < -1.0:
-                                    left = -1.0
-                                if right > 1.0:
-                                    right = 1.0
-                                elif right < -1.0:
-                                    right = -1.0
+                                left = max(-1.0, min(1.0, left))
+                                right = max(-1.0, min(1.0, right))
 
-                                # Apply commands directly
+                                # Apply motor command
                                 robot.left_motor.value = left
                                 robot.right_motor.value = right
                                 last_left, last_right = left, right
                                 pkts_ok += 1
 
-            # Watchdog: stop if no valid packet arrived within watchdog seconds
-            if last_rx_time > 0 and (now - last_rx_time) > args.watchdog:
+                                # 🔹 NEW: Per-packet debug print
+                                print(
+                                    f"[RX] seq={seq} "
+                                    f"dt_recv={dt_recv:0.4f}s "
+                                    f"L={left:+0.3f} R={right:+0.3f}"
+                                )
+
+            # Watchdog stop
+            if last_rx_time > 0 and (now_wall - last_rx_time) > args.watchdog:
                 if last_left != 0.0 or last_right != 0.0:
                     stop()
                 last_seq = None
                 last_addr = None
                 last_rx_time = 0.0
+                last_rx_perf = None
 
-            # Status printing (disabled by default)
+            # Optional periodic summary print
             if args.print_hz > 0:
                 tperf = time.perf_counter()
                 if (tperf - last_print) >= (1.0 / args.print_hz):
-                    dt = (now - last_rx_time) if last_rx_time > 0 else float("inf")
+                    dt = (now_wall - last_rx_time) if last_rx_time > 0 else float("inf")
                     print(
-                        f"seq={last_seq} dt={dt:0.3f}s "
+                        f"[STATUS] seq={last_seq} dt_since_last={dt:0.3f}s "
                         f"L={last_left:+0.3f} R={last_right:+0.3f} | "
                         f"ok={pkts_ok} bad={pkts_bad} ooo={pkts_ooo}"
                     )
                     last_print = tperf
 
-            # Tiny sleep to avoid maxing CPU while still being responsive
             time.sleep(0.001)
 
     except KeyboardInterrupt:
