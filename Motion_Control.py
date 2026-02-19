@@ -122,6 +122,9 @@ class control():
         self.last_w_cmd = w_cmd
 
         return v_cmd, w_cmd
+    
+    def controller_aw(self, measured, goal):
+        pass
 
     
     def motor_controller(self, v_cmd, w_cmd):
