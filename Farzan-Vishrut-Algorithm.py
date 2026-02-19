@@ -1,5 +1,6 @@
 import numpy as np
 from math import *
+import time as time
 '''
 State Variables:
 d - Euclidean distance between follower and its predecessor
@@ -90,12 +91,13 @@ class Agent:
         self,
         _id=0,
         _n_agents = 1,
-        _estimator_gains=[15, 50, 5], #gd, gv, p (NOW POSITIVE)
+        _estimator_gains=[-15, -50, -5], #gd, gv, p (NOW POSITIVE)
         _agent_safety_gains=[0.3, 1.4, 1.4], #ds, Eu, Ew
         _extra_parameters=[1,0.1,0.1] #T, dx_star, dy_star
     ):
         self.observed = np.zeros((2,4))
         self.estimated_state = np.zeros((2, 4)) #store dx, vx, dy, vy hat for each agent (both X and Y edges)
+        #self.estimated_state = 0.1*np.ones((2,4))
         self.control = np.zeros(2)
         self.id = _id
         self.n_agents = _n_agents
@@ -114,19 +116,20 @@ class Agent:
 
         dx = observation[1,0] # Y edge
         dy = observation[1,1] # Y edge
-        v = observation[0,3] # X edge TODO v is the follower velocity, so is the same for both edges?
+        v = observation[0,2] # X edge TODO v is the follower velocity, so is the same for both edges?
 
         v1y_hat = estimates[1,3] # Y edge
         v1x_hat = estimates[0,1] # X edge
 
         yc = (abs(ds)/ds)*(-gd*(dy_star-ds))-Ew
         xc = -gd*(dx_star-ds) - Eu
-        h1 = dx - ds - T * v
+        h1 = observation[0,0] - ds - T * v
         alpha = -gd*h1
         k = 1/T
 
-        w = [v1y_hat - gd*(dy-ds)]/dx - [abs(ds)*(Ew+yc)]/(ds*dx) #Y edge traits
-        u = k*(v1x_hat - Eu - xc - v + dy * w + alpha * h1) #X edge traits
+        w = (v1y_hat - gd*(dy-ds)/dx) - (abs(ds)*(Ew+yc))/(ds*dx) #Y edge traits
+        print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
+        u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
         control = [u, w]
         return control
@@ -135,7 +138,7 @@ class Agent:
 
     # -------------------------------------------------------------------------------------------
     # INPUT:
-    # observation = [dx, dy, theta, v] of leader to follower
+    # observation = [dx, dy, v, theta,] of leader to follower
     # estimates = [dx_hat, v1x_hat, dy_hat, v1y_hat] all of which are fed back
     # control = [u, w]
     #
@@ -143,16 +146,13 @@ class Agent:
     # estimates_dot = [dx_hat_dot, v1x_hat_dot, dy_hat_dot, v1y_hat_dot]
     # -------------------------------------------------------------------------------------------
     def estimator_dynamics(self, control, estimates, observation):
-        gains = self.estimator_gains
-        gd = gains[0]
-        gv = gains[1]
-        p = gains[2]
+        gd, gv, p = self.estimator_gains
 
         w = control[1]
 
         dx = observation[0]
         dy = observation[1]
-        v = observation[3]
+        v = observation[2]
 
         dx_hat = estimates[0]
         v1x_hat = estimates[1]
@@ -175,7 +175,7 @@ class Agent:
     def system_dynamics(self, estimates, control):
             dynamics = np.zeros((2,4))
             obs = self.observed
-            for idx in [1,2]:
+            for idx in [0,1]:
                 dynamics[idx, :] = self.estimator_dynamics(control, estimates[idx, :], obs[idx, :])
                 return dynamics
 
@@ -251,10 +251,13 @@ class Agent:
 
 def run_exp():
     agent = Agent()
-
+    timeStamp = time.perf_counter()
     #Run 1000 steps
-    for x in range(100):
+    for x in range(500):
+            while((time.perf_counter() - timeStamp) < 0.01):
+                pass
             agent.RK4_step()
+            timeStamp = time.perf_counter()
 
 if __name__ == "__main__":
      run_exp()
