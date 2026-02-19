@@ -4,9 +4,8 @@ import time
 import numpy as np
 import cv2
 import math
-import AprilTags
-import Simple_Controller 
-import VW_Controller
+import AprilTags 
+import Motion_Control
 import Jetbot_Setup
 import matplotlib.pyplot as plt
 import pickle
