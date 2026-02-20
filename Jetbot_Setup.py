@@ -73,6 +73,18 @@ class Jetbot():
         self.prev_ang_acc = self.ang_acc
         self.lin_acc = (self.lin_vel - self._prev_lin_vel) / dt
         self.ang_acc = (self.ang_vel - self._prev_ang_vel) / dt
+    
+    def get_dist_theta(self, agent):
+        # Slice pose
+        x1, y1, t1 = self.pose
+        x2, y2, t2 = agent.pose
+
+        # Calculate dist and theta
+        d = np.hypot((x2-x1),(y2-y1))
+        theta = t2 - t1
+
+        return d, theta
+        
 
     def reset(self):
         self.time_meas = None
@@ -91,6 +103,7 @@ class Jetbot():
     def wrap_to_pi(self, a: float) -> float:
         # Wrap angle to [-pi, pi]
         return (a + np.pi) % (2 * np.pi) - np.pi
+        
         
 
 def camera_setup(width=1280, height=720, fps=100):
