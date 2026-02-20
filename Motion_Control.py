@@ -14,13 +14,14 @@ class PID:
         self.error_prev = None
         self.i_max = 5000
 
-
+    def reset(self):
+        self.integral = 0.0
+        self.error_prev = None
     
     def calculate_PID(self, error, dt):
         # Check for bad dt
         if dt <= 0:
-            self.integral = 0.0
-            self.error_prev = None
+            self.reset()
             return 0.0
         
         # Accumulate error
@@ -46,19 +47,20 @@ class PID:
 
 class control():
     # Initialize the controller.
-    def __init__(self, v_max, w_max, freq, pidv, pidw):
-        self.v_max = v_max              # max velocity [mm/s]
-        self.w_max = w_max              # max angvel [rad/s]
-        self.motor_max = 0.7           # left motor max speed [0,1]
-        self.motor_min = 0.075           # left motor min speed [0,1]
+    def __init__(self, v_max, w_max, a_max, freq, pidv, pidw):
+        self.v_max = v_max              # max lin velocity [mm/s]
+        self.w_max = w_max              # max ang velocity [rad/s]
+        self.a_max = a_max              # max lin acceleration [mm/s^2]
+        self.motor_max = 0.7            # left motor max speed [0,1]
+        self.motor_min = 0.075          # left motor min speed [0,1]
         self.last_time = time.perf_counter()    # save time for dt [s]
         self.dt_max = 1.0 / freq        # max dt [s]
         self.pidv = pidv                # PID for lin vel [mm/s]
         self.pidw = pidw                # PID for ang vel [rad/s]
-        self.wheel_rad = 33            # wheel radius [mm]
+        self.wheel_rad = 33             # wheel radius [mm]
         self.wheel_len = 160            # length between wheels [mm]
-        self.last_v_cmd = 0             # previous v_cmd
-        self.last_w_cmd = 0             # previous w_cmd
+        self.last_v_cmd = 0.0           # previous v_cmd
+        self.last_w_cmd = 0.0           # previous w_cmd
         # Filtering
         self.has_filt = False
         self.v_f = 0.0
@@ -67,9 +69,16 @@ class control():
         # Motor Calibration
         self.K_V = 1628.7734269380087
         self.B_V = -107.70507007613396
+        # Acceleration integration vel
+        self.v_ref = 0.0      # integrated velocity reference
+    
+    def reset(self):
+        self.pidv.reset()
+        self.pidw.reset()
+        self.has_filt = False
+        self.v_ref = 0.0
 
-
-    def controller_vw(self, measured, goal):
+    def controller_aw(self, measured, goal):
         # Calculate dt and update last_time
         now = time.perf_counter()
         dt = now - self.last_time
@@ -77,18 +86,13 @@ class control():
 
         # For bad dt
         if dt <= 0.0 or dt >= 3*self.dt_max:
-            self.pidv.integral = 0.0
-            self.pidv.error_prev = None
-            self.pidw.integral = 0.0
-            self.pidw.error_prev = None
-            self.has_filt = False
+            self.reset()
             self.last_time = now
             return self.last_v_cmd, self.last_w_cmd
 
-
-        # Slice velocities
+        # Slice velocities and accelerations
         v_m , w_m = measured
-        v_g , w_g = goal
+        a_g , w_g = goal
 
         # Filter v_m w_m
         if not self.has_filt:
@@ -101,6 +105,15 @@ class control():
             self.w_f = a*float(w_m) + (1-a)*self.w_f
         v_m, w_m = self.v_f, self.w_f
 
+        # Clamp accel
+        a_cmd = clamp(float(a_g), -self.a_max, self.a_max)
+
+        # Integrate to velocity reference
+        self.v_ref += a_cmd * dt
+        self.v_ref = clamp(self.v_ref, -self.v_max, self.v_max)
+
+        v_g = self.v_ref
+        w_g = clamp(float(w_g), -self.w_max, self.w_max)
 
         # Calculate errors
         e_v = v_g - v_m
@@ -123,8 +136,55 @@ class control():
 
         return v_cmd, w_cmd
     
-    def controller_aw(self, measured, goal):
-        pass
+    def controller_vw(self, measured, goal):
+        # Calculate dt and update last_time
+        now = time.perf_counter()
+        dt = now - self.last_time
+        self.last_time = now
+        self.v_ref = v_g
+
+        # For bad dt
+        if dt <= 0.0 or dt >= 3*self.dt_max:
+            self.reset()
+            self.last_time = now
+            return self.last_v_cmd, self.last_w_cmd
+
+
+        # Slice velocities
+        v_m , w_m = measured
+        v_g , w_g = goal
+
+        # Filter v_m w_m
+        if not self.has_filt:
+            self.v_f = float(v_m)
+            self.w_f = float(w_m)
+            self.has_filt = True
+        else:
+            a = self.alpha
+            self.v_f = a*float(v_m) + (1-a)*self.v_f
+            self.w_f = a*float(w_m) + (1-a)*self.w_f
+        v_m, w_m = self.v_f, self.w_f
+
+        # Calculate errors
+        e_v = v_g - v_m
+        e_w = w_g - w_m
+
+        # PID feedback
+        v_fb = self.pidv.calculate_PID(e_v, dt)
+        w_fb = self.pidw.calculate_PID(e_w, dt)
+
+        # Combine PID
+        v_cmd = v_g + v_fb
+        w_cmd = w_g + w_fb
+
+        # Saturation
+        v_cmd = max(-self.v_max, min(self.v_max, v_cmd))
+        w_cmd = max(-self.w_max, min(self.w_max, w_cmd))
+
+        self.last_v_cmd = v_cmd
+        self.last_w_cmd = w_cmd
+
+        return v_cmd, w_cmd
 
     
     def motor_controller(self, v_cmd, w_cmd):

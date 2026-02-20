@@ -32,7 +32,7 @@ def main():
 # Setup
 # =====================================================================
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720, 60)
+    cap = Jetbot_Setup.camera_setup(1280, 720)
     frame_count = 0
 
     # Testing
@@ -71,15 +71,17 @@ def main():
 
     # Controllers
     # TODO: tune controllers
-    pidv = VW_Controller.PID(0.75,0.3,0) # PID for V
-    pidw = VW_Controller.PID(0.5,0.2,0) # PID for w
-    controller = VW_Controller.control(450, 8, UDP.SEND_HZ, pidv, pidw)   # max vel[mm/s], max angvel[rad/s], send freq, pids
-    
+    pidv = Motion_Control.PID(0.75,0.3,0) # PID for V
+    pidw = Motion_Control.PID(0.5,0.2,0) # PID for w
+    # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
+    controller = Motion_Control.control(450, 8, 500, UDP.SEND_HZ, pidv, pidw)       
     # TODO: Controller goals
+    # min=0 max = 
+    A_GOAL = 100     # mm/s^2
     # min=40 max= 500
-    V_GOAL = 300       # mm/s
+    V_GOAL = 0    # mm/s
     # min=0 max=10
-    W_GOAL = 1.5     # rad/s
+    W_GOAL = 0      # rad/s
 
     # Jetbots
     follower1 = Jetbot_Setup.Jetbot(26,0)   # TagID, 0-follower
@@ -181,7 +183,10 @@ def main():
             # -----------------------------------------------------------------
             if follower1.visible:
                 t_now = time.perf_counter()
-                v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
+                # VW controller:
+                # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
+                # AW controller
+                v_cmd , w_cmd = controller.controller_aw([follower1.lin_vel, follower1.ang_vel],[A_GOAL, W_GOAL])
                 left, right = controller.motor_controller(v_cmd, w_cmd)
                 at_count += 1 #TESTING
             else:
@@ -282,16 +287,23 @@ def plots():
 
     plot.plot_xy_trajectory(pose)
     plot.plot_xy_vs_time(time, pose)
-    plot.plot_velocities(time, lin_vel, ang_vel, v_goal=300, w_goal=1.5)
-    plot.plot_accelerations(time, lin_acc, ang_acc)
+    plot.plot_velocities(time, lin_vel, ang_vel, v_goal=None, w_goal=None)
+    plot.plot_accelerations(time, lin_acc, ang_acc, lin_acc_des=200,window=40)
+    plot.plot_aw(time, lin_acc, ang_vel, lin_acc_des=200, ang_vel_des=0, window=50)
+
 
     t_start = 1.0  # seconds
     mask = time >= t_start
-    steady_vel = lin_vel[mask]
-    avg_vel = np.mean(steady_vel)
+    steady_lvel = lin_vel[mask]
+    avg_lvel = np.mean(steady_lvel)
     steady_avel = ang_vel[mask]
     avg_avel = np.mean(steady_avel)
-    print("Average steady lin velocity:", avg_vel, "mm/s")
+    steady_lacc = lin_acc[mask]
+    avg_lacc = np.mean(steady_lacc)
+
+    np.set_printoptions(precision=5, suppress=1)    # set print precision and suppression
+    print("Average steady lin velocity:", avg_lvel, "mm/s")
+    print("Average steady lin acceleration:", avg_lacc, "mm/s^2")
     print("Average steady ang velocity:", avg_avel, "rad/s")
 
 
