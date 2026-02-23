@@ -7,7 +7,7 @@ import math
 import AprilTags
 
 class Jetbot():
-    def __init__(self, id, role=0):
+    def __init__(self, id, role=0, tau_pose=0.2, tau_vel=0.0):
         self.id = id
         self.role = role                # 0-follower 1-leader
         self.visible = 0                # 0-not seen 1-seen
@@ -15,6 +15,10 @@ class Jetbot():
         self.prev_time_meas = None      # time of previous measurement
         self.pose = None                # [x, y, theta]
         self.prev_pose = None           # [x, y, theta]
+        self.pose_f = None              # [x, y, theta] (filtered)
+        self.prev_pose_f = None         # [x, y, theta] (filtered)
+        self._yaw_unwrapped = None      # [rad] yaw/theta (unwrapped)
+        self._prev_yaw_raw = None       # [rad] yaw/theta (wrapped)
         self.lin_vel = None             # mm/s
         self._prev_lin_vel = 0          # mm/s
         self.ang_vel = None             # rad/s
@@ -23,6 +27,8 @@ class Jetbot():
         self.prev_lin_acc = 0           # mm/s^2
         self.ang_acc = None             # rad/s^2
         self.prev_ang_acc = 0           # rad/s^2
+        self.tau_pose = tau_pose        # sec
+        self.tau_vel  = tau_vel         # 0 disables extra vel filtering
 
     def update_meas(self, pose, time_meas):
         pose = np.asarray(pose, dtype=float).copy()
@@ -31,6 +37,10 @@ class Jetbot():
         if self.pose is None or self.time_meas is None:
             self.pose = pose
             self.prev_pose = pose.copy()
+            self._prev_yaw_raw = pose[2]
+            self._yaw_unwrapped = pose[2]
+            self.pose_f = pose.copy()
+            self.prev_pose_f = pose.copy()
             self.time_meas = time_meas
             self.prev_time_meas = time_meas
 
@@ -52,27 +62,66 @@ class Jetbot():
             # Update pose/time
             self.prev_pose = self.pose
             self.pose = pose
+            self.prev_pose_f = self.pose_f
+            self.pose_f = pose.copy() 
+            self._prev_yaw_raw = pose[2]
+            self._yaw_unwrapped = pose[2]
             self.prev_time_meas = self.time_meas
             return
-        
 
         # Update pose
         self.prev_pose = self.pose
         self.pose = pose
+
+        # Unwrap yaw
+        dyaw = self.wrap_to_pi(self.pose[2] - self._prev_yaw_raw)
+        self._yaw_unwrapped = self._yaw_unwrapped + dyaw
+        self._prev_yaw_raw = self.pose[2]
         
-        # Update velocities
+        # LPF pose
+        alpha_pose = dt / (self.tau_pose + dt) if self.tau_pose > 0 else 1.0
+        self.prev_pose_f = self.pose_f.copy()
+
+        # filter x,y
+        self.pose_f[0] = (1 - alpha_pose) * self.pose_f[0] + alpha_pose * self.pose[0]
+        self.pose_f[1] = (1 - alpha_pose) * self.pose_f[1] + alpha_pose * self.pose[1]
+        # filter unwrapped yaw
+        self.pose_f[2] = (1 - alpha_pose) * self.pose_f[2] + alpha_pose * self._yaw_unwrapped
+
+        # Differentiate filtered pose to get velocity
         self._prev_lin_vel = self.lin_vel
         self._prev_ang_vel = self.ang_vel
-        dx = (self.pose[0] - self.prev_pose[0])
-        dy = (self.pose[1] - self.prev_pose[1])
-        self.lin_vel = v_forward = (dx*np.cos(self.prev_pose[2]) + dy*np.sin(self.prev_pose[2])) / dt
-        self.ang_vel = self.wrap_to_pi((self.pose[2] - self.prev_pose[2])) / dt
 
-        # Update accelerations
+        dx = self.pose_f[0] - self.prev_pose_f[0]
+        dy = self.pose_f[1] - self.prev_pose_f[1]
+
+        # Use filtered yaw for projection; for "previous" orientation use prev_pose_f[2]
+        yaw_prev = self.prev_pose_f[2]
+        self.lin_vel = (dx * np.cos(yaw_prev) + dy * np.sin(yaw_prev)) / dt
+        self.ang_vel = (self.pose_f[2] - self.prev_pose_f[2]) / dt
+
+        # ---- 4) Optional: low-pass the velocity ----
+        if self.tau_vel > 0:
+            alpha_vel = dt / (self.tau_vel + dt)
+            self._prev_lin_vel_f = self.lin_vel_f
+            self._prev_ang_vel_f = self.ang_vel_f
+            self.lin_vel_f = (1 - alpha_vel) * self.lin_vel_f + alpha_vel * self.lin_vel
+            self.ang_vel_f = (1 - alpha_vel) * self.ang_vel_f + alpha_vel * self.ang_vel
+            vel_for_acc_lin = self.lin_vel_f
+            vel_for_acc_ang = self.ang_vel_f
+            prev_vel_for_acc_lin = self._prev_lin_vel_f
+            prev_vel_for_acc_ang = self._prev_ang_vel_f
+        else:
+            vel_for_acc_lin = self.lin_vel
+            vel_for_acc_ang = self.ang_vel
+            prev_vel_for_acc_lin = self._prev_lin_vel
+            prev_vel_for_acc_ang = self._prev_ang_vel
+
+        # Diferentiate velocity to get acceleration
         self.prev_lin_acc = self.lin_acc
         self.prev_ang_acc = self.ang_acc
-        self.lin_acc = (self.lin_vel - self._prev_lin_vel) / dt
-        self.ang_acc = (self.ang_vel - self._prev_ang_vel) / dt
+        self.lin_acc = (vel_for_acc_lin - prev_vel_for_acc_lin) / dt
+        self.ang_acc = (vel_for_acc_ang - prev_vel_for_acc_ang) / dt
     
     def get_dist_theta(self, agent):
         # Slice pose
