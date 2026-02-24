@@ -14,8 +14,6 @@ class PID:
         self.error_prev = None
         self.i_max = 5000
 
-
-    
     def calculate_PID(self, error, dt):
         # Check for bad dt
         if dt <= 0:
