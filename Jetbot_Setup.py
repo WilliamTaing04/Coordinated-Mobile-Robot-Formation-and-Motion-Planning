@@ -23,6 +23,10 @@ class Jetbot():
         self._prev_lin_vel = 0          # mm/s
         self.ang_vel = None             # rad/s
         self._prev_ang_vel = 0          # rad/s
+        self.lin_vel_f = 0.0            # mm/s (filtered)
+        self.ang_vel_f = 0.0            # rad/s (filtered)
+        self._prev_lin_vel_f = 0.0      # mm/s (filtered)
+        self._prev_ang_vel_f = 0.0      # rad/s (filtered)
         self.lin_acc = None             # mm/s^2
         self.prev_lin_acc = 0           # mm/s^2
         self.ang_acc = None             # rad/s^2
@@ -62,11 +66,16 @@ class Jetbot():
             # Update pose/time
             self.prev_pose = self.pose
             self.pose = pose
-            self.prev_pose_f = self.pose_f
+            self.prev_pose_f = self.pose_f.copy()
             self.pose_f = pose.copy() 
             self._prev_yaw_raw = pose[2]
             self._yaw_unwrapped = pose[2]
-            self.prev_time_meas = self.time_meas
+            self.lin_vel = 0.0
+            self.ang_vel = 0.0
+            self.lin_vel_f = 0.0
+            self.ang_vel_f = 0.0
+            self.lin_acc = 0.0
+            self.ang_acc = 0.0
             return
 
         # Update pose
@@ -91,16 +100,15 @@ class Jetbot():
         # Differentiate filtered pose to get velocity
         self._prev_lin_vel = self.lin_vel
         self._prev_ang_vel = self.ang_vel
-
         dx = self.pose_f[0] - self.prev_pose_f[0]
         dy = self.pose_f[1] - self.prev_pose_f[1]
 
-        # Use filtered yaw for projection; for "previous" orientation use prev_pose_f[2]
+        # Calculate velocities using filtered valueus
         yaw_prev = self.prev_pose_f[2]
         self.lin_vel = (dx * np.cos(yaw_prev) + dy * np.sin(yaw_prev)) / dt
         self.ang_vel = (self.pose_f[2] - self.prev_pose_f[2]) / dt
 
-        # ---- 4) Optional: low-pass the velocity ----
+        # LPF velocity
         if self.tau_vel > 0:
             alpha_vel = dt / (self.tau_vel + dt)
             self._prev_lin_vel_f = self.lin_vel_f
@@ -130,7 +138,7 @@ class Jetbot():
 
         # Calculate dist and theta
         d = np.hypot((x2-x1),(y2-y1))
-        theta = t2 - t1
+        theta = self.wrap_to_pi(t2 - t1)
 
         return d, theta
         
@@ -148,6 +156,14 @@ class Jetbot():
         self.prev_lin_acc = 0
         self.ang_acc = None
         self.prev_ang_acc = 0
+        self.pose_f = None
+        self.prev_pose_f = None
+        self._yaw_unwrapped = None
+        self._prev_yaw_raw = None
+        self.lin_vel_f = 0.0
+        self.ang_vel_f = 0.0
+        self._prev_lin_vel_f = 0.0
+        self._prev_ang_vel_f = 0.0
 
     def wrap_to_pi(self, a: float) -> float:
         # Wrap angle to [-pi, pi]

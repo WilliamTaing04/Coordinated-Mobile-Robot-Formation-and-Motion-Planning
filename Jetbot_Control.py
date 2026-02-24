@@ -44,6 +44,7 @@ def main():
         max_samples = 7200     # 60Hz => 60(samples/s)*120s = 7200samples
         data_time = np.zeros(max_samples)             # Time [s]
         data_pos = np.zeros((max_samples, 3))         # Jetbot pose [x,y,z] [mm]
+        data_pos_f = np.zeros((max_samples,3))        # Jetbot pose filt [x,y,z] [mm]
         data_lin_vel = np.zeros(max_samples)          # Jetbot lin velocity [mm/s]
         data_ang_vel = np.zeros(max_samples)          # Jetbot ang velocity [rad/s]
         data_lin_acc = np.zeros(max_samples)          # Jetbot lin acceleration [mm/s^2]
@@ -74,7 +75,7 @@ def main():
     pidv = Motion_Control.PID(0.75,0.3,0) # PID for V
     pidw = Motion_Control.PID(0.5,0.2,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controller = Motion_Control.control(450, 8, 500, UDP.SEND_HZ, pidv, pidw)       
+    controller = Motion_Control.control(450, 8, 500, UDP.SEND_HZ, pidv, pidw, alpha=0.2)       
     # TODO: Controller goals
     # min=0 max = 
     A_GOAL = 100     # mm/s^2
@@ -84,7 +85,7 @@ def main():
     W_GOAL = 0      # rad/s
 
     # Jetbots
-    follower1 = Jetbot_Setup.Jetbot(26,0)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(26, 0, tau_pose=0.2, tau_vel=0.0)   # TagID, 0-follower, pose tau, vel tau
 
     initial_time = time.perf_counter()
 # =====================================================================
@@ -162,12 +163,14 @@ def main():
                         # Collect Data
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
                         if tag_id == follower1.id:
-                            follower1.update_meas(pose, time.perf_counter())
+                            t_meas = time.perf_counter()
+                            follower1.update_meas(pose, t_meas)
                             follower1.visible = 1
 
                             if collect_data & follower1.visible:
-                                data_time[count] = time.perf_counter() - initial_time        # Time [s]
+                                data_time[count] = t_meas - initial_time        # Time [s]
                                 data_pos[count, :] = follower1.pose              # Jetbot pose [x,y,z] [mm]
+                                data_pos_f[count, :] = follower1.pose_f          # Jetbot pose filt [x,y,z] [mm]
                                 data_lin_vel[count] = follower1.lin_vel          # Jetbot lin velocity [mm/s]
                                 data_ang_vel[count] = follower1.ang_vel          # Jetbot ang velocity [rad/s]
                                 data_lin_acc[count] = follower1.lin_acc          # Jetbot lin acceleration [mm/s^2]
@@ -175,8 +178,9 @@ def main():
                                 count += 1
 
                         # Draw detection on image
-                        detector.draw_tags(color_frame, tag)
-                        corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
+                        if (frame_count % 4) == 0:
+                            detector.draw_tags(color_frame, tag)
+                            corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
 
             # -----------------------------------------------------------------
             # STEP 4: CONTROLLER AND COMMUNICATION
@@ -197,6 +201,7 @@ def main():
             # right = 0.15
             UDP.Send(left, right)
 
+            # Reduce display
             if (frame_count % 4) == 0:
                 # Show instruction
                 cv2.putText(color_frame, "Press 'q' to quit", 
@@ -248,6 +253,7 @@ def main():
             # Trim unused portions of pre-allocated arrays
             data_time = data_time[:count]
             data_pos = data_pos[:count, :]
+            data_pos_f = data_pos_f[:count, :]
             data_lin_vel = data_lin_vel[:count]
             data_ang_vel = data_ang_vel[:count]
             data_lin_acc = data_lin_acc[:count]
@@ -260,6 +266,7 @@ def main():
             data_dict = {
             'time': data_time, 
             'pos': data_pos, 
+            'pos_f': data_pos_f,
             'lin_vel': data_lin_vel,
             'ang_vel': data_ang_vel,
             'lin_acc': data_lin_acc,
@@ -310,5 +317,5 @@ def plots():
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    # main()
     plots()

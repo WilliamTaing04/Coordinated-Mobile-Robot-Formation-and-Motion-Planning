@@ -47,7 +47,7 @@ class PID:
 
 class control():
     # Initialize the controller.
-    def __init__(self, v_max, w_max, a_max, freq, pidv, pidw):
+    def __init__(self, v_max, w_max, a_max, freq, pidv, pidw, alpha=0.2):
         self.v_max = v_max              # max lin velocity [mm/s]
         self.w_max = w_max              # max ang velocity [rad/s]
         self.a_max = a_max              # max lin acceleration [mm/s^2]
@@ -65,7 +65,7 @@ class control():
         self.has_filt = False
         self.v_f = 0.0
         self.w_f = 0.0
-        self.alpha = 0.1   # 0.1–0.3 typical
+        self.alpha = alpha              # 0.1–0.3 typical
         # Motor Calibration
         self.K_V = 1628.7734269380087
         self.B_V = -107.70507007613396
@@ -141,7 +141,6 @@ class control():
         now = time.perf_counter()
         dt = now - self.last_time
         self.last_time = now
-        self.v_ref = v_g
 
         # For bad dt
         if dt <= 0.0 or dt >= 3*self.dt_max:
@@ -153,6 +152,8 @@ class control():
         # Slice velocities
         v_m , w_m = measured
         v_g , w_g = goal
+        self.v_ref = v_g
+
 
         # Filter v_m w_m
         if not self.has_filt:
