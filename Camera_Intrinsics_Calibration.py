@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 def setup():
-    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 1280/720
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)

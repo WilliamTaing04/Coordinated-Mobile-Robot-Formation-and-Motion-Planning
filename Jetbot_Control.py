@@ -10,7 +10,7 @@ import Jetbot_Setup
 import matplotlib.pyplot as plt
 import pickle
 from pathlib import Path
-import Data_Visualization
+import Data_Visualization as plot
 
 # Directory where this file lives
 HERE = Path(__file__).parent
@@ -44,9 +44,11 @@ def main():
         max_samples = 7200     # 60Hz => 60(samples/s)*120s = 7200samples
         data_time = np.zeros(max_samples)             # Time [s]
         data_pos = np.zeros((max_samples, 3))         # Jetbot pose [x,y,z] [mm]
-        data_pos_f = np.zeros((max_samples,3))        # Jetbot pose filt [x,y,z] [mm]
+        data_pos_f = np.zeros((max_samples, 3))       # Jetbot pose [x,y,z] [mm] (filtered)
         data_lin_vel = np.zeros(max_samples)          # Jetbot lin velocity [mm/s]
         data_ang_vel = np.zeros(max_samples)          # Jetbot ang velocity [rad/s]
+        data_lin_vel_f = np.zeros(max_samples)        # Jetbot lin velocity [mm/s] (filtered)
+        data_ang_vel_f = np.zeros(max_samples)        # Jetbot ang velocity [rad/s] (filtered)
         data_lin_acc = np.zeros(max_samples)          # Jetbot lin acceleration [mm/s^2]
         data_ang_acc = np.zeros(max_samples)          # Jetbot ang acceleration [rad/s^2]
         count = 0  # Sample counter
@@ -73,19 +75,19 @@ def main():
     # Controllers
     # TODO: tune controllers
     pidv = Motion_Control.PID(0.75,0.3,0) # PID for V
-    pidw = Motion_Control.PID(0.5,0.2,0) # PID for w
+    pidw = Motion_Control.PID(0.5,0.3,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controller = Motion_Control.control(450, 8, 500, UDP.SEND_HZ, pidv, pidw, alpha=0.2)       
+    controller = Motion_Control.control(700, 8, 500, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
     # TODO: Controller goals
     # min=0 max = 
-    A_GOAL = 100     # mm/s^2
+    A_GOAL = 25     # mm/s^2
     # min=40 max= 500
     V_GOAL = 0    # mm/s
     # min=0 max=10
-    W_GOAL = 0      # rad/s
+    W_GOAL = 1      # rad/s
 
     # Jetbots
-    follower1 = Jetbot_Setup.Jetbot(26, 0, tau_pose=0.2, tau_vel=0.0)   # TagID, 0-follower, pose tau, vel tau
+    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.35,tau_vel=0.2)   # TagID, 0-follower
 
     initial_time = time.perf_counter()
 # =====================================================================
@@ -170,9 +172,11 @@ def main():
                             if collect_data & follower1.visible:
                                 data_time[count] = t_meas - initial_time        # Time [s]
                                 data_pos[count, :] = follower1.pose              # Jetbot pose [x,y,z] [mm]
-                                data_pos_f[count, :] = follower1.pose_f          # Jetbot pose filt [x,y,z] [mm]
+                                data_pos_f[count, :] = follower1.pose_f          # Jetbot pose [x,y,z] [mm] (filtered)
                                 data_lin_vel[count] = follower1.lin_vel          # Jetbot lin velocity [mm/s]
                                 data_ang_vel[count] = follower1.ang_vel          # Jetbot ang velocity [rad/s]
+                                data_lin_vel_f[count] = follower1.lin_vel_f      # Jetbot lin velocity [mm/s] (filtered)
+                                data_ang_vel_f[count] = follower1.ang_vel_f      # Jetbot ang velocity [rad/s] (filtered)
                                 data_lin_acc[count] = follower1.lin_acc          # Jetbot lin acceleration [mm/s^2]
                                 data_ang_acc[count] = follower1.ang_acc          # Jetbot ang acceleration [rad/s^2]
                                 count += 1
@@ -210,13 +214,6 @@ def main():
                 
                 # Display frame
                 cv2.imshow('Camera', color_frame)
-
-                # print(f"Visible: {follower1.visible}")
-                # if follower1.visible:
-                #     print(f"vels: {follower1.lin_vel}    {follower1.ang_vel}")
-                #     print(f"cmd: {v_cmd}    {w_cmd}")
-                #     print(f"left {left} right {right}")
-
 
             key = cv2.waitKey(1)
             # Check for quit key press ('q' or ESC)
@@ -256,6 +253,8 @@ def main():
             data_pos_f = data_pos_f[:count, :]
             data_lin_vel = data_lin_vel[:count]
             data_ang_vel = data_ang_vel[:count]
+            data_lin_vel_f = data_lin_vel_f[:count]
+            data_ang_vel_f = data_ang_vel_f[:count]
             data_lin_acc = data_lin_acc[:count]
             data_ang_acc = data_ang_acc[:count]
 
@@ -269,6 +268,8 @@ def main():
             'pos_f': data_pos_f,
             'lin_vel': data_lin_vel,
             'ang_vel': data_ang_vel,
+            'lin_vel_f': data_lin_vel_f,
+            'ang_vel_f': data_ang_vel_f,
             'lin_acc': data_lin_acc,
             'ang_acc': data_ang_acc
             }
@@ -280,40 +281,99 @@ def main():
         print("Done!")
     
 def plots():
-    plot=Data_Visualization    
     # Load data from pickle files
     data = load_from_pickle('Jetbot_Tracking.pkl')
-    
-    time = data["time"]
-    pose = data["pos"]
+
+    t = data["time"]
+    pose = data["pos"]       # raw pose
+    pose_f = data["pos_f"]   # filtered pose
     lin_vel = data["lin_vel"]
     ang_vel = data["ang_vel"]
+    lin_vel_f = data["lin_vel_f"]
+    ang_vel_f = data["ang_vel_f"]
     lin_acc = data["lin_acc"]
     ang_acc = data["ang_acc"]
 
+    # ----------------------------
+    # Desired signals (set these)
+    # ----------------------------
+    A_DES = 25
+    V_DES = None
+    W_DES = 1
 
-    plot.plot_xy_trajectory(pose)
-    plot.plot_xy_vs_time(time, pose)
-    plot.plot_velocities(time, lin_vel, ang_vel, v_goal=None, w_goal=None)
-    plot.plot_accelerations(time, lin_acc, ang_acc, lin_acc_des=200,window=40)
-    plot.plot_aw(time, lin_acc, ang_vel, lin_acc_des=200, ang_vel_des=0, window=50)
+    # ----------------------------
+    # Plots
+    # ----------------------------
 
+    # XY trajectory
+    plot.plot_xy_trajectory(
+        pose_f,
+        title="Jetbot XY Trajectory",
+        show_start_end=True
+    )
 
+    # Pose raw vs filtered
+    plot.plot_pose_raw_vs_filtered(
+        t,
+        pose_raw=pose,
+        pose_filt=pose_f,
+        title="Pose: Raw vs Filtered"
+    )
+
+    # X and Y vs time
+    plot.plot_xy_vs_time(
+        t,
+        pose_f,
+        title="Position vs Time (Filtered)"
+    )
+
+    # Velocities raw vs filtered
+    plot.plot_velocity_raw_vs_filtered(
+        t,
+        lin_vel,
+        ang_vel,
+        lin_vel_f,
+        ang_vel_f,
+        "Velocities: Raw vs Filtered"
+    )
+
+    # Velocities vs time (with goal)
+    plot.plot_velocities(
+        t,
+        lin_vel_f,
+        ang_vel_f,
+        v_des=V_DES,
+        w_des=W_DES,
+        title="Velocities vs Time (Filtered)"
+    )
+
+    # Accelerations vs time (with goal)
+    plot.plot_accelerations(
+        t,
+        lin_acc,
+        ang_acc,
+        a_des=A_DES,
+        title="Accelerations vs Time",
+        window=10,
+        plot_raw=True,
+    )
+
+    # ----------------------------
+    # Steady-state averages
+    # ----------------------------
     t_start = 1.0  # seconds
-    mask = time >= t_start
-    steady_lvel = lin_vel[mask]
-    avg_lvel = np.mean(steady_lvel)
-    steady_avel = ang_vel[mask]
-    avg_avel = np.mean(steady_avel)
-    steady_lacc = lin_acc[mask]
-    avg_lacc = np.mean(steady_lacc)
+    mask = t >= t_start
 
-    np.set_printoptions(precision=5, suppress=1)    # set print precision and suppression
+    avg_lvel = float(np.mean(lin_vel[mask])) if np.any(mask) else float("nan")
+    avg_avel = float(np.mean(ang_vel[mask])) if np.any(mask) else float("nan")
+    avg_lacc = float(np.mean(lin_acc[mask])) if np.any(mask) else float("nan")
+
+    np.set_printoptions(precision=5, suppress=True)
     print("Average steady lin velocity:", avg_lvel, "mm/s")
     print("Average steady lin acceleration:", avg_lacc, "mm/s^2")
     print("Average steady ang velocity:", avg_avel, "rad/s")
 
-
+    # Show all figures at the end
     plt.show()
 
 if __name__ == "__main__":
