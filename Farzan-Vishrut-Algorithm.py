@@ -127,7 +127,7 @@ class Agent:
         alpha = -gd*h1
         k = 1/T
 
-        w = (v1y_hat - gd*(dy-ds)/dx) - (abs(ds)*(Ew+yc))/(ds*dx) #Y edge traits
+        w = ((v1y_hat - gd*(dy-ds))/(dx)) - (abs(ds)*(Ew+yc))/(ds*dx) #Y edge traits
         print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
         u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
@@ -240,14 +240,14 @@ class Agent:
         k2, kobs_2 = self.system_dynamics(s2, control_input, obs_2)
 
         s3 = initial_state + k2 * (h/2)
-        obs_3 = obs_2 + kobs_2 * (h/2)
+        obs_3 = obs_1 + kobs_2 * (h/2)
         control_input = self.u_w_calculation(s3, obs_3)
         k3, kobs_3 = self.system_dynamics(s3, control_input, obs_3)
 
         s4 = initial_state + k3 * h
-        obs_4 = obs_3 + kobs_3 * h
+        obs_4 = obs_1 + kobs_3 * h
         control_input = self.u_w_calculation(s4, obs_4)
-        k4, obs_1 = self.system_dynamics(s4, control_input, obs_4) # this obs_1 not used, just labeled to show that it should ideally be the same as the next iteration obs_1
+        k4, kobs_1 = self.system_dynamics(s4, control_input, obs_4) # this kobs_1 not used, just labeled to show that it should ideally be the same as the next iteration kobs_1
 
         # Result of RK4 is to calculate the next state
         next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
