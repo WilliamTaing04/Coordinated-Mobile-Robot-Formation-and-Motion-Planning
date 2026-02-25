@@ -51,7 +51,7 @@ class control():
         self.v_max = v_max              # max lin velocity [mm/s]
         self.w_max = w_max              # max ang velocity [rad/s]
         self.a_max = a_max              # max lin acceleration [mm/s^2]
-        self.motor_max = 0.7            # left motor max speed [0,1]
+        self.motor_max = 0.8            # left motor max speed [0,1]
         self.motor_min = 0.075          # left motor min speed [0,1]
         self.last_time = time.perf_counter()    # save time for dt [s]
         self.dt_max = 1.0 / freq        # max dt [s]
@@ -65,7 +65,7 @@ class control():
         self.has_filt = False
         self.v_f = 0.0
         self.w_f = 0.0
-        self.alpha = 0.1   # 0.1–0.3 typical
+        self.alpha = 0.5   # 0.1–0.3 typical
         # Motor Calibration
         self.K_V = 1628.7734269380087
         self.B_V = -107.70507007613396
