@@ -1,44 +1,87 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# -------------------------------
-# Utility: Rolling Average
-# -------------------------------
-def rolling_average(x, window_size):
-    if window_size <= 1:
-        return np.array(x)
-    # pad to keep same length behavior similar to 'same' conv
-    w = int(window_size)
-    return np.convolve(x, np.ones(w)/w, mode='same')
+def _as_desired_array(desired, t):
+    """
+    Convert desired input (None | scalar | array-like | callable) to an array aligned with t.
+    """
+    if desired is None:
+        return None
+
+    t = np.asarray(t)
+
+    if callable(desired):
+        y = np.asarray(desired(t), dtype=float)
+        if y.shape[0] != t.shape[0]:
+            raise ValueError("Callable desired(t) must return array of same length as t.")
+        return y
+
+    if np.ndim(desired) == 0:
+        return np.full_like(t, float(desired), dtype=float)
+
+    y = np.asarray(desired, dtype=float)
+    if y.shape[0] != t.shape[0]:
+        raise ValueError("Desired array must have same length as t.")
+    return y
+
+def rolling_average(x, window):
+    """
+    Simple windowed rolling average (centered) using convolution.
+    window <= 1 disables smoothing and returns original array.
+    """
+    x = np.asarray(x, dtype=float)
+    if window is None or int(window) <= 1:
+        return x
+    w = int(window)
+    kernel = np.ones(w, dtype=float) / w
+    return np.convolve(x, kernel, mode="same")
+
 
 # -------------------------------
-# 1) XY Trajectory Plot
+# XY Trajectory
 # -------------------------------
-def plot_xy_trajectory(pose_list):
-    pose = np.asarray(pose_list)
+def plot_xy_trajectory(
+    pose,
+    title="X vs Y Trajectory",
+    label=None,
+    show_start_end=True,
+):
+    pose = np.asarray(pose)
     x = pose[:, 0]
     y = pose[:, 1]
 
-    plt.figure(figsize=(6,6))
-    plt.plot(x, y)
-    plt.title("X vs Y Trajectory")
+    plt.figure(figsize=(6, 6))
+    plt.plot(x, y, label=label)
+
+    if show_start_end and len(x) > 0:
+        plt.scatter(x[0], y[0], marker="o", label="Start")
+        plt.scatter(x[-1], y[-1], marker="x", label="End")
+
+    plt.title(title)
     plt.xlabel("X [mm]")
     plt.ylabel("Y [mm]")
     plt.axis("equal")
     plt.grid(True)
+    if label is not None or show_start_end:
+        plt.legend()
     plt.tight_layout()
-    # plt.show()
+
 
 # -------------------------------
-# 2) X vs T and Y vs T (2 subplots)
+# X(t) and Y(t)
 # -------------------------------
-def plot_xy_vs_time(t_list, pose_list):
-    t = np.asarray(t_list)
-    pose = np.asarray(pose_list)
+def plot_xy_vs_time(
+    t,
+    pose,
+    title="Position vs Time",
+):
+    t = np.asarray(t)
+    pose = np.asarray(pose)
+
     x = pose[:, 0]
     y = pose[:, 1]
 
-    fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    fig, axs = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
 
     axs[0].plot(t, x)
     axs[0].set_title("X vs Time")
@@ -51,160 +94,184 @@ def plot_xy_vs_time(t_list, pose_list):
     axs[1].set_ylabel("Y [mm]")
     axs[1].grid(True)
 
-    plt.tight_layout()
-    # plt.show()
+    fig.suptitle(title)
+    fig.tight_layout()
+
 
 # -------------------------------
-# 3) Velocity Plots (with goals + smoothing)
+# Pose Raw vs Filtered
 # -------------------------------
-def plot_velocities(t, lin_vel, ang_vel,
-                    v_goal=None, w_goal=None,
-                    window=20):
+def plot_pose_raw_vs_filtered(
+    t,
+    pose_raw,
+    pose_filt,
+    title="Pose: Raw vs Filtered",
+):
+    t = np.asarray(t)
+    pr = np.asarray(pose_raw)
+    pf = np.asarray(pose_filt)
+
+    fig, axs = plt.subplots(3, 1, figsize=(9, 7), sharex=True)
+
+    # X
+    axs[0].plot(t, pr[:, 0], label="Raw")
+    axs[0].plot(t, pf[:, 0], label="Filtered")
+    axs[0].set_ylabel("X [mm]")
+    axs[0].grid(True)
+    axs[0].legend()
+
+    # Y
+    axs[1].plot(t, pr[:, 1], label="Raw")
+    axs[1].plot(t, pf[:, 1], label="Filtered")
+    axs[1].set_ylabel("Y [mm]")
+    axs[1].grid(True)
+    axs[1].legend()
+
+    # Yaw
+    axs[2].plot(t, pr[:, 2], label="Raw")
+    axs[2].plot(t, pf[:, 2], label="Filtered")
+    axs[2].set_xlabel("Time [s]")
+    axs[2].set_ylabel("Yaw [rad]")
+    axs[2].grid(True)
+    axs[2].legend()
+
+    fig.suptitle(title)
+    fig.tight_layout()
+
+# -------------------------------
+# Velocity Raw vs Filtered
+# -------------------------------
+def plot_velocity_raw_vs_filtered(
+    t,
+    lin_vel_raw,
+    ang_vel_raw,
+    lin_vel_filt,
+    ang_vel_filt,
+    title="Velocity: Raw vs Filtered",
+):
+    t = np.asarray(t)
+    v_r = np.asarray(lin_vel_raw)
+    w_r = np.asarray(ang_vel_raw)
+    v_f = np.asarray(lin_vel_filt)
+    w_f = np.asarray(ang_vel_filt)
+
+    fig, axs = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+
+    axs[0].plot(t, v_r, label="Raw")
+    axs[0].plot(t, v_f, label="Filtered")
+    axs[0].set_title("Linear Velocity")
+    axs[0].set_ylabel("v [mm/s]")
+    axs[0].grid(True)
+    axs[0].legend()
+
+    axs[1].plot(t, w_r, label="Raw")
+    axs[1].plot(t, w_f, label="Filtered")
+    axs[1].set_title("Angular Velocity")
+    axs[1].set_xlabel("Time [s]")
+    axs[1].set_ylabel("w [rad/s]")
+    axs[1].grid(True)
+    axs[1].legend()
+
+    fig.suptitle(title)
+    fig.tight_layout()
+
+# -------------------------------
+# Velocities vs Time
+# -------------------------------
+def plot_velocities(
+    t,
+    lin_vel,
+    ang_vel,
+    v_des=None,
+    w_des=None,
+    title="Velocities vs Time",
+):
     t = np.asarray(t)
     lin_vel = np.asarray(lin_vel)
     ang_vel = np.asarray(ang_vel)
 
-    lin_smooth = rolling_average(lin_vel, window)
-    ang_smooth = rolling_average(ang_vel, window)
+    v_des_arr = _as_desired_array(v_des, t)
+    w_des_arr = _as_desired_array(w_des, t)
 
-    fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    fig, axs = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
 
     # Linear velocity
-    axs[0].plot(t, lin_vel, alpha=0.4, label="Raw")
-    axs[0].plot(t, lin_smooth, linewidth=2, label="Rolling Avg")
-    # v_goal may be scalar or array
-    if v_goal is not None:
-        if np.ndim(v_goal) == 0:
-            axs[0].axhline(v_goal, linestyle='--', linewidth=2, label="V Goal")
-        else:
-            axs[0].plot(t, np.asarray(v_goal), linestyle='--', linewidth=2, label="V Goal")
-
-    axs[0].set_title("Linear Velocity vs Time")
-    axs[0].set_ylabel("Linear Velocity [mm/s]")
+    axs[0].plot(t, lin_vel, label="Measured")
+    if v_des_arr is not None:
+        axs[0].plot(t, v_des_arr, linestyle="--", label="Desired")
+    axs[0].set_title("Linear Velocity")
+    axs[0].set_ylabel("v [mm/s]")
     axs[0].grid(True)
     axs[0].legend()
 
     # Angular velocity
-    axs[1].plot(t, ang_vel, alpha=0.4, label="Raw")
-    axs[1].plot(t, ang_smooth, linewidth=2, label="Rolling Avg")
-    if w_goal is not None:
-        if np.ndim(w_goal) == 0:
-            axs[1].axhline(w_goal, linestyle='--', linewidth=2, label="W Goal")
-        else:
-            axs[1].plot(t, np.asarray(w_goal), linestyle='--', linewidth=2, label="W Goal")
-
-    axs[1].set_title("Angular Velocity vs Time")
+    axs[1].plot(t, ang_vel, label="Measured")
+    if w_des_arr is not None:
+        axs[1].plot(t, w_des_arr, linestyle="--", label="Desired")
+    axs[1].set_title("Angular Velocity")
     axs[1].set_xlabel("Time [s]")
-    axs[1].set_ylabel("Angular Velocity [rad/s]")
+    axs[1].set_ylabel("w [rad/s]")
     axs[1].grid(True)
     axs[1].legend()
 
-    plt.tight_layout()
-    # plt.show()
+    fig.suptitle(title)
+    fig.tight_layout()
+
 
 # -------------------------------
-# 4) Acceleration Plots (with smoothing)
+# Accelerations vs Time
 # -------------------------------
-def plot_accelerations(t, lin_acc, ang_acc, lin_acc_des=None, ang_acc_des=None, window=25):
+# -------------------------------
+# Accelerations vs Time (with optional rolling average)
+# -------------------------------
+def plot_accelerations(
+    t,
+    lin_acc,
+    ang_acc,
+    a_des=None,
+    alpha_des=None,
+    title="Accelerations vs Time",
+    window=1,
+    plot_raw=True,
+):
     """
-    Plot linear and angular accelerations (measured) and optional desired arrays/scalars.
+    window: rolling average window size (samples). window<=1 disables.
+    plot_raw: if True, plot raw + smoothed; if False, plot only smoothed.
     """
     t = np.asarray(t)
     lin_acc = np.asarray(lin_acc)
     ang_acc = np.asarray(ang_acc)
 
-    lin_smooth = rolling_average(lin_acc, window)
-    ang_smooth = rolling_average(ang_acc, window)
+    a_des_arr = _as_desired_array(a_des, t)
+    alpha_des_arr = _as_desired_array(alpha_des, t)
 
-    fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
+    lin_acc_s = rolling_average(lin_acc, window)
+    ang_acc_s = rolling_average(ang_acc, window)
 
-    axs[0].plot(t, lin_acc, alpha=0.4, label="Raw")
-    axs[0].plot(t, lin_smooth, linewidth=2, label="Rolling Avg")
-    if lin_acc_des is not None:
-        if np.ndim(lin_acc_des) == 0:
-            axs[0].axhline(lin_acc_des, linestyle='--', linewidth=2, label="a_des")
-        else:
-            axs[0].plot(t, np.asarray(lin_acc_des), linestyle='--', linewidth=2, label="a_des")
-    axs[0].set_title("Linear Acceleration vs Time")
-    axs[0].set_ylabel("Linear Acceleration [mm/s²]")
+    fig, axs = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+
+    # Linear acceleration
+    if plot_raw:
+        axs[0].plot(t, lin_acc, alpha=0.35, label="Measured (raw)")
+    axs[0].plot(t, lin_acc_s, label=f"Measured (roll avg, w={int(window)})" if int(window) > 1 else "Measured")
+    if a_des_arr is not None:
+        axs[0].plot(t, a_des_arr, linestyle="--", label="Desired")
+    axs[0].set_title("Linear Acceleration")
+    axs[0].set_ylabel("a [mm/s²]")
     axs[0].grid(True)
     axs[0].legend()
 
-    axs[1].plot(t, ang_acc, alpha=0.4, label="Raw")
-    axs[1].plot(t, ang_smooth, linewidth=2, label="Rolling Avg")
-    if ang_acc_des is not None:
-        if np.ndim(ang_acc_des) == 0:
-            axs[1].axhline(ang_acc_des, linestyle='--', linewidth=2, label="ang a_des")
-        else:
-            axs[1].plot(t, np.asarray(ang_acc_des), linestyle='--', linewidth=2, label="ang a_des")
-    axs[1].set_title("Angular Acceleration vs Time")
+    # Angular acceleration
+    if plot_raw:
+        axs[1].plot(t, ang_acc, alpha=0.35, label="Measured (raw)")
+    axs[1].plot(t, ang_acc_s, label=f"Measured (roll avg, w={int(window)})" if int(window) > 1 else "Measured")
+    if alpha_des_arr is not None:
+        axs[1].plot(t, alpha_des_arr, linestyle="--", label="Desired")
+    axs[1].set_title("Angular Acceleration")
     axs[1].set_xlabel("Time [s]")
-    axs[1].set_ylabel("Angular Acceleration [rad/s²]")
+    axs[1].set_ylabel("α [rad/s²]")
     axs[1].grid(True)
     axs[1].legend()
 
-    plt.tight_layout()
-    # plt.show()
-
-# -------------------------------
-# 5) Combined plot: Linear Accel (meas vs desired) and Angular Velocity (meas vs desired)
-# -------------------------------
-def plot_aw(t, lin_acc_meas, ang_vel_meas, lin_acc_des=None, ang_vel_des=None, window=25):
-    """
-    Top subplot: linear acceleration (measured vs desired)
-    Bottom subplot: angular velocity (measured vs desired)
-
-    lin_acc_des and ang_vel_des may be scalar values or arrays matching t.
-    """
-    t = np.asarray(t)
-    lin_acc_meas = np.asarray(lin_acc_meas)
-    ang_vel_meas = np.asarray(ang_vel_meas)
-
-    # smoothing
-    lin_acc_smooth = rolling_average(lin_acc_meas, window)
-    ang_vel_smooth = rolling_average(ang_vel_meas, window)
-
-    fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-
-    # Linear acceleration subplot
-    axes[0].plot(t, lin_acc_meas, alpha=0.35, label="a_meas (raw)")
-    axes[0].plot(t, lin_acc_smooth, linewidth=1.6, label="a_meas (rolling avg)")
-    if lin_acc_des is not None:
-        if np.ndim(lin_acc_des) == 0:
-            axes[0].axhline(lin_acc_des, linestyle='--', linewidth=2, label="a_des")
-        else:
-            axes[0].plot(t, np.asarray(lin_acc_des), linestyle='--', linewidth=2, label="a_des")
-    axes[0].set_title("Linear Acceleration vs Time")
-    axes[0].set_ylabel("Linear Acceleration [mm/s²]")
-    axes[0].grid(True)
-    axes[0].legend(loc='upper right')
-
-    # Angular velocity subplot
-    axes[1].plot(t, ang_vel_meas, alpha=0.35, label="w_meas (raw)")
-    axes[1].plot(t, ang_vel_smooth, linewidth=1.6, label="w_meas (rolling avg)")
-    if ang_vel_des is not None:
-        if np.ndim(ang_vel_des) == 0:
-            axes[1].axhline(ang_vel_des, linestyle='--', linewidth=2, label="w_des")
-        else:
-            axes[1].plot(t, np.asarray(ang_vel_des), linestyle='--', linewidth=2, label="w_des")
-    axes[1].set_title("Angular Velocity vs Time")
-    axes[1].set_xlabel("Time [s]")
-    axes[1].set_ylabel("Angular Velocity [rad/s]")
-    axes[1].grid(True)
-    axes[1].legend(loc='upper right')
-
-    plt.tight_layout()
-    # plt.show()
-
-# -------------------------------
-# Example usage (uncomment to run)
-# -------------------------------
-# T = 6.0
-# fs = 50.0
-# n = int(T * fs)
-# t = np.linspace(0, T, n)
-# a_des = np.zeros(n); a_des[50:150] = 400
-# a_meas = np.roll(a_des, 3) + np.random.randn(n)*60
-# w_des = np.zeros(n); w_des[120:300] = 0.8
-# w_meas = np.roll(w_des, 2) + np.random.randn(n)*0.02
-# plot_accel_and_angvel_with_desired(t, a_meas, a_des, w_meas, w_des, window=15)
+    fig.suptitle(title)
+    fig.tight_layout()

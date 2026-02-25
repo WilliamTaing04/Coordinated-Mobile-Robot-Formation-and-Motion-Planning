@@ -17,22 +17,22 @@ class Jetbot():
         self.prev_pose = None           # [x, y, theta]
         self.pose_f = None              # [x, y, theta] (filtered)
         self.prev_pose_f = None         # [x, y, theta] (filtered)
-        self._yaw_unwrapped = None      # [rad] yaw/theta (unwrapped)
-        self._prev_yaw_raw = None       # [rad] yaw/theta (wrapped)
+        self.yaw_unwrapped = None       # [rad] yaw/theta (unwrapped)
+        self.prev_yaw_raw = None        # [rad] yaw/theta (wrapped)
         self.lin_vel = None             # mm/s
         self._prev_lin_vel = 0          # mm/s
-        self.ang_vel = None             # rad/s
-        self._prev_ang_vel = 0          # rad/s
         self.lin_vel_f = 0.0            # mm/s (filtered)
+        self.prev_lin_vel_f = 0.0       # mm/s (filtered)
+        self.ang_vel = None             # rad/s
+        self.prev_ang_vel = 0           # rad/s
         self.ang_vel_f = 0.0            # rad/s (filtered)
-        self._prev_lin_vel_f = 0.0      # mm/s (filtered)
-        self._prev_ang_vel_f = 0.0      # rad/s (filtered)
+        self.prev_ang_vel_f = 0.0       # rad/s (filtered)
         self.lin_acc = None             # mm/s^2
         self.prev_lin_acc = 0           # mm/s^2
         self.ang_acc = None             # rad/s^2
         self.prev_ang_acc = 0           # rad/s^2
         self.tau_pose = tau_pose        # sec
-        self.tau_vel  = tau_vel         # 0 disables extra vel filtering
+        self.tau_vel  = tau_vel         # sec 0 disables vel filtering
 
     def update_meas(self, pose, time_meas):
         pose = np.asarray(pose, dtype=float).copy()
@@ -41,8 +41,8 @@ class Jetbot():
         if self.pose is None or self.time_meas is None:
             self.pose = pose
             self.prev_pose = pose.copy()
-            self._prev_yaw_raw = pose[2]
-            self._yaw_unwrapped = pose[2]
+            self.prev_yaw_raw = pose[2]
+            self.yaw_unwrapped = pose[2]
             self.pose_f = pose.copy()
             self.prev_pose_f = pose.copy()
             self.time_meas = time_meas
@@ -68,14 +68,9 @@ class Jetbot():
             self.pose = pose
             self.prev_pose_f = self.pose_f.copy()
             self.pose_f = pose.copy() 
-            self._prev_yaw_raw = pose[2]
-            self._yaw_unwrapped = pose[2]
-            self.lin_vel = 0.0
-            self.ang_vel = 0.0
-            self.lin_vel_f = 0.0
-            self.ang_vel_f = 0.0
-            self.lin_acc = 0.0
-            self.ang_acc = 0.0
+            self.prev_yaw_raw = pose[2]
+            self.yaw_unwrapped = pose[2]
+            self.prev_time_meas = self.time_meas
             return
 
         # Update pose
@@ -83,9 +78,9 @@ class Jetbot():
         self.pose = pose
 
         # Unwrap yaw
-        dyaw = self.wrap_to_pi(self.pose[2] - self._prev_yaw_raw)
-        self._yaw_unwrapped = self._yaw_unwrapped + dyaw
-        self._prev_yaw_raw = self.pose[2]
+        dyaw = self.wrap_to_pi(self.pose[2] - self.prev_yaw_raw)
+        self.yaw_unwrapped = self.yaw_unwrapped + dyaw
+        self.prev_yaw_raw = self.pose[2]
         
         # LPF pose
         alpha_pose = dt / (self.tau_pose + dt) if self.tau_pose > 0 else 1.0
@@ -95,11 +90,12 @@ class Jetbot():
         self.pose_f[0] = (1 - alpha_pose) * self.pose_f[0] + alpha_pose * self.pose[0]
         self.pose_f[1] = (1 - alpha_pose) * self.pose_f[1] + alpha_pose * self.pose[1]
         # filter unwrapped yaw
-        self.pose_f[2] = (1 - alpha_pose) * self.pose_f[2] + alpha_pose * self._yaw_unwrapped
+        self.pose_f[2] = (1 - alpha_pose) * self.pose_f[2] + alpha_pose * self.yaw_unwrapped
 
         # Differentiate filtered pose to get velocity
         self._prev_lin_vel = self.lin_vel
-        self._prev_ang_vel = self.ang_vel
+        self.prev_ang_vel = self.ang_vel
+
         dx = self.pose_f[0] - self.prev_pose_f[0]
         dy = self.pose_f[1] - self.prev_pose_f[1]
 
@@ -112,18 +108,18 @@ class Jetbot():
         if self.tau_vel > 0:
             alpha_vel = dt / (self.tau_vel + dt)
             self._prev_lin_vel_f = self.lin_vel_f
-            self._prev_ang_vel_f = self.ang_vel_f
+            self.prev_ang_vel_f = self.ang_vel_f
             self.lin_vel_f = (1 - alpha_vel) * self.lin_vel_f + alpha_vel * self.lin_vel
             self.ang_vel_f = (1 - alpha_vel) * self.ang_vel_f + alpha_vel * self.ang_vel
             vel_for_acc_lin = self.lin_vel_f
             vel_for_acc_ang = self.ang_vel_f
             prev_vel_for_acc_lin = self._prev_lin_vel_f
-            prev_vel_for_acc_ang = self._prev_ang_vel_f
+            prev_vel_for_acc_ang = self.prev_ang_vel_f
         else:
             vel_for_acc_lin = self.lin_vel
             vel_for_acc_ang = self.ang_vel
             prev_vel_for_acc_lin = self._prev_lin_vel
-            prev_vel_for_acc_ang = self._prev_ang_vel
+            prev_vel_for_acc_ang = self.prev_ang_vel
 
         # Diferentiate velocity to get acceleration
         self.prev_lin_acc = self.lin_acc
@@ -151,7 +147,7 @@ class Jetbot():
         self.lin_vel = None
         self._prev_lin_vel = 0
         self.ang_vel = None
-        self._prev_ang_vel = 0
+        self.prev_ang_vel = 0
         self.lin_acc = None  
         self.prev_lin_acc = 0
         self.ang_acc = None
@@ -175,7 +171,7 @@ def camera_setup(width=1280, height=720, fps=100):
     print("\nInitializing camera and detector...")
     # Initialize camera and detector
 
-    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)    # 1280 x 720
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

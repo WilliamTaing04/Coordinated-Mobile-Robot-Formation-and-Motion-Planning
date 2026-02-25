@@ -12,12 +12,11 @@ class PID:
         # Errors
         self.integral = 0.0
         self.error_prev = None
-        self.i_max = 5000
-
+        self.i_max = 500
     def reset(self):
         self.integral = 0.0
         self.error_prev = None
-    
+
     def calculate_PID(self, error, dt):
         # Check for bad dt
         if dt <= 0:
@@ -51,14 +50,14 @@ class control():
         self.v_max = v_max              # max lin velocity [mm/s]
         self.w_max = w_max              # max ang velocity [rad/s]
         self.a_max = a_max              # max lin acceleration [mm/s^2]
-        self.motor_max = 0.7            # left motor max speed [0,1]
+        self.motor_max = 0.8            # left motor max speed [0,1]
         self.motor_min = 0.075          # left motor min speed [0,1]
         self.last_time = time.perf_counter()    # save time for dt [s]
         self.dt_max = 1.0 / freq        # max dt [s]
         self.pidv = pidv                # PID for lin vel [mm/s]
         self.pidw = pidw                # PID for ang vel [rad/s]
         self.wheel_rad = 33             # wheel radius [mm]
-        self.wheel_len = 160            # length between wheels [mm]
+        self.wheel_len = 115            # length between wheels [mm]    MAYBE 155-160
         self.last_v_cmd = 0.0           # previous v_cmd
         self.last_w_cmd = 0.0           # previous w_cmd
         # Filtering
@@ -195,7 +194,7 @@ class control():
         v_r = v_cmd + w_cmd * wheel_len / 2
         v_l = v_cmd - w_cmd * wheel_len / 2
 
-        # Apply calibration
+        # Apply calibralion
         r_n = (v_r - self.B_V) / self.K_V
         l_n = (v_l - self.B_V) / self.K_V
 
