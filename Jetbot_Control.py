@@ -165,11 +165,12 @@ def main():
                         # Collect Data
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
                         if tag_id == follower1.id:
-                            follower1.update_meas(pose, time.perf_counter())
+                            t_meas = time.perf_counter()
+                            follower1.update_meas(pose, t_meas)
                             follower1.visible = 1
 
                             if collect_data & follower1.visible:
-                                data_time[count] = time.perf_counter() - initial_time        # Time [s]
+                                data_time[count] = t_meas - initial_time        # Time [s]
                                 data_pos[count, :] = follower1.pose              # Jetbot pose [x,y,z] [mm]
                                 data_pos_f[count, :] = follower1.pose_f          # Jetbot pose [x,y,z] [mm] (filtered)
                                 data_lin_vel[count] = follower1.lin_vel          # Jetbot lin velocity [mm/s]
@@ -181,8 +182,9 @@ def main():
                                 count += 1
 
                         # Draw detection on image
-                        detector.draw_tags(color_frame, tag)
-                        corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
+                        if (frame_count % 4) == 0:
+                            detector.draw_tags(color_frame, tag)
+                            corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
 
             # -----------------------------------------------------------------
             # STEP 4: CONTROLLER AND COMMUNICATION
@@ -203,6 +205,7 @@ def main():
             # right = 0.15
             UDP.Send(left, right)
 
+            # Reduce display
             if (frame_count % 4) == 0:
                 # Show instruction
                 cv2.putText(color_frame, "Press 'q' to quit", 
@@ -374,5 +377,5 @@ def plots():
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    # main()
     plots()
