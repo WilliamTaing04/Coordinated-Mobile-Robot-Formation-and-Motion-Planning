@@ -77,7 +77,7 @@ def main():
     pidv = Motion_Control.PID(0.75,0.3,0) # PID for V
     pidw = Motion_Control.PID(0.5,0.3,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controller = Motion_Control.control(700, 8, 500, UDP.SEND_HZ, pidv, pidw)       
+    controller = Motion_Control.control(700, 8, 500, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
     # TODO: Controller goals
     # min=0 max = 
     A_GOAL = 25     # mm/s^2
