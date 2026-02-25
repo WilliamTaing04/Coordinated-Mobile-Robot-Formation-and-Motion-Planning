@@ -127,7 +127,7 @@ class Agent:
         alpha = -gd*h1
         k = 1/T
 
-        w = (v1y_hat - gd*(dy-ds)/dx) - (abs(ds)*(Ew+yc))/(ds*dx) #Y edge traits
+        w = ((v1y_hat - gd*(dy-ds))/(dx)) - (abs(ds)*(Ew+yc))/(ds*dx) #Y edge traits
         print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
         u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
@@ -172,12 +172,25 @@ class Agent:
 
         return state_dot
 
-    def system_dynamics(self, estimates, control):
-            dynamics = np.zeros((2,4))
-            obs = self.observed
+    def state_dynamics(self, control, observed):
+        v = observed[2]
+        theta = observed[3]
+
+        state_dot = np.zeros((1, 4))
+        state_dot[0, 0] = v * cos(theta) # Dx dot
+        state_dot[0, 1] = v * sin(theta) # Dy dot
+        state_dot[0, 2] = control[0] # u = v dot
+        state_dot[0, 3] = control[1] # w = theta dot
+        return state_dot
+
+    def system_dynamics(self, estimates, control, observed):
+            estimates_dot = np.zeros((2,4))
+            state_dot = np.zeros((2,4))
             for idx in [0,1]:
-                dynamics[idx, :] = self.estimator_dynamics(control, estimates[idx, :], obs[idx, :])
-                return dynamics
+                estimates_dot[idx, :] = self.estimator_dynamics(control, estimates[idx, :], observed[idx, :])
+                state_dot[idx, :] = self.state_dynamics(control, observed[idx, :])
+            return estimates_dot, state_dot
+
 
 
     '''
@@ -203,37 +216,74 @@ class Agent:
         1) May be desirable to RK4 for only the variables of interest to be integrated (estimated_states)
         2) The change in the control and observed states may be negligible within one time step.
     '''
-    def RK4_step(self, h=0.01):
+    def RK4_step(self, h=0.01): #IMPLEMENTATION ONE, ESTIMATOR, STATE, AND CONTROL UPDATES
         # We don't need to update here but I kinda like it
         self.update_self_state()
 
         initial_state = np.copy(self.estimated_state)
 
+        # Current state and current observed. These get modified at each of the 4 RK4 steps
+        s1 = self.estimated_state
+        obs_1 = self.observed
         # Grabs Un
-        control_input = self.u_w_calculation(self.estimated_state, self.observed)
-
+        control_input = self.u_w_calculation(s1, obs_1)
         # We don't need to write here but I kinda like it here
         self.write_control(control_input)
-
-        # K1 dependent on Kn and Un
-        k1 = self.system_dynamics(initial_state, control_input)
+        # K1 dependent on Kn and Un, S1 is the initial estimated state
+        k1, kobs_1 = self.system_dynamics(initial_state, control_input, obs_1)
 
         # Simple updated Xn = S2 for K2 calculation
         s2 = initial_state + k1 * (h/2)
-
+        obs_2 = obs_1 + kobs_1 * (h/2)
         # K2 dependent on Xn + K1(h/2) and Un + h/2? Not sure about the step in the input
-        k2 = self.system_dynamics(s2, control_input)
+        control_input = self.u_w_calculation(s2, obs_2)
+        k2, kobs_2 = self.system_dynamics(s2, control_input, obs_2)
 
         s3 = initial_state + k2 * (h/2)
-
-        k3 = self.system_dynamics(s3, control_input)
+        obs_3 = obs_1 + kobs_2 * (h/2)
+        control_input = self.u_w_calculation(s3, obs_3)
+        k3, kobs_3 = self.system_dynamics(s3, control_input, obs_3)
 
         s4 = initial_state + k3 * h
+        obs_4 = obs_1 + kobs_3 * h
+        control_input = self.u_w_calculation(s4, obs_4)
+        k4, kobs_1 = self.system_dynamics(s4, control_input, obs_4) # this kobs_1 not used, just labeled to show that it should ideally be the same as the next iteration kobs_1
 
-        k4 = self.system_dynamics(s4, control_input)
-
+        # Result of RK4 is to calculate the next state
         next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
         self.estimated_state = np.copy(next_state)
+
+    # def RK4_step2(self, h=0.01): #IMPLEMENTATION TWO, JUST ESTIMATOR ITERATING, THIS CODE NEEDS UPDATING NOW TOO
+    #     # We don't need to update here but I kinda like it
+    #     self.update_self_state()
+    #
+    #     initial_state = np.copy(self.estimated_state)
+    #
+    #     # Grabs Un
+    #     control_input = self.u_w_calculation(self.estimated_state, self.observed)
+    #
+    #     # We don't need to write here but I kinda like it here
+    #     self.write_control(control_input)
+    #
+    #     # K1 dependent on Kn and Un
+    #     k1 = self.system_dynamics(initial_state, control_input)
+    #
+    #     # Simple updated Xn = S2 for K2 calculation
+    #     s2 = initial_state + k1 * (h/2)
+    #
+    #     # K2 dependent on Xn + K1(h/2) and Un + h/2? Not sure about the step in the input
+    #     k2 = self.system_dynamics(s2, control_input)
+    #
+    #     s3 = initial_state + k2 * (h/2)
+    #
+    #     k3 = self.system_dynamics(s3, control_input)
+    #
+    #     s4 = initial_state + k3 * h
+    #
+    #     k4 = self.system_dynamics(s4, control_input)
+    #
+    #     next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+    #     self.estimated_state = np.copy(next_state)
 
     def write_control(self, control_input):
         print(control_input[0], control_input[1])
