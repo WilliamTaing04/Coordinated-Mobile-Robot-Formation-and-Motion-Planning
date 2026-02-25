@@ -74,8 +74,8 @@ def main():
 
     # Controllers
     # TODO: tune controllers
-    pidv = Motion_Control.PID(0.75,0.3,0) # PID for V
-    pidw = Motion_Control.PID(0.5,0.3,0) # PID for w
+    pidv = Motion_Control.PID(0.5,0.1,0) # PID for V
+    pidw = Motion_Control.PID(0.5,0.1,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
     controller = Motion_Control.control(700, 8, 500, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
     # TODO: Controller goals
@@ -84,10 +84,10 @@ def main():
     # min=40 max= 500
     V_GOAL = 0    # mm/s
     # min=0 max=10
-    W_GOAL = 1      # rad/s
+    W_GOAL = 1.5      # rad/s
 
     # Jetbots
-    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.35,tau_vel=0.2)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.2,tau_vel=0.25)   # TagID, 0-follower
 
     initial_time = time.perf_counter()
 # =====================================================================
@@ -299,7 +299,7 @@ def plots():
     # ----------------------------
     A_DES = 25
     V_DES = None
-    W_DES = 1
+    W_DES = 1.5
 
     # ----------------------------
     # Plots
@@ -354,7 +354,7 @@ def plots():
         ang_acc,
         a_des=A_DES,
         title="Accelerations vs Time",
-        window=10,
+        window=30,
         plot_raw=True,
     )
 
@@ -377,5 +377,5 @@ def plots():
     plt.show()
 
 if __name__ == "__main__":
-    # main()
+    main()
     plots()
