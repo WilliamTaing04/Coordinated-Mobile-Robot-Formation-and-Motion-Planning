@@ -68,7 +68,7 @@ def main():
     print(T_cam_to_workspace)
 
     # TODO: Setup UDP communication
-    UDP = Jetbot_Setup.UDP(Freq=60)
+    UDP = Jetbot_Setup.UDP(Freq=32)
     '''
     ssh jetbot@10.40.109.62
     '''
@@ -81,11 +81,11 @@ def main():
     controller = Motion_Control.control(700, 8, 500, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
     # TODO: Controller goals
     # min=0 max = 
-    A_GOAL = 25     # mm/s^2
+    A_GOAL = 0     # mm/s^2
     # min=40 max= 500
     V_GOAL = 0    # mm/s
     # min=0 max=10
-    W_GOAL = 1.5      # rad/s
+    W_GOAL = 0      # rad/s
 
     # Jetbots
     follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.2,tau_vel=0.25)   # TagID, 0-follower
@@ -232,6 +232,9 @@ def main():
             elapsed = time.perf_counter() - start_time
             if elapsed < UDP.period:
                 time.sleep(UDP.period - elapsed)
+            else:
+                print("Loop period exceeded")
+                break
 
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")

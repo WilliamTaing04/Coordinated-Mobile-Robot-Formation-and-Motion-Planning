@@ -128,7 +128,7 @@ class Agent:
         k = 1/T
 
         w = ((v1y_hat - gd*(dy-ds))/(dx)) - (abs(ds)*(Ew+yc))/(ds*dx) #Y edge traits
-        print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
+        #print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
         u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
         control = [u, w]
@@ -216,7 +216,7 @@ class Agent:
         1) May be desirable to RK4 for only the variables of interest to be integrated (estimated_states)
         2) The change in the control and observed states may be negligible within one time step.
     '''
-    def RK4_step(self, h=0.01): #IMPLEMENTATION ONE, ESTIMATOR, STATE, AND CONTROL UPDATES
+    def RK4_step(self, h=0.03125): #IMPLEMENTATION ONE, ESTIMATOR, STATE, AND CONTROL UPDATES, 32Hz
         # We don't need to update here but I kinda like it
         #self.update_self_state() #auto updated in outer loop
 
