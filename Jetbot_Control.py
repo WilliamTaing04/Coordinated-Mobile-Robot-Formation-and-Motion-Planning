@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import pickle
 from pathlib import Path
 import Data_Visualization as plot
-import 
+
 
 # Directory where this file lives
 HERE = Path(__file__).parent
@@ -81,11 +81,11 @@ def main():
     controller = Motion_Control.control(700, 8, 500, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
     # TODO: Controller goals
     # min=0 max = 
-    A_GOAL = 25     # mm/s^2
+    A_GOAL = 0     # mm/s^2
     # min=40 max= 500
     V_GOAL = 0    # mm/s
     # min=0 max=10
-    W_GOAL = 1.5      # rad/s
+    W_GOAL = 0      # rad/s
 
     # Jetbots
     follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.2,tau_vel=0.25)   # TagID, 0-follower
@@ -298,9 +298,9 @@ def plots():
     # ----------------------------
     # Desired signals (set these)
     # ----------------------------
-    A_DES = 25
+    A_DES = None
     V_DES = None
-    W_DES = 1.5
+    W_DES = None
 
     # ----------------------------
     # Plots
@@ -358,6 +358,13 @@ def plots():
         window=30,
         plot_raw=True,
     )
+    
+    # dt Histogram
+    plot.analyze_dt_histogram(
+        t,
+        bins=30,
+        title="dt"
+    )
 
     # ----------------------------
     # Steady-state averages
@@ -378,5 +385,5 @@ def plots():
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    # main()
     plots()

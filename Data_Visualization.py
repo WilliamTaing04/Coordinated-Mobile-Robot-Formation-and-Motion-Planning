@@ -309,7 +309,7 @@ def analyze_dt_histogram(time_array, bins=30, title="dt Histogram"):
     plt.figure(figsize=(7,4))
     plt.hist(dt, bins=bins, edgecolor='black', alpha=0.7)
     plt.axvline(dt_avg, color='red', linestyle='--',
-                label=f"Mean dt = {dt_avg:.4f}s")
+                label=f"Avg Hz = {1/dt_avg:.4f}Hz")
     plt.title(title)
     plt.xlabel("dt [s]")
     plt.ylabel("Count")
