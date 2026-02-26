@@ -218,7 +218,7 @@ class Agent:
     '''
     def RK4_step(self, h=0.01): #IMPLEMENTATION ONE, ESTIMATOR, STATE, AND CONTROL UPDATES
         # We don't need to update here but I kinda like it
-        self.update_self_state()
+        #self.update_self_state() #auto updated in outer loop
 
         initial_state = np.copy(self.estimated_state)
 
@@ -227,7 +227,7 @@ class Agent:
         obs_1 = self.observed
         # Grabs Un
         control_input = self.u_w_calculation(s1, obs_1)
-        self.write_control(control_input)
+        #self.write_control(control_input)
 
         # K1 dependent on Kn and Un, S1 is the initial estimated state
         k1, kobs_1 = self.system_dynamics(initial_state, control_input, obs_1)
@@ -252,6 +252,7 @@ class Agent:
         # Result of RK4 is to calculate the next state
         next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
         self.estimated_state = np.copy(next_state)
+        return()
 
     # def RK4_step2(self, h=0.01): #IMPLEMENTATION TWO, JUST ESTIMATOR ITERATING, THIS CODE NEEDS UPDATING NOW TOO
     #     # We don't need to update here but I kinda like it
@@ -285,10 +286,6 @@ class Agent:
     #     next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
     #     self.estimated_state = np.copy(next_state)
 
-    def write_control(self, control_input):
-        print(control_input[0], control_input[1])
-        return 0
-
     '''
     Proposed alternative function to self_dynamics
     '''
@@ -302,6 +299,9 @@ class Agent:
         theta_Y = obsY[2]
         self.observed = np.array([[d_X * cos(theta_X), d_X * sin(theta_X), v_X, theta_X],
                                 [d_Y * cos(theta_Y), d_Y * sin(theta_Y), v_Y, theta_Y]])
+
+    def getuw(self):
+        return self.u_w_calculation(self.estimated_state, self.observed)
 
 # def run_exp():
 #     agent = Agent()

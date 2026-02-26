@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import pickle
 from pathlib import Path
 import Data_Visualization as plot
-import 
+import farzan_vishrut_algorithm
 
 # Directory where this file lives
 HERE = Path(__file__).parent
@@ -89,6 +89,7 @@ def main():
 
     # Jetbots
     follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.2,tau_vel=0.25)   # TagID, 0-follower
+    agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
 
     initial_time = time.perf_counter()
 # =====================================================================
@@ -167,7 +168,8 @@ def main():
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
                         if tag_id == follower1.id:
                             t_meas = time.perf_counter()
-                            follower1.update_meas(pose, t_meas)
+                            updated = follower1.update_meas(pose, t_meas)
+                            agent1.update_self_state(updated,updated)
                             follower1.visible = 1
 
                             if collect_data & follower1.visible:
@@ -194,7 +196,9 @@ def main():
                 t_now = time.perf_counter()
                 # VW controller:
                 # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
-                # AW controller
+                agent1.RK4_step()
+                A_GOAL, W_GOAL = agent1.getuw()
+                # UW controller
                 v_cmd , w_cmd = controller.controller_aw([follower1.lin_vel, follower1.ang_vel],[A_GOAL, W_GOAL])
                 left, right = controller.motor_controller(v_cmd, w_cmd)
                 at_count += 1 #TESTING
