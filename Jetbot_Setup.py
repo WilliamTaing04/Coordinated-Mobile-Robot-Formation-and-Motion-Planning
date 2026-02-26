@@ -137,7 +137,6 @@ class Jetbot():
         theta = self.wrap_to_pi(t2 - t1)
 
         return d, theta
-        
 
     def reset(self):
         self.time_meas = None
