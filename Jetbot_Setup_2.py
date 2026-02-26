@@ -14,35 +14,35 @@ class Jetbot():
         self.time_meas = np.zeros((2))           # time of measurement (current, past)
 
         self.pose = None                # [x, y, theta]
-        self.pose_f = np.zeros((3,2))              # [x, y, theta] (filtered) (current, past)
+        self.pose_f = np.zeros((2,3))              # [x, y, theta] (filtered) (current, past)
 
         self.lin_vel_x = np.zeros((2))            # x mm/s (filtered)
         self.lin_vel_y = np.zeros((2))            # y mm/s (filtered)
-        self.lin_vel = None                       # directional velocity
+        self.lin_vel = 0.0                       # directional velocity
         self.ang_vel = np.zeros((2))              # theta rad/s (filtered)
 
         self.lin_acc_x = np.zeros((2))
         self.lin_acc_y = np.zeros((2))
-        self.lin_acc = None             # mm/s^2
+        self.lin_acc = 0.0             # mm/s^2
 
         self.tau = tau        # sec
 
     def update_meas(self, pose, time_meas):
         self.pose = np.asarray(pose, dtype=float).copy()
-        self.time_meas = float(time_meas)
+        self.time_meas[0] = float(time_meas)
 
         dt = self.time_meas[0] - self.time_meas[1]
         alpha_pose = dt / (self.tau + dt)
 
         # Check for first update
         if self.pose is None or self.time_meas is None or dt > 0.2:
-            self.pose_f = [pose.copy() , pose.copy()]
+            self.pose_f = np.array([pose.copy() , pose.copy()])
             self.time_meas = [time_meas, time_meas]
 
-            self.lin_vel = 0.0
-            self.ang_vel = 0.0
-            self.lin_acc = 0.0
-            return
+            # self.lin_vel = 0.0
+            # self.ang_vel = 0.0
+            # self.lin_acc = 0.0
+            return 0.0, 0.0, 0.0
         
         if dt <= 1e-6:
             return
@@ -56,13 +56,13 @@ class Jetbot():
         self.lin_vel_y[0] = (self.pose_f[0,1] - self.pose_f[1,1]) / dt # y lin velocity
         self.ang_vel[0] = (self.pose_f[0,2] - self.pose_f[1,2]) / dt # theta ang velocity (pass in theta as rad)
 
-        self.lin_vel =  self.lin_vel_x * np.cos(self.pose_f[0,2]) + self.lin_vel_y * np.sin(self.pose_f[0,2])
+        self.lin_vel =  self.lin_vel_x[0] * np.cos(self.pose_f[0,2]) + self.lin_vel_y[0] * np.sin(self.pose_f[0,2])
         
         self.lin_acc_x[0] = (self.lin_vel_x[0] - self.lin_vel_x[1]) / dt
         self.lin_acc_y[0] = (self.lin_vel_y[0] - self.lin_vel_y[1]) / dt
         # add in if we want angular acceleration
 
-        self.lin_acc =  self.lin_acc_x * np.cos(self.pose_f[0,2]) + self.lin_acc_y * np.sin(self.pose_f[0,2])
+        self.lin_acc =  self.lin_acc_x[0] * np.cos(self.pose_f[0,2]) + self.lin_acc_y[0] * np.sin(self.pose_f[0,2])
 
         self.pose_f[1,:] = self.pose_f[0,:] # set all current values to be previous values
         self.lin_vel_x[1] = self.lin_vel_x[0]
@@ -79,7 +79,7 @@ class Jetbot():
         self.time_meas = np.zeros((2))           # time of measurement (current, past)
 
         self.pose = None                # [x, y, theta]
-        self.pose_f = np.zeros((3,2))              # [x, y, theta] (filtered) (current, past)
+        self.pose_f = np.zeros((2,3))              # [x, y, theta] (filtered) (current, past)
 
         self.lin_vel_x = np.zeros((2))            # x mm/s (filtered)
         self.lin_vel_y = np.zeros((2))            # y mm/s (filtered)
@@ -96,7 +96,7 @@ def camera_setup(width=1280, height=720, fps=100):
     print("\nInitializing camera and detector...")
     # Initialize camera and detector
 
-    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)    # 1280 x 720
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

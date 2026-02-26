@@ -275,3 +275,44 @@ def plot_accelerations(
 
     fig.suptitle(title)
     fig.tight_layout()
+
+def analyze_dt_histogram(time_array, bins=30, title="dt Histogram"):
+    """
+    Plots histogram of dt values and prints timing statistics.
+    """
+
+    t = np.asarray(time_array, dtype=float)
+
+    if t.size < 2:
+        print("Not enough samples to compute dt.")
+        return
+
+    dt = np.diff(t)
+
+    # Stats
+    dt_avg = np.mean(dt)
+    dt_min = np.min(dt)
+    dt_max = np.max(dt)
+    dt_std = np.std(dt)
+    freq_avg = 1.0 / dt_avg if dt_avg > 0 else np.nan
+
+    print("------ dt Statistics ------")
+    print(f"Samples:      {len(dt)}")
+    print(f"Average dt:   {dt_avg:.6f} s")
+    print(f"Min dt:       {dt_min:.6f} s")
+    print(f"Max dt:       {dt_max:.6f} s")
+    print(f"Std dev dt:   {dt_std:.6f} s")
+    print(f"Avg freq:     {freq_avg:.2f} Hz")
+    print("---------------------------")
+
+    # Histogram
+    plt.figure(figsize=(7,4))
+    plt.hist(dt, bins=bins, edgecolor='black', alpha=0.7)
+    plt.axvline(dt_avg, color='red', linestyle='--',
+                label=f"Mean dt = {dt_avg:.4f}s")
+    plt.title(title)
+    plt.xlabel("dt [s]")
+    plt.ylabel("Count")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
