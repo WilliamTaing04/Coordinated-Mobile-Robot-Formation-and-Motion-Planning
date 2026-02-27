@@ -92,7 +92,7 @@ class Agent:
         _id=0,
         _n_agents = 1,
         _estimator_gains=[-6, -8, -2], #gd, gv, p (NOW POSITIVE)
-        _agent_safety_gains=[120, 400, 400], #ds, Eu, Ew
+        _agent_safety_gains=[.12, .4, .4], #ds, Eu, Ew
         _extra_parameters=[1, 0.1, 0.1] #T, dx_star, dy_star
     ):
         self.observed = np.zeros((2,4))

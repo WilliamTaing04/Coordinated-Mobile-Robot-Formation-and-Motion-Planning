@@ -179,8 +179,8 @@ def main():
                         if tag_id == follower1.id:
                             t_meas = time.perf_counter()
                             follower1.update_meas(pose, t_meas)
-                            d, v, theta  = follower1.get_dist_theta(leader)
-                            updated = np.array([d,v,theta])
+                            d, v, theta  = follower1.get_dist_theta(leader) # mm, mm/s, radians
+                            updated = np.array([d/1000,v/1000,theta]) # m, m/s, radians
                             agent1.update_self_state(updated,updated)
                             follower1.visible = 1
 
