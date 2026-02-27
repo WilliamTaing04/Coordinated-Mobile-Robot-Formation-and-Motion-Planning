@@ -316,3 +316,47 @@ def analyze_dt_histogram(time_array, bins=30, title="dt Histogram"):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
+
+def plot_accel_and_angvel(
+    t,
+    lin_acc_meas,
+    ang_vel_meas,
+    lin_acc_des,
+    ang_vel_des,
+    title="Linear Acceleration & Angular Velocity Tracking"
+    ):
+        """
+        All desired inputs must be arrays the same length as t.
+        """
+
+        t = np.asarray(t)
+        lin_acc_meas = np.asarray(lin_acc_meas)
+        ang_vel_meas = np.asarray(ang_vel_meas)
+        lin_acc_des = np.asarray(lin_acc_des)
+        ang_vel_des = np.asarray(ang_vel_des)
+
+        if not (len(t) == len(lin_acc_meas) == len(ang_vel_meas)
+                == len(lin_acc_des) == len(ang_vel_des)):
+            raise ValueError("All input arrays must have same length")
+
+        fig, axs = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+
+        # Linear Acceleration
+        axs[0].plot(t, lin_acc_meas, label="Measured")
+        axs[0].plot(t, lin_acc_des, linestyle="--", label="Desired")
+        axs[0].set_ylabel("Linear Accel [mm/s²]")
+        axs[0].set_title("Linear Acceleration")
+        axs[0].grid(True)
+        axs[0].legend()
+
+        # Angular Velocity
+        axs[1].plot(t, ang_vel_meas, label="Measured")
+        axs[1].plot(t, ang_vel_des, linestyle="--", label="Desired")
+        axs[1].set_xlabel("Time [s]")
+        axs[1].set_ylabel("Angular Velocity [rad/s]")
+        axs[1].set_title("Angular Velocity")
+        axs[1].grid(True)
+        axs[1].legend()
+
+        fig.suptitle(title)
+        fig.tight_layout()

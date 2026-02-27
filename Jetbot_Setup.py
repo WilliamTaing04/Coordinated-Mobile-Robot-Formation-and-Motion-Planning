@@ -129,14 +129,14 @@ class Jetbot():
     
     def get_dist_theta(self, agent):
         # Slice pose
-        x1, y1, t1 = self.pose
-        x2, y2, t2 = agent.pose
+        x1, y1, theta1 = self.pose
+        x2, y2, _ = agent.pose
 
         # Calculate dist and theta
         d = np.hypot((x2-x1),(y2-y1))
-        theta = self.wrap_to_pi(t2 - t1)
+        theta = self.wrap_to_pi(np.atan2(x2-x1, y1-y2) - theta1 - np.pi/2)
 
-        return d, theta
+        return d, self.lin_vel_f, theta
 
     def reset(self):
         self.time_meas = None

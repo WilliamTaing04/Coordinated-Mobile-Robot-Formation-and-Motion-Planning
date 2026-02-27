@@ -52,6 +52,10 @@ def main():
         data_ang_vel_f = np.zeros(max_samples)        # Jetbot ang velocity [rad/s] (filtered)
         data_lin_acc = np.zeros(max_samples)          # Jetbot lin acceleration [mm/s^2]
         data_ang_acc = np.zeros(max_samples)          # Jetbot ang acceleration [rad/s^2]
+        data_lin_acc_des = np.zeros(max_samples)      # Jetbot lin acceleration [mm/s^2]
+        data_ang_vel_des = np.zeros(max_samples)       # Jetbot ang velocity [rad/s]
+
+
         count = 0  # Sample counter
 
     # AprilTag detector
@@ -60,6 +64,7 @@ def main():
     TAG_SIZE = 65  # Update this value
     
     intrinsics = np.load('camera_intrinsics.npy')  # Replace with loaded transformation
+    np.set_printoptions(precision=4, suppress=True)
     print(f"Intrinsics: {intrinsics}")
 
     # Load the calibration transformation matrix
@@ -68,7 +73,7 @@ def main():
     print(T_cam_to_workspace)
 
     # TODO: Setup UDP communication
-    UDP = Jetbot_Setup.UDP(Freq=32)
+    UDP = Jetbot_Setup.UDP(Freq=30)
     '''
     ssh jetbot@10.40.109.62
     '''
@@ -78,17 +83,18 @@ def main():
     pidv = Motion_Control.PID(0.5,0.1,0) # PID for V
     pidw = Motion_Control.PID(0.5,0.1,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controller = Motion_Control.control(700, 8, 500, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
+    controller = Motion_Control.control(500, 4, 250, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
     # TODO: Controller goals
     # min=0 max = 
-    A_GOAL = 0     # mm/s^2
+    U_GOAL = 0     # mm/s^2
     # min=40 max= 500
     V_GOAL = 0    # mm/s
     # min=0 max=10
     W_GOAL = 0      # rad/s
 
     # Jetbots
-    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.2,tau_vel=0.25)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(9,1,tau_pose=0.2,tau_vel=0.25)
+    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
 
     initial_time = time.perf_counter()
@@ -101,6 +107,7 @@ def main():
             start_time = time.perf_counter()
             frame_count += 1
             follower1.visible = 0   # reset visible
+            leader.visible = 0
             
 
             # -----------------------------------------------------------------
@@ -166,14 +173,21 @@ def main():
 
                         # Collect Data
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
+                        if tag_id == leader.id:
+                            t_meas = time.perf_counter()
+                            leader.update_meas(pose, t_meas)
+                            leader.visible = 1
+
                         if tag_id == follower1.id:
                             t_meas = time.perf_counter()
-                            updated = follower1.update_meas(pose, t_meas)
+                            follower1.update_meas(pose, t_meas)
+                            d, v, theta  = follower1.get_dist_theta(leader)
+                            updated = np.array([d,v,theta])
                             agent1.update_self_state(updated,updated)
                             follower1.visible = 1
 
                             if collect_data & follower1.visible:
-                                data_time[count] = t_meas - initial_time        # Time [s]
+                                data_time[count] = t_meas - initial_time         # Time [s]
                                 data_pos[count, :] = follower1.pose              # Jetbot pose [x,y,z] [mm]
                                 data_pos_f[count, :] = follower1.pose_f          # Jetbot pose [x,y,z] [mm] (filtered)
                                 data_lin_vel[count] = follower1.lin_vel          # Jetbot lin velocity [mm/s]
@@ -193,21 +207,26 @@ def main():
             # STEP 4: CONTROLLER AND COMMUNICATION
             # -----------------------------------------------------------------
             if follower1.visible:
+                agent1.RK4_step()
+                U_GOAL, W_GOAL = agent1.getuw()
+                data_lin_acc_des[count] = U_GOAL
+                data_ang_vel_des[count] = W_GOAL
                 t_now = time.perf_counter()
                 # VW controller:
                 # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
-                agent1.RK4_step()
-                A_GOAL, W_GOAL = agent1.getuw()
                 # UW controller
-                v_cmd , w_cmd = controller.controller_aw([follower1.lin_vel, follower1.ang_vel],[A_GOAL, W_GOAL])
+                v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
                 left, right = controller.motor_controller(v_cmd, w_cmd)
+
+                
+
                 at_count += 1 #TESTING
             else:
                 left = right = 0.0
 
             # Send UDP package
-            # left = -0.15
-            # right = 0.15
+            # left = 0
+            # right = 0
             UDP.Send(left, right)
 
             # Reduce display
@@ -233,8 +252,9 @@ def main():
             if elapsed < UDP.period:
                 time.sleep(UDP.period - elapsed)
             else:
-                print("Loop period exceeded")
-                break
+                # print("Loop period exceeded")
+                # break
+                pass
 
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
@@ -265,6 +285,8 @@ def main():
             data_ang_vel_f = data_ang_vel_f[:count]
             data_lin_acc = data_lin_acc[:count]
             data_ang_acc = data_ang_acc[:count]
+            data_lin_acc_des = data_lin_acc_des[:count]
+            data_ang_vel_des = data_ang_vel_des[:count]
 
             # Save all data to pickle file
             filename='Jetbot_Tracking.pkl'
@@ -279,7 +301,9 @@ def main():
             'lin_vel_f': data_lin_vel_f,
             'ang_vel_f': data_ang_vel_f,
             'lin_acc': data_lin_acc,
-            'ang_acc': data_ang_acc
+            'ang_acc': data_ang_acc,
+            'lin_acc_des': data_lin_acc_des,
+            'ang_vel_des': data_ang_vel_des
             }
 
             # Write dictionary to pickle file
@@ -301,11 +325,13 @@ def plots():
     ang_vel_f = data["ang_vel_f"]
     lin_acc = data["lin_acc"]
     ang_acc = data["ang_acc"]
+    lin_acc_des = data["lin_acc_des"]
+    ang_vel_des = data["ang_vel_des"]
 
     # ----------------------------
     # Desired signals (set these)
     # ----------------------------
-    A_DES = None
+    U_DES = None
     V_DES = None
     W_DES = None
 
@@ -360,7 +386,7 @@ def plots():
         t,
         lin_acc,
         ang_acc,
-        a_des=A_DES,
+        a_des=U_DES,
         title="Accelerations vs Time",
         window=30,
         plot_raw=True,
@@ -369,8 +395,18 @@ def plots():
     # dt Histogram
     plot.analyze_dt_histogram(
         t,
-        bins=30,
+        bins=50,
         title="dt"
+    )
+
+    # Desired vs Actual
+    plot.plot_accel_and_angvel(
+        t,
+        lin_acc,
+        ang_vel_f,
+        lin_acc_des,
+        ang_vel_des,
+        title="UW acutal vs desired"
     )
 
     # ----------------------------
@@ -392,5 +428,5 @@ def plots():
     plt.show()
 
 if __name__ == "__main__":
-    # main()
+    main()
     plots()

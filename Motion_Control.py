@@ -77,7 +77,7 @@ class control():
         self.has_filt = False
         self.v_ref = 0.0
 
-    def controller_aw(self, measured, goal):
+    def controller_uw(self, measured, goal):
         # Calculate dt and update last_time
         now = time.perf_counter()
         dt = now - self.last_time
