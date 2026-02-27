@@ -53,9 +53,7 @@ def main():
         data_lin_acc = np.zeros(max_samples)          # Jetbot lin acceleration [mm/s^2]
         data_ang_acc = np.zeros(max_samples)          # Jetbot ang acceleration [rad/s^2]
         data_lin_acc_des = np.zeros(max_samples)      # Jetbot lin acceleration [mm/s^2]
-        data_ang_vel_des = np.zeros(max_samples)       # Jetbot ang velocity [rad/s]
-
-
+        data_ang_vel_des = np.zeros(max_samples)      # Jetbot ang velocity [rad/s]
         count = 0  # Sample counter
 
     # AprilTag detector
@@ -85,9 +83,9 @@ def main():
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
     controller = Motion_Control.control(500, 4, 250, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
     # TODO: Controller goals
-    # min=0 max = 
+    # min=0 max =400
     U_GOAL = 0     # mm/s^2
-    # min=40 max= 500
+    # min=40 max=500
     V_GOAL = 0    # mm/s
     # min=0 max=10
     W_GOAL = 0      # rad/s
@@ -218,8 +216,6 @@ def main():
                 v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
                 left, right = controller.motor_controller(v_cmd, w_cmd)
 
-                
-
                 at_count += 1 #TESTING
             else:
                 left = right = 0.0
@@ -230,7 +226,7 @@ def main():
             UDP.Send(left, right)
 
             # Reduce display
-            if (frame_count % 4) == 0:
+            if (frame_count % 5) == 0:
                 # Show instruction
                 cv2.putText(color_frame, "Press 'q' to quit", 
                             (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
@@ -328,86 +324,29 @@ def plots():
     lin_acc_des = data["lin_acc_des"]
     ang_vel_des = data["ang_vel_des"]
 
-    # ----------------------------
-    # Desired signals (set these)
-    # ----------------------------
-    U_DES = None
-    V_DES = None
-    W_DES = None
-
-    # ----------------------------
-    # Plots
-    # ----------------------------
-
     # XY trajectory
-    plot.plot_xy_trajectory(
-        pose_f,
-        title="Jetbot XY Trajectory",
-        show_start_end=True
-    )
+    plot.plot_xy_trajectory(pose_f, title="Jetbot XY Trajectory", show_start_end=True)
 
     # Pose raw vs filtered
-    plot.plot_pose_raw_vs_filtered(
-        t,
-        pose_raw=pose,
-        pose_filt=pose_f,
-        title="Pose: Raw vs Filtered"
-    )
+    plot.plot_pose_raw_vs_filtered(t, pose_raw=pose, pose_filt=pose_f, title="Pose: Raw vs Filtered")
 
     # X and Y vs time
-    plot.plot_xy_vs_time(
-        t,
-        pose_f,
-        title="Position vs Time (Filtered)"
-    )
+    plot.plot_xy_vs_time(t, pose_f, title="Position vs Time (Filtered)")
 
     # Velocities raw vs filtered
-    plot.plot_velocity_raw_vs_filtered(
-        t,
-        lin_vel,
-        ang_vel,
-        lin_vel_f,
-        ang_vel_f,
-        "Velocities: Raw vs Filtered"
-    )
+    plot.plot_velocity_raw_vs_filtered(t, lin_vel, ang_vel, lin_vel_f, ang_vel_f, "Velocities: Raw vs Filtered")
 
     # Velocities vs time (with goal)
-    plot.plot_velocities(
-        t,
-        lin_vel_f,
-        ang_vel_f,
-        v_des=V_DES,
-        w_des=W_DES,
-        title="Velocities vs Time (Filtered)"
-    )
+    plot.plot_velocities(t, lin_vel_f, ang_vel_f, v_des=None, w_des=ang_vel_des, title="Velocities vs Time (Filtered)")
 
     # Accelerations vs time (with goal)
-    plot.plot_accelerations(
-        t,
-        lin_acc,
-        ang_acc,
-        a_des=U_DES,
-        title="Accelerations vs Time",
-        window=30,
-        plot_raw=True,
-    )
+    plot.plot_accelerations( t, lin_acc, ang_acc, a_des=ang_vel_des, title="Accelerations vs Time", window=30, plot_raw=True,)
     
     # dt Histogram
-    plot.analyze_dt_histogram(
-        t,
-        bins=50,
-        title="dt"
-    )
+    plot.analyze_dt_histogram( t, bins=50, title="dt")
 
     # Desired vs Actual
-    plot.plot_accel_and_angvel(
-        t,
-        lin_acc,
-        ang_vel_f,
-        lin_acc_des,
-        ang_vel_des,
-        title="UW acutal vs desired"
-    )
+    plot.plot_accel_and_angvel(t, lin_acc, ang_vel_f, lin_acc_des, ang_vel_des, title="UW acutal vs desired")
 
     # ----------------------------
     # Steady-state averages
@@ -428,5 +367,5 @@ def plots():
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    # main()
     plots()
