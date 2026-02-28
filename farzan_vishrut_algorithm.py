@@ -85,15 +85,15 @@ Eω + yc
 
 # The local X-Axis is in the direction of the follower's heading
 # The local Y-Axis is the first 2D orthogonal axis CCW from the X-Axis
-
 class Agent:
     def __init__(
         self,
         _id=0,
         _n_agents = 1,
-        _estimator_gains=[-6, -8, -2], #gd, gv, p (NOW POSITIVE)
+        #_estimator_gains=[-6, -8, -2], #gd, gv, p 
+        _estimator_gains=[-2, -2*(-2**2)/9, -2/3],
         _agent_safety_gains=[.12, .4, .4], #ds (safety bound), Eu, Ew
-        _extra_parameters=[0.2, -0.3, 0.4] #T, dx_star(desired lateral distance
+        _extra_parameters=[1, -0.3, 0.4] #T, dx_star(desired lateral distance
                                            # , dy_star (desired longitudinal distance
     ):
         self.observed = np.zeros((2,4))
@@ -124,10 +124,12 @@ class Agent:
 
         yc = max(((abs(ds)/ds)*(-gd*(dy_star-ds))-Ew), 0)
         xc = max((-gd*(dx_star-ds) - Eu), 0)
-        
+
         h1 = observation[0,0] - ds - T * v
         alpha = -gd*h1
         k = 1/T
+
+        dx = max(dx,0.2)
 
         w = ((v1y_hat - gd*(dy-ds))/(dx)) - (abs(ds)*(Ew+yc))/(ds*dx) #Y edge traits
         #print("dx: ", dx, "ds: ", ds)
