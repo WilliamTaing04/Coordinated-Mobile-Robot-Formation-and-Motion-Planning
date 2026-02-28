@@ -38,14 +38,56 @@ def main():
 
     # Testing
     at_count = 0
+    dt_break = 0
+    np.set_printoptions(precision=4, suppress=True)
 
-    collect_data = 1    #0=no collect 1=collect 
+
+    # Settings
+    collect_data = 1    # 0=no collect 1=collect
+    control_freq = 30   # Hz
+    TAG_SIZE = 65       # mm
+
+    # AprilTag detector
+    detector = AprilTags.AprilTags()
+    intrinsics = np.load('camera_intrinsics.npy')  # Replace with loaded transformation
+    print(f"Intrinsics: {intrinsics}")
+
+    # Load the calibration transformation matrix
+    T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
+    print(f"Transformation Matrix: {T_cam_to_workspace}")
+
+    # TODO: Setup UDP communication
+    UDP = Jetbot_Setup.UDP(Freq=control_freq)
+    '''
+    ssh jetbot@10.40.109.62
+    '''
+
+    # Controllers
+    pidv = Motion_Control.PID(0.5,0.1,0) # PID for V
+    pidw = Motion_Control.PID(0.5,0.1,0) # PID for w
+    # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
+    controller = Motion_Control.control(500, 4, 250, control_freq, pidv, pidw, alpha=0.5)       
+    # # Controller goals
+    # # min=0 max =400
+    # U_GOAL = 0     # mm/s^2
+    # # min=40 max=500
+    # V_GOAL = 0    # mm/s
+    # # min=0 max=10
+    # W_GOAL = 0      # rad/s
+
+    # Jetbots
+    leader = Jetbot_Setup.Jetbot(9,1,tau_pose=0.2,tau_vel=0.25)
+    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
+
+    jetbot_array = [leader, follower1]
+
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
         max_samples = 7200     # 60Hz => 60(samples/s)*120s = 7200samples
         data_time = np.zeros(max_samples)             # Time [s]
-        data_pos = np.zeros((max_samples, 3))         # Jetbot pose [x,y,z] [mm]
-        data_pos_f = np.zeros((max_samples, 3))       # Jetbot pose [x,y,z] [mm] (filtered)
+        data_pos = np.zeros((max_samples, 3))         # Jetbot pose [x,y,theta] [mm][rad]
+        data_pos_f = np.zeros((max_samples, 3))       # Jetbot pose [x,y,theta] [mm][rad] (filtered)
         data_lin_vel = np.zeros(max_samples)          # Jetbot lin velocity [mm/s]
         data_ang_vel = np.zeros(max_samples)          # Jetbot ang velocity [rad/s]
         data_lin_vel_f = np.zeros(max_samples)        # Jetbot lin velocity [mm/s] (filtered)
@@ -56,45 +98,6 @@ def main():
         data_ang_vel_des = np.zeros(max_samples)      # Jetbot ang velocity [rad/s]
         count = 0  # Sample counter
 
-    # AprilTag detector
-    detector = AprilTags.AprilTags()
-    # TODO: Set the validation tag size in millimeters
-    TAG_SIZE = 65  # Update this value
-    
-    intrinsics = np.load('camera_intrinsics.npy')  # Replace with loaded transformation
-    np.set_printoptions(precision=4, suppress=True)
-    print(f"Intrinsics: {intrinsics}")
-
-    # Load the calibration transformation matrix
-    T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
-    print("\nLoaded camera-to-workspace transformation matrix:")
-    print(T_cam_to_workspace)
-
-    # TODO: Setup UDP communication
-    UDP = Jetbot_Setup.UDP(Freq=30)
-    '''
-    ssh jetbot@10.40.109.62
-    '''
-
-    # Controllers
-    # TODO: tune controllers
-    pidv = Motion_Control.PID(0.5,0.1,0) # PID for V
-    pidw = Motion_Control.PID(0.5,0.1,0) # PID for w
-    # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controller = Motion_Control.control(500, 4, 250, UDP.SEND_HZ, pidv, pidw, alpha=0.5)       
-    # TODO: Controller goals
-    # min=0 max =400
-    U_GOAL = 0     # mm/s^2
-    # min=40 max=500
-    V_GOAL = 0    # mm/s
-    # min=0 max=10
-    W_GOAL = 0      # rad/s
-
-    # Jetbots
-    leader = Jetbot_Setup.Jetbot(9,1,tau_pose=0.2,tau_vel=0.25)
-    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
-
     initial_time = time.perf_counter()
 # =====================================================================
 # MAIN TRACKING LOOP
@@ -104,9 +107,8 @@ def main():
             # Record start time of the loop
             start_time = time.perf_counter()
             frame_count += 1
-            follower1.visible = 0   # reset visible
-            leader.visible = 0
-            
+            for jetbot in jetbot_array:
+                jetbot.visible = 0   # reset visible 
 
             # -----------------------------------------------------------------
             # STEP 1: CAPTURE FRAME
@@ -131,7 +133,7 @@ def main():
             # If no tags are detected 
             if len(tags)==0:
                 # No tags detected      
-                if (frame_count % 2) == 0:      
+                if (frame_count % 4) == 0:      
                     cv2.putText(color_frame, "No tag detected", 
                                 (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
                                 0.7, (0, 0, 255), 2)
@@ -171,6 +173,12 @@ def main():
 
                         # Collect Data
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
+                        # for jetbot in jetbot_array:
+                        #     if tag_id == jetbot.id:
+                        #         t_meas = time.perf_counter()
+                        #         jetbot.update_meas(pose, t_meas)
+                        #         jetbot.visible = 1
+
                         if tag_id == leader.id:
                             t_meas = time.perf_counter()
                             leader.update_meas(pose, t_meas)
@@ -179,15 +187,15 @@ def main():
                         if tag_id == follower1.id:
                             t_meas = time.perf_counter()
                             follower1.update_meas(pose, t_meas)
-                            d, v, theta  = follower1.get_dist_theta(leader) # mm, mm/s, radians
-                            updated = np.array([d/1000,v/1000,theta]) # m, m/s, radians
+                            d, v, theta  = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
+                            updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
                             agent1.update_self_state(updated,updated)
                             follower1.visible = 1
 
                             if collect_data & follower1.visible:
                                 data_time[count] = t_meas - initial_time         # Time [s]
-                                data_pos[count, :] = follower1.pose              # Jetbot pose [x,y,z] [mm]
-                                data_pos_f[count, :] = follower1.pose_f          # Jetbot pose [x,y,z] [mm] (filtered)
+                                data_pos[count, :] = follower1.pose              # Jetbot pose [x,y,theta] [mm][rad]
+                                data_pos_f[count, :] = follower1.pose_f          # Jetbot pose [x,y,theta] [mm][rad] (filtered)
                                 data_lin_vel[count] = follower1.lin_vel          # Jetbot lin velocity [mm/s]
                                 data_ang_vel[count] = follower1.ang_vel          # Jetbot ang velocity [rad/s]
                                 data_lin_vel_f[count] = follower1.lin_vel_f      # Jetbot lin velocity [mm/s] (filtered)
@@ -204,6 +212,10 @@ def main():
             # -----------------------------------------------------------------
             # STEP 4: CONTROLLER AND COMMUNICATION
             # -----------------------------------------------------------------
+            # for jetbot in jetbot_array:
+            #     if jetbot.visible:
+            #         pass
+
             if follower1.visible:
                 agent1.RK4_step()
                 U_GOAL, W_GOAL = agent1.getuw()
@@ -214,7 +226,7 @@ def main():
                 # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
                 # UW controller
                 v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
-                left, right = controller.motor_controller(v_cmd, w_cmd)
+                left, right = controller.motor_controller(1000*v_cmd, 1000*w_cmd) # m to mm
 
                 at_count += 1 #TESTING
             else:
@@ -226,7 +238,7 @@ def main():
             UDP.Send(left, right)
 
             # Reduce display
-            if (frame_count % 5) == 0:
+            if (frame_count % 4) == 0:
                 # Show instruction
                 cv2.putText(color_frame, "Press 'q' to quit", 
                             (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
@@ -245,9 +257,10 @@ def main():
             # MAINTAIN FIXED TIMESTEP
             # -----------------------------------------------------------------
             elapsed = time.perf_counter() - start_time
-            if elapsed < UDP.period:
-                time.sleep(UDP.period - elapsed)
+            if elapsed < 1/control_freq:
+                time.sleep(1/control_freq - elapsed)
             else:
+                dt_break += 1
                 # print("Loop period exceeded")
                 # break
                 pass
@@ -269,6 +282,7 @@ def main():
         cap.release()
         cv2.destroyAllWindows()
         print(f"%Time Tag visible: {100*at_count/frame_count}%")
+        print(f"%Time DT exceeded: {100*dt_break/frame_count}% {dt_break}")
 
         if collect_data:
             # Trim unused portions of pre-allocated arrays
@@ -328,13 +342,13 @@ def plots():
     plot.plot_xy_trajectory(pose_f, title="Jetbot XY Trajectory", show_start_end=True)
 
     # Pose raw vs filtered
-    plot.plot_pose_raw_vs_filtered(t, pose_raw=pose, pose_filt=pose_f, title="Pose: Raw vs Filtered")
+    # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose, pose_filt=pose_f, title="Pose: Raw vs Filtered")
 
     # X and Y vs time
-    plot.plot_xy_vs_time(t, pose_f, title="Position vs Time (Filtered)")
+    # plot.plot_xy_vs_time(t, pose_f, title="Position vs Time (Filtered)")
 
     # Velocities raw vs filtered
-    plot.plot_velocity_raw_vs_filtered(t, lin_vel, ang_vel, lin_vel_f, ang_vel_f, "Velocities: Raw vs Filtered")
+    # plot.plot_velocity_raw_vs_filtered(t, lin_vel, ang_vel, lin_vel_f, ang_vel_f, "Velocities: Raw vs Filtered")
 
     # Velocities vs time (with goal)
     plot.plot_velocities(t, lin_vel_f, ang_vel_f, v_des=None, w_des=ang_vel_des, title="Velocities vs Time (Filtered)")
@@ -343,7 +357,7 @@ def plots():
     plot.plot_accelerations( t, lin_acc, ang_acc, a_des=ang_vel_des, title="Accelerations vs Time", window=30, plot_raw=True,)
     
     # dt Histogram
-    plot.analyze_dt_histogram( t, bins=50, title="dt")
+    plot.analyze_dt_histogram( t, bins=75, title="dt Histrogram")
 
     # Desired vs Actual
     plot.plot_accel_and_angvel(t, lin_acc, ang_vel_f, lin_acc_des, ang_vel_des, title="UW acutal vs desired")
@@ -359,13 +373,13 @@ def plots():
     avg_lacc = float(np.mean(lin_acc[mask])) if np.any(mask) else float("nan")
 
     np.set_printoptions(precision=5, suppress=True)
-    print("Average steady lin velocity:", avg_lvel, "mm/s")
-    print("Average steady lin acceleration:", avg_lacc, "mm/s^2")
-    print("Average steady ang velocity:", avg_avel, "rad/s")
+    # print("Average steady lin velocity:", avg_lvel, "mm/s")
+    # print("Average steady lin acceleration:", avg_lacc, "mm/s^2")
+    # print("Average steady ang velocity:", avg_avel, "rad/s")
 
     # Show all figures at the end
     plt.show()
 
 if __name__ == "__main__":
-    # main()
+    main()
     plots()

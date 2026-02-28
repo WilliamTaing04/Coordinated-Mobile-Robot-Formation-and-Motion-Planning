@@ -296,14 +296,14 @@ def analyze_dt_histogram(time_array, bins=30, title="dt Histogram"):
     dt_std = np.std(dt)
     freq_avg = 1.0 / dt_avg if dt_avg > 0 else np.nan
 
-    print("------ dt Statistics ------")
-    print(f"Samples:      {len(dt)}")
-    print(f"Average dt:   {dt_avg:.6f} s")
-    print(f"Min dt:       {dt_min:.6f} s")
-    print(f"Max dt:       {dt_max:.6f} s")
-    print(f"Std dev dt:   {dt_std:.6f} s")
+    # print("------ dt Statistics ------")
+    # print(f"Samples:      {len(dt)}")
+    # print(f"Average dt:   {dt_avg:.6f} s")
+    # print(f"Min dt:       {dt_min:.6f} s")
+    # print(f"Max dt:       {dt_max:.6f} s")
+    # print(f"Std dev dt:   {dt_std:.6f} s")
     print(f"Avg freq:     {freq_avg:.2f} Hz")
-    print("---------------------------")
+    # print("---------------------------")
 
     # Histogram
     plt.figure(figsize=(7,4))

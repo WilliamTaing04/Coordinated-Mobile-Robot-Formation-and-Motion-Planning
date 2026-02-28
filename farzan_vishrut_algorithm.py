@@ -93,7 +93,7 @@ class Agent:
         _n_agents = 1,
         _estimator_gains=[-6, -8, -2], #gd, gv, p (NOW POSITIVE)
         _agent_safety_gains=[.12, .4, .4], #ds, Eu, Ew
-        _extra_parameters=[1, 0.1, 0.1] #T, dx_star, dy_star
+        _extra_parameters=[0.2, -0.3, 0.4] #T, dx_star, dy_star
     ):
         self.observed = np.zeros((2,4))
         self.estimated_state = np.zeros((2, 4)) #store dx, vx, dy, vy hat for each agent (both X and Y edges)
