@@ -66,7 +66,7 @@ def main():
     pidv = Motion_Control.PID(0.5,0.1,0) # PID for V
     pidw = Motion_Control.PID(0.5,0.1,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controller = Motion_Control.control(500, 4, 250, control_freq, pidv, pidw, alpha=0.75)       
+    controller = Motion_Control.control(500, 8, 500, control_freq, pidv, pidw, alpha=0.75)       
     # # Controller goals
     # # min=0 max =400
     # U_GOAL = 0     # mm/s^2
@@ -77,7 +77,7 @@ def main():
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(9,1,tau_pose=0.2,tau_vel=0.25)
-    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.1,tau_vel=0.0)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
 
     jetbot_array = [leader, follower1]
@@ -87,16 +87,16 @@ def main():
         num_bots = len(jetbot_array)
         max_samples = 7200                              
         data_time = np.zeros(max_samples)                         # Time [s]
-        data_pos = np.zeros((max_samples, num_bots, 3))           # Jetbot pose [x,y,theta] [mm][rad]
-        data_pos_f = np.zeros((max_samples, num_bots, 3))         # Jetbot pose [x,y,theta] [mm][rad] (filtered)
+        data_pos   = np.full((max_samples, num_bots, 3), np.nan)  # Jetbot pose [x,y,theta] [mm][rad]
+        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)  # Jetbot pose [x,y,theta] [mm][rad] (filtered)
         data_lin_vel = np.zeros((max_samples, num_bots))          # Jetbot lin velocity [mm/s]
         data_ang_vel = np.zeros((max_samples, num_bots))          # Jetbot ang velocity [rad/s]
         data_lin_vel_f = np.zeros((max_samples, num_bots))        # Jetbot lin velocity [mm/s] (filtered)
         data_ang_vel_f = np.zeros((max_samples, num_bots))        # Jetbot ang velocity [rad/s] (filtered)
         data_lin_acc = np.zeros((max_samples, num_bots))          # Jetbot lin acceleration [mm/s^2]
         data_ang_acc = np.zeros((max_samples, num_bots))          # Jetbot ang acceleration [rad/s^2]
-        data_lin_acc_des = np.zeros((max_samples, num_bots))      # Jetbot lin acceleration [mm/s^2]
-        data_ang_vel_des = np.zeros((max_samples, num_bots))      # Jetbot ang velocity [rad/s]
+        data_lin_acc_des = np.zeros((max_samples, num_bots))      # Jetbot lin acceleration [mm/s^2] (desired)
+        data_ang_vel_des = np.zeros((max_samples, num_bots))      # Jetbot ang velocity [rad/s] (desired)
         count = 0  # Sample counter
 
     initial_time = time.perf_counter()
@@ -174,6 +174,7 @@ def main():
 
                         # Collect Data
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
+                        # TODO: multi agent
                         # for jetbot in jetbot_array:
                         #     if tag_id == jetbot.id:
                         #         t_meas = time.perf_counter()
@@ -206,38 +207,59 @@ def main():
                             #     data_lin_acc[count] = follower1.lin_acc          # Jetbot lin acceleration [mm/s^2]
                             #     data_ang_acc[count] = follower1.ang_acc          # Jetbot ang acceleration [rad/s^2]
                             #     count += 1
+                            # Draw detection on image
 
-                        if collect_data:
-                                data_time[count] = t_meas - initial_time         # Time [s]
-                                for i, jetbot in enumerate(jetbot_array):
-                                    if jetbot.visible:
-                                        data_pos[count, i, :] = jetbot.pose              # Jetbot pose [x,y,theta] [mm][rad]
-                                        data_pos_f[count, i, :] = jetbot.pose_f          # Jetbot pose [x,y,theta] [mm][rad] (filtered)
-                                        data_lin_vel[count, i] = jetbot.lin_vel          # Jetbot lin velocity [mm/s]
-                                        data_ang_vel[count, i] = jetbot.ang_vel          # Jetbot ang velocity [rad/s]
-                                        data_lin_vel_f[count, i] = jetbot.lin_vel_f      # Jetbot lin velocity [mm/s] (filtered)
-                                        data_ang_vel_f[count, i] = jetbot.ang_vel_f      # Jetbot ang velocity [rad/s] (filtered)
-                                        data_lin_acc[count, i] = jetbot.lin_acc          # Jetbot lin acceleration [mm/s^2]
-                                        data_ang_acc[count, i] = jetbot.ang_acc          # Jetbot ang acceleration [rad/s^2]
-                                count += 1
+                    if (frame_count % 4) == 0:
+                        detector.draw_tags(color_frame, tag)
+                        corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
+
+            if collect_data and count < max_samples:
+                data_time[count] = t_meas - initial_time         # Time [s]
+                for i, jetbot in enumerate(jetbot_array):
+                    if jetbot.visible:
+                        data_pos[count, i, :] = jetbot.pose              # Jetbot pose [x,y,theta] [mm][rad]
+                        data_pos_f[count, i, :] = jetbot.pose_f          # Jetbot pose [x,y,theta] [mm][rad] (filtered)
+                        data_lin_vel[count, i] = jetbot.lin_vel          # Jetbot lin velocity [mm/s]
+                        data_ang_vel[count, i] = jetbot.ang_vel          # Jetbot ang velocity [rad/s]
+                        data_lin_vel_f[count, i] = jetbot.lin_vel_f      # Jetbot lin velocity [mm/s] (filtered)
+                        data_ang_vel_f[count, i] = jetbot.ang_vel_f      # Jetbot ang velocity [rad/s] (filtered)
+                        data_lin_acc[count, i] = jetbot.lin_acc          # Jetbot lin acceleration [mm/s^2]
+                        data_ang_acc[count, i] = jetbot.ang_acc          # Jetbot ang acceleration [rad/s^2]
+                count += 1
+
                         
-                        # Draw detection on image
-                        if (frame_count % 4) == 0:
-                            detector.draw_tags(color_frame, tag)
-                            corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
+                
 
             # -----------------------------------------------------------------
             # STEP 4: CONTROLLER AND COMMUNICATION
             # -----------------------------------------------------------------
+            # TODO: mutli agent
             # for jetbot in jetbot_array:
-            #     if jetbot.visible:
-            #         pass
+            #     if jetbot.visible && jetbot.role==0:
+                #     jetbot.RK4_step()
+                #     U_GOAL, W_GOAL = agent1.getuw()
+                #     data_lin_acc_des[count, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
+                #     data_ang_vel_des[count, i] = W_GOAL
+                #     t_now = time.perf_counter()
+                #     # VW controller:
+                #     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
+                #     # UW controller
+                #     v_cmd , w_cmd = controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL, W_GOAL])
+                #     left, right = controller.motor_controller(v_cmd, w_cmd)
+
+                #     at_count += 1 #TESTING
+                # else:
+                #     left = right = 0.0
+                #  # Send UDP package
+                # # left = 0
+                # # right = 0
+                # UDP.Send(left, right)
 
             if follower1.visible:
                 agent1.RK4_step()
                 U_GOAL, W_GOAL = agent1.getuw()
-                data_lin_acc_des[count, 1] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
-                data_ang_vel_des[count, 1] = W_GOAL
+                data_lin_acc_des[count-1, 1] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
+                data_ang_vel_des[count-1, 1] = W_GOAL
                 t_now = time.perf_counter()
                 # VW controller:
                 # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
@@ -340,12 +362,11 @@ def main():
         print("Done!")
     
 def plots():
-    # Load data from pickle files
     data = load_from_pickle('Jetbot_Tracking.pkl')
-
     t = data["time"]
-    pose = data["pos"]       # raw pose
-    pose_f = data["pos_f"]   # filtered pose
+    pose = data["pos"]
+    pose_f = data["pos_f"]
+
     lin_vel = data["lin_vel"]
     ang_vel = data["ang_vel"]
     lin_vel_f = data["lin_vel_f"]
@@ -355,29 +376,46 @@ def plots():
     lin_acc_des = data["lin_acc_des"]
     ang_vel_des = data["ang_vel_des"]
 
-    # # XY trajectory
-    # plot.plot_xy_trajectory(pose_f[:, 1, :], title="Jetbot XY Trajectory", show_start_end=True)
+    i = 1 
 
-    # # Pose raw vs filtered
-    # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose, pose_filt=pose_f, title="Pose: Raw vs Filtered")
+    # XY trajectory
+    plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
 
-    # # X and Y vs time
-    # plot.plot_xy_vs_time(t, pose_f, title="Position vs Time (Filtered)")
+    # Pose raw vs filtered
+    plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :],
+                              title=f"Robot {i} Pose: Raw vs Filtered")
 
-    # # Velocities raw vs filtered
-    # plot.plot_velocity_raw_vs_filtered(t, lin_vel, ang_vel, lin_vel_f, ang_vel_f, "Velocities: Raw vs Filtered")
+    # X and Y vs time
+    plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
 
-    # # Velocities vs time (with goal)
-    # plot.plot_velocities(t, lin_vel_f, ang_vel_f, v_des=None, w_des=ang_vel_des, title="Velocities vs Time (Filtered)")
+    # Velocities raw vs filtered
+    plot.plot_velocity_raw_vs_filtered(t,
+                                  lin_vel[:, i], ang_vel[:, i],
+                                  lin_vel_f[:, i], ang_vel_f[:, i],
+                                  title=f"Robot {i} Velocities: Raw vs Filtered")
 
-    # # Accelerations vs time (with goal)
-    # plot.plot_accelerations( t, lin_acc, ang_acc, a_des=ang_vel_des, title="Accelerations vs Time", window=30, plot_raw=True,)
+    # Velocities vs time (desired for this robot)
+    plot.plot_velocities(t,
+                    lin_vel_f[:, i], ang_vel_f[:, i],
+                    v_des=None,
+                    w_des=ang_vel_des[:, i],
+                    title=f"Robot {i} Velocities vs Time (Filtered)")
     
-    # # dt Histogram
-    # plot.analyze_dt_histogram( t, bins=75, title="dt Histrogram")
+    # Accelerations vs time
+    plot.plot_accelerations(
+        t,
+        lin_acc[:, i],
+        ang_acc[:, i],
+        a_des=lin_acc_des[:, i],
+        title="Accelerations vs Time",
+        window=30,
+        plot_raw=True)
 
-    # # Desired vs Actual
-    # plot.plot_accel_and_angvel(t, lin_acc, ang_vel_f, lin_acc_des, ang_vel_des, title="UW acutal vs desired")
+    # Desired vs Actual (UW)
+    plot.plot_accel_and_angvel(t,
+                          lin_acc[:, i], ang_vel_f[:, i],
+                          lin_acc_des[:, i], ang_vel_des[:, i],
+                          title=f"Robot {i} UW actual vs desired")
 
     # ----------------------------
     # Steady-state averages
@@ -399,4 +437,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    # plots()
+    plots()

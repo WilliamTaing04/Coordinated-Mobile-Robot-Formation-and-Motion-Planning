@@ -91,9 +91,9 @@ class Agent:
         _id=0,
         _n_agents = 1,
         #_estimator_gains=[-6, -8, -2], #gd, gv, p 
-        _estimator_gains=[-2, -2*(-2**2)/9, -2/3],
+        _estimator_gains=[-4, -2*((-4)**2)/9, -4/3],
         _agent_safety_gains=[.12, .4, .4], #ds (safety bound), Eu, Ew
-        _extra_parameters=[1, -0.3, 0.4] #T, dx_star(desired lateral distance
+        _extra_parameters=[0.2, -0.3, 0.4] #T, dx_star(desired lateral distance
                                            # , dy_star (desired longitudinal distance
     ):
         self.observed = np.zeros((2,4))
@@ -136,8 +136,8 @@ class Agent:
         #print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
         u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
-        u = clamp(u, -500, 500)
-        w = clamp(w , -10, 10)
+        u = clamp(u, -0.5, 0.5)
+        w = clamp(w , -6, 6)
 
         control = [u, w]
         return control
