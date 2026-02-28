@@ -92,8 +92,9 @@ class Agent:
         _id=0,
         _n_agents = 1,
         _estimator_gains=[-6, -8, -2], #gd, gv, p (NOW POSITIVE)
-        _agent_safety_gains=[.12, .4, .4], #ds, Eu, Ew
-        _extra_parameters=[1, 0.1, 0.1] #T, dx_star, dy_star
+        _agent_safety_gains=[.12, .4, .4], #ds (safety bound), Eu, Ew
+        _extra_parameters=[0.2, -0.3, 0.4] #T, dx_star(desired lateral distance
+                                           # , dy_star (desired longitudinal distance
     ):
         self.observed = np.zeros((2,4))
         self.estimated_state = np.zeros((2, 4)) #store dx, vx, dy, vy hat for each agent (both X and Y edges)
@@ -121,8 +122,9 @@ class Agent:
         v1y_hat = estimates[1,3] # Y edge
         v1x_hat = estimates[0,1] # X edge
 
-        yc = (abs(ds)/ds)*(-gd*(dy_star-ds))-Ew
-        xc = -gd*(dx_star-ds) - Eu
+        yc = max(((abs(ds)/ds)*(-gd*(dy_star-ds))-Ew), 0)
+        xc = max((-gd*(dx_star-ds) - Eu), 0)
+        
         h1 = observation[0,0] - ds - T * v
         alpha = -gd*h1
         k = 1/T
