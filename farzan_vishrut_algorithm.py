@@ -90,7 +90,7 @@ class Agent:
         self,
         _id=0,
         _n_agents = 1,
-        #_estimator_gains=[-6, -8, -2], #gd, gv, p 
+        #_estimator_gains=[-6, -8, -2], #gd, gv, p
         _estimator_gains=[-2, -2*(-2**2)/9, -2/3],
         _agent_safety_gains=[.12, .4, .4], #ds (safety bound), Eu, Ew
         _extra_parameters=[1, -0.3, 0.4] #T, dx_star(desired lateral distance
