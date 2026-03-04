@@ -136,10 +136,11 @@ class Agent:
         #print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
         u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
-        u = clamp(u, -0.5, 0.5)
-        w = clamp(w , -6, 6)
+       # u = clamp(u, -0.5, 0.5)
+       # w = clamp(w , -6, 6)
 
         control = [u, w]
+        print(control)
         return control
 
 
@@ -169,8 +170,8 @@ class Agent:
 
         state_dot = np.zeros(4)
 
-        dx_del = -dx + dx_hat
-        dy_del = -dy + dy_hat
+        dx_del = dx - dx_hat
+        dy_del = dy - dy_hat
 
         #print("obs:",observation, "estimates:", estimates, "control:", control)
 
@@ -304,19 +305,26 @@ class Agent:
 
     def getuw(self):
         return self.u_w_calculation(self.estimated_state, self.observed)
-
-# def run_exp():
-#     agent = Agent()
-#     timeStamp = time.perf_counter()
-#     #Run 1000 steps
-#     for x in range(500):
-#             while((time.perf_counter() - timeStamp) < 0.01):
-#                 pass
-#             agent.RK4_step()
-#             timeStamp = time.perf_counter()
-#
-# if __name__ == "__main__":
-#      run_exp()
-
+    
 def clamp(x, lo, hi):
     return max(lo, min(hi, x))
+
+def run_exp():
+    d = 700
+    v = 1
+    theta = pi/4
+    agent = Agent()
+    timeStamp = time.perf_counter()
+    #Run 1000 steps
+    for x in range(100):
+        while((time.perf_counter() - timeStamp) < 0.01):
+                pass
+        d = d+1
+        updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
+        agent.update_self_state(updated,updated)
+        agent.RK4_step()
+        timeStamp = time.perf_counter()
+
+if __name__ == "__main__":
+    run_exp()
+
