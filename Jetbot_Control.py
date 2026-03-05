@@ -187,6 +187,8 @@ def main():
 
                         # Collect Data
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
+
+                        
                         # TODO: multi agent
                         # for jetbot in jetbot_array:
                         #     if tag_id == jetbot.id:

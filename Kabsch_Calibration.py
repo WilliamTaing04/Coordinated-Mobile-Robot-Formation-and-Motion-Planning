@@ -72,7 +72,7 @@ def main():
     
     # Initialize camera and detector
     print("\nInitializing camera and AprilTag detector...")
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
+    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 1280/720
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
@@ -93,16 +93,16 @@ def main():
     detector = AprilTags()
     
     # TODO: Camera Intrinsics
-    # fx = 1014.7877227030419
-    # fy = 1015.5790339720445
-    # ppx = 426.0549465833697
-    # ppy = 269.5657379492221
+    fx = 567.0808121682248
+    fy = 567.9872671569556
+    ppx = 611.6370406868606
+    ppy = 336.7914364923219
 
-    # intrinsics = np.array([
-    #             [fx, 0, ppx],
-    #             [0, fy, ppy],
-    #             [0, 0, 1]])
-    intrinsics = np.load('camera_intrinsics.npy')
+    intrinsics = np.array([
+                [fx, 0, ppx],
+                [0, fy, ppy],
+                [0, 0, 1]])
+    #intrinsics = np.load('camera_intrinsics.npy')
 
     print(f"Intrinsics: {intrinsics}")
     
