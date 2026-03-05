@@ -7,8 +7,10 @@ import math
 import AprilTags
 
 class Jetbot():
-    def __init__(self, id, role=0, tau_pose=0.2, tau_vel=0.0):
-        self.id = id
+    def __init__(self, id, IP, controller, role=0, tau_pose=0.2, tau_vel=0.0):
+        self.id = id                    # tag id
+        self.IP = str(IP)               # network IP addr
+        self.controller = controller    # controller
         self.role = role                # 0-follower 1-leader
         self.visible = 0                # 0-not seen 1-seen
         self.time_meas = None           # time of measurement
@@ -128,9 +130,12 @@ class Jetbot():
         self.ang_acc = (vel_for_acc_ang - prev_vel_for_acc_ang) / dt
     
     def get_dist_theta(self, agent):
+        if self.pose is None or agent is None or agent.pose is None:
+            return None
+        
         # Slice pose
         x1, y1, theta1 = self.pose
-        x2, y2, _ = agent.pose
+        x2, y2, theta2 = agent.pose
 
         # Calculate dist and theta
         d = np.hypot((x2-x1),(y2-y1))
@@ -190,8 +195,7 @@ def camera_setup(width=1280, height=720, fps=100):
     return cap
 
 class UDP():
-    def __init__(self, IP="10.40.109.62", Freq=60):
-        self.JETBOT_IP = IP
+    def __init__(self, Freq=60):
         self.PORT = 5005
         self.SEND_HZ = Freq
         self.period = 1.0 / self.SEND_HZ
@@ -202,20 +206,28 @@ class UDP():
         # seq(uint32), t_sent(double), left(float), right(float)
         self.PACK_FMT = "<Idff"
         self.PACK_SIZE = struct.calcsize(self.PACK_FMT)
-        print(f"[START] Sending to {self.JETBOT_IP}:{self.PORT} Pack_FMT={self.PACK_FMT}")
 
-    def Send(self, left, right):
+    def Send(self, IP, left, right):
         t_sent = time.time()  # wall time so JetBot can compute age
         pkt = struct.pack(self.PACK_FMT, self.seq, t_sent, float(left), float(right))
-        self.sock.sendto(pkt, (self.JETBOT_IP, self.PORT))
+        self.sock.sendto(pkt, (str(IP), self.PORT))
         self.seq += 1
 
-    def Close(self):
+    def Close(self, IP):
         print("\n[STOP] Sending stop command and exiting...")
         t_sent = time.time()
         pkt = struct.pack(self.PACK_FMT, self.seq, t_sent, 0.0, 0.0)
-        self.sock.sendto(pkt, (self.JETBOT_IP, self.PORT))
-        self.sock.close()
+        try:
+            self.sock.sendto(pkt, (str(IP), self.PORT))
+        except OSError as e:
+            print(f"[WARN] failed to send stop to {IP}: {e}")
+    
+    def Shutdown(self):
+        try:
+            self.sock.close()
+        except Exception as e:
+            print(f"[WARN] error closing UDP socket: {e}")
+        self._closed = True
 
 def rot_to_rpy(R):
     """

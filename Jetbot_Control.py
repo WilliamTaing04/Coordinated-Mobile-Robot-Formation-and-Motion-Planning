@@ -60,13 +60,25 @@ def main():
     UDP = Jetbot_Setup.UDP(Freq=control_freq)
     '''
     ssh jetbot@10.40.109.62
+    ssh jetbot@10.40.101.192
+    ssh jetbot@10.40.122.89
+    ssh jetbot@
+
+    python3 ~/jetbot/jetbot/control_reciever.py
     '''
 
     # Controllers
-    pidv = Motion_Control.PID(0.5,0.1,0) # PID for V
-    pidw = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidvL = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidwL = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidv1 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidw1 = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidv3 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidw3 = Motion_Control.PID(0.5,0.1,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controller = Motion_Control.control(500, 8, 500, control_freq, pidv, pidw, alpha=0.75)       
+    controllerL = Motion_Control.control(500, 8, 500, control_freq, pidvL, pidwL, alpha=0.75)
+    controller1 = Motion_Control.control(500, 8, 500, control_freq, pidv1, pidw1, alpha=0.75)
+    controller3 = Motion_Control.control(500, 8, 500, control_freq, pidv3, pidw3, alpha=0.75)
+
     # # Controller goals
     # # min=0 max =400
     # U_GOAL = 0     # mm/s^2
@@ -76,11 +88,12 @@ def main():
     # W_GOAL = 0      # rad/s
 
     # Jetbots
-    leader = Jetbot_Setup.Jetbot(9,1,tau_pose=0.2,tau_vel=0.25)
-    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(9,"bad",controllerL,role=1,tau_pose=0.2,tau_vel=0.25)
+    follower1 = Jetbot_Setup.Jetbot(26,"10.40.109.62",controller1,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower3 = Jetbot_Setup.Jetbot(999,"10.40.122.89",controller3,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
-
-    jetbot_array = [leader, follower1]
+    
+    jetbot_array = [leader, follower1, follower3]
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -234,47 +247,49 @@ def main():
             # STEP 4: CONTROLLER AND COMMUNICATION
             # -----------------------------------------------------------------
             # TODO: mutli agent
-            # for jetbot in jetbot_array:
-            #     if jetbot.visible && jetbot.role==0:
-                #     jetbot.RK4_step()
-                #     U_GOAL, W_GOAL = agent1.getuw()
-                #     data_lin_acc_des[count, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
-                #     data_ang_vel_des[count, i] = W_GOAL
-                #     t_now = time.perf_counter()
-                #     # VW controller:
-                #     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
-                #     # UW controller
-                #     v_cmd , w_cmd = controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL, W_GOAL])
-                #     left, right = controller.motor_controller(v_cmd, w_cmd)
+            for i, jetbot in enumerate(jetbot_array):
+                if jetbot.visible and jetbot.role==0:
+                    agent1.RK4_step()   # TODO: change this
+                    U_GOAL, W_GOAL = agent1.getuw()
+                    data_lin_acc_des[count, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
+                    data_ang_vel_des[count, i] = W_GOAL
+                    t_now = time.perf_counter()
+                    # VW controller:
+                    # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
+                    # UW controller
+                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL, W_GOAL])
+                    left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
 
-                #     at_count += 1 #TESTING
-                # else:
-                #     left = right = 0.0
-                #  # Send UDP package
-                # # left = 0
-                # # right = 0
-                # UDP.Send(left, right)
-
-            if follower1.visible:
-                agent1.RK4_step()
-                U_GOAL, W_GOAL = agent1.getuw()
-                data_lin_acc_des[count-1, 1] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
-                data_ang_vel_des[count-1, 1] = W_GOAL
-                t_now = time.perf_counter()
-                # VW controller:
-                # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
-                # UW controller
-                v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
-                left, right = controller.motor_controller(v_cmd, w_cmd)
-
+                else:
+                    left = right = 0.0
+                 # Send UDP package
+                left = 0.3
+                right = -0.3
+                if jetbot.role==0:
+                    UDP.Send(jetbot.IP, left, right)
                 at_count += 1 #TESTING
-            else:
-                left = right = 0.0
+
+            # TODO: uncomment for normal use
+            # if follower1.visible:
+            #     agent1.RK4_step()
+            #     U_GOAL, W_GOAL = agent1.getuw()
+            #     data_lin_acc_des[count-1, 1] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
+            #     data_ang_vel_des[count-1, 1] = W_GOAL
+            #     t_now = time.perf_counter()
+            #     # VW controller:
+            #     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
+            #     # UW controller
+            #     v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
+            #     left, right = controller.motor_controller(v_cmd, w_cmd)
+
+            #     at_count += 1 #TESTING
+            # else:
+            #     left = right = 0.0
 
             # Send UDP package
             # left = 0
             # right = 0
-            UDP.Send(left, right)
+            # UDP.Send(left, right)
 
             # Reduce display
             if (frame_count % 4) == 0:
@@ -317,7 +332,10 @@ def main():
         # CLEANUP
         # =====================================================================
         print("\n[STOP] Sending stop command and exiting...")
-        UDP.Close()
+        for jetbot in jetbot_array:
+            if jetbot.role==0:
+                UDP.Close(jetbot.IP)
+        UDP.Shutdown()
         cap.release()
         cv2.destroyAllWindows()
         print(f"%Time Tag visible: {100*at_count/frame_count}%")
