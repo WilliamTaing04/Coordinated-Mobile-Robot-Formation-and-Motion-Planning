@@ -77,12 +77,19 @@ def main():
     pidwL = Motion_Control.PID(0.5,0.1,0) # PID for w
     pidv1 = Motion_Control.PID(0.5,0.1,0) # PID for v
     pidw1 = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidv2 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidw2 = Motion_Control.PID(0.5,0.1,0) # PID for w
     pidv3 = Motion_Control.PID(0.5,0.1,0) # PID for v
     pidw3 = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidv4 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidw4 = Motion_Control.PID(0.5,0.1,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
     controllerL = Motion_Control.control(500, 8, 500, control_freq, pidvL, pidwL, alpha=0.75)
     controller1 = Motion_Control.control(500, 8, 500, control_freq, pidv1, pidw1, alpha=0.75)
+    controller2 = Motion_Control.control(500, 8, 500, control_freq, pidv2, pidw2, alpha=0.75)
     controller3 = Motion_Control.control(500, 8, 500, control_freq, pidv3, pidw3, alpha=0.75)
+    controller4 = Motion_Control.control(500, 8, 500, control_freq, pidv4, pidw4, alpha=0.75)
+
 
     # # Controller goals
     # # min=0 max =400
@@ -95,10 +102,12 @@ def main():
     # Jetbots
     leader = Jetbot_Setup.Jetbot(9,"bad",controllerL,role=1,tau_pose=0.2,tau_vel=0.25)
     follower1 = Jetbot_Setup.Jetbot(26,"10.40.109.62",controller1,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower3 = Jetbot_Setup.Jetbot(999,"10.40.122.89",controller3,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9992,"10.40.101.192",controller2,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower3 = Jetbot_Setup.Jetbot(9993,"10.40.122.89",controller3,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower4 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
     
-    jetbot_array = [leader, follower1, follower3]
+    jetbot_array = [leader, follower1, follower2, follower3, follower4]
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
