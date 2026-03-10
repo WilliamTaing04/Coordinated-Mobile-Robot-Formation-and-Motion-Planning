@@ -1,4 +1,43 @@
 """
+SETUP:
+Create control_reciever.py
+~/jetbot/jetbot/
+vim control_reciever.py
+
+Change __init__.py:
+vim ~/jetbot/jetbot/__init__.py
+~/jetbot/jetbot/ vim __init__.py
+#from .camera import Camera
+#from .heartbeat import Heartbeat
+from .motor import Motor
+from .robot import Robot
+#from .image import bgr8_to_jpeg
+#from .object_detection import ObjectDetector
+
+Install Packages:
+sudo apt-get update
+sudo apt-get install -y python3-smbus i2c-tools git python3-pip python3-setuptools python3-wheel
+
+sudo -H python3 -m pip install --upgrade "pip<22" "setuptools<60" "wheel"
+
+git clone https://github.com/adafruit/Adafruit-Motor-HAT-Python-Library.git
+cd Adafruit-Motor-HAT-Python-Library
+sudo python3 setup.py install
+
+python3 -m pip install --user traitlets pyserial
+
+Run Program:
+cd ~/jetbot
+python3 -m jetbot.control_reciever
+
+
+EXPECTED OUTPUT:
+[START] Listening on 0.0.0.0:5005
+       PACK_FMT=<Idff> PACK_SIZE=...
+       watchdog=0.250s
+Ctrl+C to quit.
+
+
 JetBot UDP motor receiver
 Packet format matches sender:
 PACK_FMT = "<Idff"  (seq:uint32, t_sent:double, left:float, right:float)

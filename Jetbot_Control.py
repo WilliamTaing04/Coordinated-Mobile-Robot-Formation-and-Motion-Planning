@@ -59,12 +59,17 @@ def main():
     # TODO: Setup UDP communication
     UDP = Jetbot_Setup.UDP(Freq=control_freq)
     '''
+    follower1:
     ssh jetbot@10.40.109.62
+    follower2:
     ssh jetbot@10.40.101.192
+    follower3:
+    ssh jetbot@10.40.122.94
+    follower4:
     ssh jetbot@10.40.122.89
-    ssh jetbot@
 
-    python3 ~/jetbot/jetbot/control_reciever.py
+    cd ~/jetbot
+    python3 -m jetbot.control_reciever
     '''
 
     # Controllers
