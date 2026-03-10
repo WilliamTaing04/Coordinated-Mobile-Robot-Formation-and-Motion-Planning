@@ -41,7 +41,6 @@ def main():
     dt_break = 0
     np.set_printoptions(precision=4, suppress=True)
 
-
     # Settings
     collect_data = 1    # 0=no collect 1=collect
     control_freq = 30   # Hz
@@ -56,20 +55,20 @@ def main():
     T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
     print(f"Transformation Matrix: {T_cam_to_workspace}")
 
-    # TODO: Setup UDP communication
+    # UDP communication
     UDP = Jetbot_Setup.UDP(Freq=control_freq)
     '''
-    follower1:
-    ssh jetbot@10.40.109.62
-    follower2:
-    ssh jetbot@10.40.101.192
-    follower3:
-    ssh jetbot@10.40.122.94
-    follower4:
-    ssh jetbot@10.40.122.89
+follower1:
+ssh jetbot@10.40.109.62
+follower2:
+ssh jetbot@10.40.101.192
+follower3:
+ssh jetbot@10.40.122.94
+follower4:
+ssh jetbot@10.40.122.89
 
-    cd ~/jetbot
-    python3 -m jetbot.control_reciever
+cd ~/jetbot
+python3 -m jetbot.control_reciever
     '''
 
     # Controllers
@@ -103,8 +102,9 @@ def main():
     leader = Jetbot_Setup.Jetbot(9,"bad",controllerL,role=1,tau_pose=0.2,tau_vel=0.25)
     follower1 = Jetbot_Setup.Jetbot(26,"10.40.109.62",controller1,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower2 = Jetbot_Setup.Jetbot(9992,"10.40.101.192",controller2,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower3 = Jetbot_Setup.Jetbot(9993,"10.40.122.89",controller3,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower3 = Jetbot_Setup.Jetbot(9993,"10.40.122.94",controller3,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower4 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    
     agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
     
     jetbot_array = [leader, follower1, follower2, follower3, follower4]
@@ -199,9 +199,8 @@ def main():
                         # convert rotation matrix to rpy (radians)
                         roll, pitch, yaw = Jetbot_Setup.rot_to_rpy(rot_workspace)
 
-                        # Collect Data
+                        # Get pose for data collection
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
-
                         
                         # TODO: multi agent
                         # for jetbot in jetbot_array:
@@ -211,6 +210,7 @@ def main():
                         #         jetbot.visible = 1
                         #         d, v, theta = jetbot.get_dist_theta(leader)
                         #         updated = np.array([d/1000, v/1000, theta])
+                        #         agent1.update_self_state(updated,updated)
                                     
                         if tag_id == leader.id:
                             t_meas = time.perf_counter()
@@ -220,7 +220,7 @@ def main():
                         if tag_id == follower1.id:
                             t_meas = time.perf_counter()
                             follower1.update_meas(pose, t_meas)
-                            d, v, theta  = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
+                            d, v, theta = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
                             updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
                             agent1.update_self_state(updated,updated)
                             follower1.visible = 1
@@ -278,12 +278,13 @@ def main():
 
                 else:
                     left = right = 0.0
-                 # Send UDP package
-                left = 0.3
-                right = -0.3
+                    
+                # Send UDP package
+                # left = 0.2
+                # right = -0.2
                 if jetbot.role==0:
                     UDP.Send(jetbot.IP, left, right)
-                at_count += 1 #TESTING
+            at_count += 1 #TESTING
 
             # TODO: uncomment for normal use
             # if follower1.visible:
@@ -450,6 +451,9 @@ def plots():
                           lin_acc[:, i], ang_vel_f[:, i],
                           lin_acc_des[:, i], ang_vel_des[:, i],
                           title=f"Robot {i} UW actual vs desired")
+    
+    plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
+
 
     # ----------------------------
     # Steady-state averages
@@ -471,4 +475,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    plots()
+    # plots()
