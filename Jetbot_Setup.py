@@ -7,7 +7,7 @@ import math
 import AprilTags
 
 class Jetbot():
-    def __init__(self, id, role=0, tau_pose=0.2, tau_vel=0.0):
+    def __init__(self, id, role=0, tau_pose=0.2, tau_vel=0.4):
         self.id = id
         self.role = role                # 0-follower 1-leader
         self.visible = 0                # 0-not seen 1-seen
@@ -33,6 +33,7 @@ class Jetbot():
         self.prev_ang_acc = 0           # rad/s^2
         self.tau_pose = tau_pose        # sec
         self.tau_vel  = tau_vel         # sec 0 disables vel filtering
+        self.last_print_time = time.time()
 
     def update_meas(self, pose, time_meas):
         pose = np.asarray(pose, dtype=float).copy()
@@ -101,7 +102,7 @@ class Jetbot():
 
         # Calculate velocities using filtered valueus
         yaw_prev = self.prev_pose_f[2]
-        self.lin_vel = (dx * np.cos(yaw_prev) + dy * np.sin(yaw_prev)) / dt
+        self.lin_vel = (dx*np.cos(yaw_prev)+dy*np.sin(yaw_prev)) / dt
         self.ang_vel = (self.pose_f[2] - self.prev_pose_f[2]) / dt
 
         # LPF velocity
@@ -133,8 +134,15 @@ class Jetbot():
         x2, y2, _ = agent.pose
 
         # Calculate dist and theta
-        d = np.hypot((x2-x1),(y2-y1))
-        theta = self.wrap_to_pi(np.atan2(x2-x1, y1-y2) - theta1 - np.pi/2)
+        d = np.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
+        theta = self.wrap_to_pi(np.atan2(y2-y1, x2-x1) - theta1)
+
+
+        if time.time() - self.last_print_time >= 1.0:
+            print(d, self.lin_vel, theta)
+            print(self.pose)
+            self.last_print_time = time.time()
+
 
         return d, self.lin_vel_f, theta
 
@@ -170,7 +178,7 @@ def camera_setup(width=1280, height=720, fps=100):
     print("\nInitializing camera and detector...")
     # Initialize camera and detector
 
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
+    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)    # 1280 x 720
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

@@ -77,7 +77,7 @@ def main():
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(9,1,tau_pose=0.2,tau_vel=0.25)
-    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.2,tau_vel=0.2)   # TagID, 0-follower
     agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
 
     jetbot_array = [leader, follower1]
@@ -175,7 +175,7 @@ def main():
                         # Collect Data
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
 
-                        
+
                         # TODO: multi agent
                         # for jetbot in jetbot_array:
                         #     if tag_id == jetbot.id:
@@ -195,6 +195,7 @@ def main():
                             follower1.update_meas(pose, t_meas)
                             d, v, theta  = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
                             updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
+                            #print("distance:", updated[0])
                             agent1.update_self_state(updated,updated)
                             follower1.visible = 1
 
@@ -216,7 +217,7 @@ def main():
                         corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
 
             if collect_data and count < max_samples:
-                data_time[count] = t_meas - initial_time         # Time [s]
+                #data_time[count] = t_meas - initial_time         # Time [s]
                 for i, jetbot in enumerate(jetbot_array):
                     if jetbot.visible:
                         data_pos[count, i, :] = jetbot.pose              # Jetbot pose [x,y,theta] [mm][rad]
@@ -266,7 +267,8 @@ def main():
                 # VW controller:
                 # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
                 # UW controller
-                v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
+                
+                v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL*1000, W_GOAL])
                 left, right = controller.motor_controller(v_cmd, w_cmd)
 
                 at_count += 1 #TESTING
@@ -274,8 +276,11 @@ def main():
                 left = right = 0.0
 
             # Send UDP package
-            # left = 0
-            # right = 0
+            #left = 0
+            #right = 0
+            #if(left < 0) and (left < 0):
+             #   left = 0;
+              #  right = 0;
             UDP.Send(left, right)
 
             # Reduce display
@@ -383,18 +388,18 @@ def plots():
     # XY trajectory
     plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
 
-    # Pose raw vs filtered
-    plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :],
-                              title=f"Robot {i} Pose: Raw vs Filtered")
+    # # Pose raw vs filtered
+    # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :],
+    #                           title=f"Robot {i} Pose: Raw vs Filtered")
 
-    # X and Y vs time
-    plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
+    # # X and Y vs time
+    # plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
 
-    # Velocities raw vs filtered
-    plot.plot_velocity_raw_vs_filtered(t,
-                                  lin_vel[:, i], ang_vel[:, i],
-                                  lin_vel_f[:, i], ang_vel_f[:, i],
-                                  title=f"Robot {i} Velocities: Raw vs Filtered")
+    # # Velocities raw vs filtered
+    # plot.plot_velocity_raw_vs_filtered(t,
+    #                               lin_vel[:, i], ang_vel[:, i],
+    #                               lin_vel_f[:, i], ang_vel_f[:, i],
+    #                               title=f"Robot {i} Velocities: Raw vs Filtered")
 
     # Velocities vs time (desired for this robot)
     plot.plot_velocities(t,
@@ -439,4 +444,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    plots()
+    #plots()
