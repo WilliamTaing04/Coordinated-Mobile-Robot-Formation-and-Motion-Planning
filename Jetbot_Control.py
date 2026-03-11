@@ -274,7 +274,7 @@ python3 -m jetbot.control_reciever
                     # VW controller:
                     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
                     # UW controller
-                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL, W_GOAL])
+                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
 
                 else:
