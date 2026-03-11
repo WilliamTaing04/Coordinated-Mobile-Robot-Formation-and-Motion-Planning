@@ -360,3 +360,149 @@ def plot_accel_and_angvel(
 
         fig.suptitle(title)
         fig.tight_layout()
+
+def plot_all_xy_trajectories(pose_f, title="All Robots XY Trajectories", labels=None, show_start_end=True):
+    """
+    pose_f: array of shape (T, N, 3)
+    labels: optional list of robot names (length N)
+    """
+
+    pose_f = np.asarray(pose_f)
+    num_bots = pose_f.shape[1]
+
+    plt.figure(figsize=(7, 7))
+
+    for i in range(num_bots):
+        x = pose_f[:, i, 0]
+        y = pose_f[:, i, 1]
+
+        # Mask NaNs (invisible periods)
+        mask = ~np.isnan(x) & ~np.isnan(y)
+        if not np.any(mask):
+            continue
+
+        label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
+
+        plt.plot(x[mask], y[mask], label=label)
+
+        if show_start_end:
+            first = np.argmax(mask)
+            last = len(mask) - 1 - np.argmax(mask[::-1])
+            plt.scatter(x[first], y[first], marker="o")
+            plt.scatter(x[last], y[last], marker="x")
+
+    plt.title(title)
+    plt.xlabel("X [mm]")
+    plt.ylabel("Y [mm]")
+    plt.axis("equal")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+def plot_all_linear_velocity(t, lin_vel_f, title="All Robots Linear Velocity vs Time", labels=None):
+    """
+    t: (T,)
+    lin_vel_f: (T, N)
+    """
+
+    t = np.asarray(t)
+    lin_vel_f = np.asarray(lin_vel_f)
+    num_bots = lin_vel_f.shape[1]
+
+    plt.figure(figsize=(9, 5))
+
+    for i in range(num_bots):
+        v = lin_vel_f[:, i]
+        mask = ~np.isnan(v)
+
+        label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
+        plt.plot(t[mask], v[mask], label=label)
+
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Linear Velocity [mm/s]")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+def plot_all_angular_velocity(t, ang_vel_f, title="All Robots Angular Velocity vs Time", labels=None):
+    """
+    t: (T,)
+    ang_vel_f: (T, N)
+    """
+
+    t = np.asarray(t)
+    ang_vel_f = np.asarray(ang_vel_f)
+    num_bots = ang_vel_f.shape[1]
+
+    plt.figure(figsize=(9, 5))
+
+    for i in range(num_bots):
+        w = ang_vel_f[:, i]
+        mask = ~np.isnan(w)
+
+        label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
+        plt.plot(t[mask], w[mask], label=label)
+
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Angular Velocity [rad/s]")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+def plot_all_angular_velocity(t, ang_vel_f, title="All Robots Angular Velocity vs Time", labels=None):
+    """
+    t: (T,)
+    ang_vel_f: (T, N)
+    """
+
+    t = np.asarray(t)
+    ang_vel_f = np.asarray(ang_vel_f)
+    num_bots = ang_vel_f.shape[1]
+
+    plt.figure(figsize=(9, 5))
+
+    for i in range(num_bots):
+        w = ang_vel_f[:, i]
+        mask = ~np.isnan(w)
+
+        label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
+        plt.plot(t[mask], w[mask], label=label)
+
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Angular Velocity [rad/s]")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+def plot_all_linear_acceleration(t, lin_acc, title="All Robots Linear Acceleration vs Time", labels=None, window=1):
+    """
+    t: (T,)
+    lin_acc: (T, N)
+    window: rolling average window (<=1 disables smoothing)
+    """
+
+    t = np.asarray(t)
+    lin_acc = np.asarray(lin_acc)
+    num_bots = lin_acc.shape[1]
+
+    plt.figure(figsize=(9, 5))
+
+    for i in range(num_bots):
+        a = lin_acc[:, i]
+        mask = ~np.isnan(a)
+
+        if window is not None and window > 1:
+            a = rolling_average(a, window)
+
+        label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
+        plt.plot(t[mask], a[mask], label=label)
+
+    plt.title(title)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Linear Acceleration [mm/s²]")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()

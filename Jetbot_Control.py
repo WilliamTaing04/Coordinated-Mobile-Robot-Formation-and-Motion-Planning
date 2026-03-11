@@ -242,7 +242,8 @@ python3 -m jetbot.control_reciever
                         corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
 
             if collect_data and count < max_samples:
-                #data_time[count] = t_meas - initial_time         # Time [s]
+                t_meas = time.perf_counter()
+                data_time[count] = t_meas - initial_time                 # Time [s]
                 for i, jetbot in enumerate(jetbot_array):
                     if jetbot.visible:
                         data_pos[count, i, :] = jetbot.pose              # Jetbot pose [x,y,theta] [mm][rad]
@@ -266,8 +267,8 @@ python3 -m jetbot.control_reciever
                 if jetbot.visible and jetbot.role==0:
                     agent1.RK4_step()   # TODO: change this
                     U_GOAL, W_GOAL = agent1.getuw()
-                    data_lin_acc_des[count, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
-                    data_ang_vel_des[count, i] = W_GOAL
+                    data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
+                    data_ang_vel_des[count-1, i] = W_GOAL
                     t_now = time.perf_counter()
                     # VW controller:
                     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
@@ -403,7 +404,6 @@ def plots():
     t = data["time"]
     pose = data["pos"]
     pose_f = data["pos_f"]
-
     lin_vel = data["lin_vel"]
     ang_vel = data["ang_vel"]
     lin_vel_f = data["lin_vel_f"]
@@ -413,68 +413,30 @@ def plots():
     lin_acc_des = data["lin_acc_des"]
     ang_vel_des = data["ang_vel_des"]
 
-    i = 1 
+    num_bots = pose_f.shape[1]
 
-    # XY trajectory
-    plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
+    # Per agent individual plots
+    for i in range(num_bots):
+        plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
+        plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
+        plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
+        plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
+        plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
+        plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
+        plot.plot_accel_and_angvel(t, lin_acc[:, i], ang_vel_f[:, i], lin_acc_des[:, i], ang_vel_des[:, i], title=f"Robot {i} UW actual vs desired")
+        
+        plt.show()
 
-    # # Pose raw vs filtered
-    # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :],
-    #                           title=f"Robot {i} Pose: Raw vs Filtered")
-
-    # # X and Y vs time
-    # plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
-
-    # # Velocities raw vs filtered
-    # plot.plot_velocity_raw_vs_filtered(t,
-    #                               lin_vel[:, i], ang_vel[:, i],
-    #                               lin_vel_f[:, i], ang_vel_f[:, i],
-    #                               title=f"Robot {i} Velocities: Raw vs Filtered")
-
-    # Velocities vs time (desired for this robot)
-    plot.plot_velocities(t,
-                    lin_vel_f[:, i], ang_vel_f[:, i],
-                    v_des=None,
-                    w_des=ang_vel_des[:, i],
-                    title=f"Robot {i} Velocities vs Time (Filtered)")
-    
-    # Accelerations vs time
-    plot.plot_accelerations(
-        t,
-        lin_acc[:, i],
-        ang_acc[:, i],
-        a_des=lin_acc_des[:, i],
-        title="Accelerations vs Time",
-        window=30,
-        plot_raw=True)
-
-    # Desired vs Actual (UW)
-    plot.plot_accel_and_angvel(t,
-                          lin_acc[:, i], ang_vel_f[:, i],
-                          lin_acc_des[:, i], ang_vel_des[:, i],
-                          title=f"Robot {i} UW actual vs desired")
-    
+    # Multiagent plots    
     plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
-
-
-    # ----------------------------
-    # Steady-state averages
-    # ----------------------------
-    # t_start = 1.0  # seconds
-    # mask = t >= t_start
-
-    # avg_lvel = float(np.mean(lin_vel[mask])) if np.any(mask) else float("nan")
-    # avg_avel = float(np.mean(ang_vel[mask])) if np.any(mask) else float("nan")
-    # avg_lacc = float(np.mean(lin_acc[mask])) if np.any(mask) else float("nan")
-
-    # np.set_printoptions(precision=5, suppress=True)
-    # print("Average steady lin velocity:", avg_lvel, "mm/s")
-    # print("Average steady lin acceleration:", avg_lacc, "mm/s^2")
-    # print("Average steady ang velocity:", avg_avel, "rad/s")
-
-    # Show all figures at the end
+    plot.plot_all_xy_trajectories(pose_f, title="All Agents XY Trajectories", labels=["Leader", "Follower1", "Follower2", "Follower3"], show_start_end=True)
+    plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
+    plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
+    plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower1", "Follower2", "Follower3"], window=20)
+    
     plt.show()
 
+
 if __name__ == "__main__":
-    main()
-    # plots()
+    # main()
+    plots()
