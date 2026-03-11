@@ -153,7 +153,6 @@ def main():
                         tag_id = tag.tag_id
                         
                         # Extract position in camera frame (already in mm)
-                        # Flatten trans_vector to get a 1D array of shape (3,)
                         pos_camera = trans_vector.flatten()  # Replace with position array
 
                         # Create full 4x4 pose transformation from tag to camera
@@ -162,7 +161,6 @@ def main():
                         T_tag_to_cam[:3, 3] = trans_vector.reshape((3,))  # Replace with translation vector
                         
                         # Transform full pose to workspace frame
-                        # Multiply T_cam_to_workspace @ T_tag_to_cam
                         T_tag_to_workspace = T_cam_to_workspace @ T_tag_to_cam  # Replace with homogeneous coordinates (4x4)
                         
                         # Extract position and orientation in workspace frame
