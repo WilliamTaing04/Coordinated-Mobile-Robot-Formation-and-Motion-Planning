@@ -1,4 +1,43 @@
 """
+SETUP:
+Create control_reciever.py
+~/jetbot/jetbot/
+vim control_reciever.py
+
+Change __init__.py:
+vim ~/jetbot/jetbot/__init__.py
+~/jetbot/jetbot/ vim __init__.py
+#from .camera import Camera
+#from .heartbeat import Heartbeat
+from .motor import Motor
+from .robot import Robot
+#from .image import bgr8_to_jpeg
+#from .object_detection import ObjectDetector
+
+Install Packages:
+sudo apt-get update
+sudo apt-get install -y python3-smbus i2c-tools git python3-pip python3-setuptools python3-wheel
+
+sudo -H python3 -m pip install --upgrade "pip<22" "setuptools<60" "wheel"
+
+git clone https://github.com/adafruit/Adafruit-Motor-HAT-Python-Library.git
+cd Adafruit-Motor-HAT-Python-Library
+sudo python3 setup.py install
+
+python3 -m pip install --user traitlets pyserial
+
+Run Program:
+cd ~/jetbot
+python3 -m jetbot.control_reciever
+
+
+EXPECTED OUTPUT:
+[START] Listening on 0.0.0.0:5005
+       PACK_FMT=<Idff> PACK_SIZE=...
+       watchdog=0.250s
+Ctrl+C to quit.
+
+
 JetBot UDP motor receiver
 Packet format matches sender:
 PACK_FMT = "<Idff"  (seq:uint32, t_sent:double, left:float, right:float)
@@ -11,7 +50,7 @@ import time
 
 # JetBot motor control
 try:
-    from jetbot import Robot
+    from jetbot.robot import Robot
 except ImportError:
     Robot = None
 
@@ -77,7 +116,6 @@ def main():
 
     try:
         while True:
-            now_wall = time.time()
             now_perf = time.perf_counter()
 
             # Drain socket (newest packet wins)
@@ -111,7 +149,7 @@ def main():
                             pkts_ooo += 1
                         else:
                             last_seq = seq
-                            last_rx_time = now_wall
+                            last_rx_time = now_perf
 
                             # Compute dt between received packets
                             if last_rx_perf is None:
@@ -138,32 +176,19 @@ def main():
                                 pkts_ok += 1
 
                                 # 🔹 NEW: Per-packet debug print
-                                print(
-                                    f"[RX] seq={seq} "
-                                    f"dt_recv={dt_recv:0.4f}s "
-                                    f"L={left:+0.3f} R={right:+0.3f}"
-                                )
+                                # replace the per-packet print with:
+                                if args.print_hz > 0 and (now_perf - last_print) >= (1.0 / args.print_hz):
+                                    print(f"[RX] seq={seq} dt_recv={dt_recv:0.4f}s L={left:+0.3f} R={right:+0.3f}")
+                                    last_print = now_perf
 
             # Watchdog stop
-            if last_rx_time > 0 and (now_wall - last_rx_time) > args.watchdog:
+            if last_rx_time > 0 and (now_perf - last_rx_time) > args.watchdog:
                 if last_left != 0.0 or last_right != 0.0:
                     stop()
                 last_seq = None
                 last_addr = None
                 last_rx_time = 0.0
                 last_rx_perf = None
-
-            # Optional periodic summary print
-            if args.print_hz > 0:
-                tperf = time.perf_counter()
-                if (tperf - last_print) >= (1.0 / args.print_hz):
-                    dt = (now_wall - last_rx_time) if last_rx_time > 0 else float("inf")
-                    print(
-                        f"[STATUS] seq={last_seq} dt_since_last={dt:0.3f}s "
-                        f"L={last_left:+0.3f} R={last_right:+0.3f} | "
-                        f"ok={pkts_ok} bad={pkts_bad} ooo={pkts_ooo}"
-                    )
-                    last_print = tperf
 
             time.sleep(0.001)
 

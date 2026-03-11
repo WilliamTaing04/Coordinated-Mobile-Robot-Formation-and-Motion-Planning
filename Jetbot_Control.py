@@ -41,7 +41,6 @@ def main():
     dt_break = 0
     np.set_printoptions(precision=4, suppress=True)
 
-
     # Settings
     collect_data = 1    # 0=no collect 1=collect
     control_freq = 30   # Hz
@@ -56,17 +55,41 @@ def main():
     T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
     print(f"Transformation Matrix: {T_cam_to_workspace}")
 
-    # TODO: Setup UDP communication
+    # UDP communication
     UDP = Jetbot_Setup.UDP(Freq=control_freq)
     '''
-    ssh jetbot@10.40.109.62
+follower1:
+ssh jetbot@10.40.109.62
+follower2:
+ssh jetbot@10.40.101.192
+follower3:
+ssh jetbot@10.40.122.94
+follower4:
+ssh jetbot@10.40.122.89
+
+cd ~/jetbot
+python3 -m jetbot.control_reciever
     '''
 
     # Controllers
-    pidv = Motion_Control.PID(0.5,0.1,0) # PID for V
-    pidw = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidvL = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidwL = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidv1 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidw1 = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidv2 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidw2 = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidv3 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidw3 = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidv4 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    pidw4 = Motion_Control.PID(0.5,0.1,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controller = Motion_Control.control(500, 8, 500, control_freq, pidv, pidw, alpha=0.75)       
+    controllerL = Motion_Control.control(500, 8, 500, control_freq, pidvL, pidwL, alpha=0.75)
+    controller1 = Motion_Control.control(500, 8, 500, control_freq, pidv1, pidw1, alpha=0.75)
+    controller2 = Motion_Control.control(500, 8, 500, control_freq, pidv2, pidw2, alpha=0.75)
+    controller3 = Motion_Control.control(500, 8, 500, control_freq, pidv3, pidw3, alpha=0.75)
+    controller4 = Motion_Control.control(500, 8, 500, control_freq, pidv4, pidw4, alpha=0.75)
+
+
     # # Controller goals
     # # min=0 max =400
     # U_GOAL = 0     # mm/s^2
@@ -76,11 +99,15 @@ def main():
     # W_GOAL = 0      # rad/s
 
     # Jetbots
-    leader = Jetbot_Setup.Jetbot(9,1,tau_pose=0.2,tau_vel=0.25)
-    follower1 = Jetbot_Setup.Jetbot(26,0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(9,"bad",controllerL,role=1,tau_pose=0.2,tau_vel=0.25)
+    follower1 = Jetbot_Setup.Jetbot(26,"10.40.109.62",controller1,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9992,"10.40.101.192",controller2,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower3 = Jetbot_Setup.Jetbot(9993,"10.40.122.94",controller3,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower4 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    
     agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
-
-    jetbot_array = [leader, follower1]
+    
+    jetbot_array = [leader, follower1, follower2, follower3, follower4]
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -170,8 +197,9 @@ def main():
                         # convert rotation matrix to rpy (radians)
                         roll, pitch, yaw = Jetbot_Setup.rot_to_rpy(rot_workspace)
 
-                        # Collect Data
+                        # Get pose for data collection
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
+                        
                         # TODO: multi agent
                         # for jetbot in jetbot_array:
                         #     if tag_id == jetbot.id:
@@ -180,6 +208,7 @@ def main():
                         #         jetbot.visible = 1
                         #         d, v, theta = jetbot.get_dist_theta(leader)
                         #         updated = np.array([d/1000, v/1000, theta])
+                        #         agent1.update_self_state(updated,updated)
                                     
                         if tag_id == leader.id:
                             t_meas = time.perf_counter()
@@ -189,8 +218,9 @@ def main():
                         if tag_id == follower1.id:
                             t_meas = time.perf_counter()
                             follower1.update_meas(pose, t_meas)
-                            d, v, theta  = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
+                            d, v, theta = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
                             updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
+                            #print("distance:", updated[0])
                             agent1.update_self_state(updated,updated)
                             follower1.visible = 1
 
@@ -212,7 +242,7 @@ def main():
                         corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
 
             if collect_data and count < max_samples:
-                data_time[count] = t_meas - initial_time         # Time [s]
+                #data_time[count] = t_meas - initial_time         # Time [s]
                 for i, jetbot in enumerate(jetbot_array):
                     if jetbot.visible:
                         data_pos[count, i, :] = jetbot.pose              # Jetbot pose [x,y,theta] [mm][rad]
@@ -232,46 +262,52 @@ def main():
             # STEP 4: CONTROLLER AND COMMUNICATION
             # -----------------------------------------------------------------
             # TODO: mutli agent
-            # for jetbot in jetbot_array:
-            #     if jetbot.visible && jetbot.role==0:
-                #     jetbot.RK4_step()
-                #     U_GOAL, W_GOAL = agent1.getuw()
-                #     data_lin_acc_des[count, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
-                #     data_ang_vel_des[count, i] = W_GOAL
-                #     t_now = time.perf_counter()
-                #     # VW controller:
-                #     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
-                #     # UW controller
-                #     v_cmd , w_cmd = controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL, W_GOAL])
-                #     left, right = controller.motor_controller(v_cmd, w_cmd)
+            for i, jetbot in enumerate(jetbot_array):
+                if jetbot.visible and jetbot.role==0:
+                    agent1.RK4_step()   # TODO: change this
+                    U_GOAL, W_GOAL = agent1.getuw()
+                    data_lin_acc_des[count, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
+                    data_ang_vel_des[count, i] = W_GOAL
+                    t_now = time.perf_counter()
+                    # VW controller:
+                    # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
+                    # UW controller
+                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
+                    left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
 
-                #     at_count += 1 #TESTING
-                # else:
-                #     left = right = 0.0
-                #  # Send UDP package
-                # # left = 0
-                # # right = 0
-                # UDP.Send(left, right)
+                else:
+                    left = right = 0.0
+                    
+                # Send UDP package
+                # left = 0.2
+                # right = -0.2
+                if jetbot.role==0:
+                    UDP.Send(jetbot.IP, left, right)
+            at_count += 1 #TESTING
 
-            if follower1.visible:
-                agent1.RK4_step()
-                U_GOAL, W_GOAL = agent1.getuw()
-                data_lin_acc_des[count-1, 1] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
-                data_ang_vel_des[count-1, 1] = W_GOAL
-                t_now = time.perf_counter()
-                # VW controller:
-                # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
-                # UW controller
-                v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
-                left, right = controller.motor_controller(v_cmd, w_cmd)
+            # TODO: uncomment for normal use
+            # if follower1.visible:
+            #     agent1.RK4_step()
+            #     U_GOAL, W_GOAL = agent1.getuw()
+            #     data_lin_acc_des[count-1, 1] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
+            #     data_ang_vel_des[count-1, 1] = W_GOAL
+            #     t_now = time.perf_counter()
+            #     # VW controller:
+            #     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
+            #     # UW controller
+            #     v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
+            #     left, right = controller.motor_controller(v_cmd, w_cmd)
 
-                at_count += 1 #TESTING
-            else:
-                left = right = 0.0
+            #     at_count += 1 #TESTING
+            # else:
+            #     left = right = 0.0
 
             # Send UDP package
-            # left = 0
-            # right = 0
+            #left = 0
+            #right = 0
+            #if(left < 0) and (left < 0):
+             #   left = 0;
+              #  right = 0;
             UDP.Send(left, right)
 
             # Reduce display
@@ -315,7 +351,10 @@ def main():
         # CLEANUP
         # =====================================================================
         print("\n[STOP] Sending stop command and exiting...")
-        UDP.Close()
+        for jetbot in jetbot_array:
+            if jetbot.role==0:
+                UDP.Close(jetbot.IP)
+        UDP.Shutdown()
         cap.release()
         cv2.destroyAllWindows()
         print(f"%Time Tag visible: {100*at_count/frame_count}%")
@@ -379,18 +418,18 @@ def plots():
     # XY trajectory
     plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
 
-    # Pose raw vs filtered
-    plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :],
-                              title=f"Robot {i} Pose: Raw vs Filtered")
+    # # Pose raw vs filtered
+    # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :],
+    #                           title=f"Robot {i} Pose: Raw vs Filtered")
 
-    # X and Y vs time
-    plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
+    # # X and Y vs time
+    # plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
 
-    # Velocities raw vs filtered
-    plot.plot_velocity_raw_vs_filtered(t,
-                                  lin_vel[:, i], ang_vel[:, i],
-                                  lin_vel_f[:, i], ang_vel_f[:, i],
-                                  title=f"Robot {i} Velocities: Raw vs Filtered")
+    # # Velocities raw vs filtered
+    # plot.plot_velocity_raw_vs_filtered(t,
+    #                               lin_vel[:, i], ang_vel[:, i],
+    #                               lin_vel_f[:, i], ang_vel_f[:, i],
+    #                               title=f"Robot {i} Velocities: Raw vs Filtered")
 
     # Velocities vs time (desired for this robot)
     plot.plot_velocities(t,
@@ -414,6 +453,9 @@ def plots():
                           lin_acc[:, i], ang_vel_f[:, i],
                           lin_acc_des[:, i], ang_vel_des[:, i],
                           title=f"Robot {i} UW actual vs desired")
+    
+    plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
+
 
     # ----------------------------
     # Steady-state averages
@@ -435,4 +477,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    plots()
+    # plots()

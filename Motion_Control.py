@@ -46,12 +46,12 @@ class PID:
 
 class control():
     # Initialize the controller.
-    def __init__(self, v_max, w_max, a_max, freq, pidv, pidw, alpha=0.2):
+    def __init__(self, v_max, w_max, a_max, freq, pidv, pidw, alpha=0.2, xydeadzone=10, tdeadzone=0.2):
         self.v_max = v_max              # max lin velocity [mm/s]
         self.w_max = w_max              # max ang velocity [rad/s]
         self.a_max = a_max              # max lin acceleration [mm/s^2]
         self.motor_max = 0.8            # left motor max speed [0,1]
-        self.motor_min = 0.075          # left motor min speed [0,1]
+        self.motor_min = 0.1          # left motor min speed [0,1]
         self.last_time = time.perf_counter()    # save time for dt [s]
         self.dt_max = 1.0 / freq        # max dt [s]
         self.pidv = pidv                # PID for lin vel [mm/s]
@@ -69,8 +69,11 @@ class control():
         self.K_V = 1628.7734269380087
         self.B_V = -107.70507007613396
         # Acceleration integration vel
-        self.v_ref = 0.0      # integrated velocity reference
-    
+        self.v_ref = 0.0                # integrated velocity reference
+        # xyt controller
+        self.xydeadzone = xydeadzone    # positional deadzone [mm]
+        self.tdeadzone = tdeadzone      # angular deadzone [rad]
+
     def reset(self):
         self.pidv.reset()
         self.pidw.reset()
@@ -186,6 +189,43 @@ class control():
 
         return v_cmd, w_cmd
 
+    # def controller_xyt(self, pose, goal):
+    #     x, y, theta = pose
+    #     xg, yg, thetag = goal
+
+    #     dx = xg - x
+    #     dy = yg - y
+    #     dtheta = thetag - theta
+
+    #     dist = np.hypot(dx, dy)
+
+    #     # wrap heading error
+    #     etheta = np.atan2(np.sin(dtheta), np.cos(dtheta))
+
+    #     # stop condition (position + heading)
+    #     if dist < self.xydeadzone and abs(etheta) < self.tdeadzone:
+    #         return 0.0, 0.0
+
+    #     # body-frame errors (X forward, Y left)
+    #     ex = dx * np.cos(theta) + dy * np.sin(theta)
+    #     ey = -dx * np.sin(theta) + dy * np.cos(theta)
+
+    #     # Gains (good starting points for mm/rad units)
+    #     kx = 0.6
+    #     ky = 0.004
+    #     ktheta = 1.5
+
+    #     v = kx * ex
+    #     w = ky * ey + ktheta * etheta
+
+    #     # reduce forward speed if not pointed roughly toward goal
+    #     v *= max(0.0, np.cos(etheta))
+
+    #     # clamp
+    #     v = np.clip(v, -self.v_max, self.v_max)
+    #     w = np.clip(w, -self.w_max, self.w_max)
+
+    #     return float(v), float(w)
     
     def motor_controller(self, v_cmd, w_cmd):
         wheel_len = self.wheel_len

@@ -90,10 +90,10 @@ class Agent:
         self,
         _id=0,
         _n_agents = 1,
-        #_estimator_gains=[-6, -8, -2], #gd, gv, p
-        _estimator_gains=[-2, -2*(-2**2)/9, -2/3],
-        _agent_safety_gains=[.12, .4, .4], #ds (safety bound), Eu, Ew
-        _extra_parameters=[0.2, -0.3, 0.4] #T, dx_star(desired lateral distance
+        _estimator_gains=[-6, -2, -1], #gd, gv, p (4,4,2)
+        #_estimator_gains=[-2, -2*(-2**2)/9, -2/3],
+        _agent_safety_gains=[0.04, .3, .3], #ds (safety bound), Eu, Ew
+        _extra_parameters=[0.7, 0.2, 0.2] #T, dx_star(desired lateral distance
                                            # , dy_star (desired longitudinal distance
     ):
         self.observed = np.zeros((2,4))
@@ -105,6 +105,7 @@ class Agent:
         self.estimator_gains = _estimator_gains
         self.agent_safety_gains = _agent_safety_gains
         self.extra_parameters = _extra_parameters
+        self.last_print_time = 0
 
 
 
@@ -123,23 +124,32 @@ class Agent:
         v1x_hat = estimates[0,1] # X edge
 
         yc = max(((abs(ds)/ds)*(-gd*(dy_star-ds))-Ew), 0)
+        if(yc == 0):
+             print("Yc = 0")
         xc = max((-gd*(dx_star-ds) - Eu), 0)
+        if(xc == 0):
+            print("Xc = 0")
 
         h1 = observation[0,0] - ds - T * v
         alpha = -gd*h1
         k = 1/T
 
-        dx = max(dx,0.2)
+        dx = max(dx,1)
 
         w = ((v1y_hat - gd*(dy-ds))/(dx)) - (abs(ds)*(Ew+yc))/(ds*dx) #Y edge traits
         #print("dx: ", dx, "ds: ", ds)
         #print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
         u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
-        u = clamp(u, -0.5, 0.5)
-        w = clamp(w , -6, 6)
+
+       # u = clamp(u, -0.5, 0.5)
+        #w = clamp(w , -4, 4)
 
         control = [u, w]
+        if time.time() - self.last_print_time >= 0.3:
+            print(control)
+            #print("k",k,"v1xhat",v1x_hat,"xc",xc,"v",v,"dy",observation[0,1],"alpha",alpha)
+            self.last_print_time = time.time()
         return control
 
 
@@ -178,7 +188,7 @@ class Agent:
         state_dot[1] = gv * dx_del + v1y_hat * w + p * w * dy_del
 
         state_dot[2] = v1y_hat - dx * w + gd * dy_del
-        state_dot[3] = gv * dy_del - v1y_hat * w - p * w * dx_del
+        state_dot[3] = gv * dy_del - v1x_hat * w - p * w * dx_del
 
         return state_dot
 
@@ -226,65 +236,65 @@ class Agent:
         1) May be desirable to RK4 for only the variables of interest to be integrated (estimated_states)
         2) The change in the control and observed states may be negligible within one time step.
     '''
-    # def RK4_step(self, h=0.03125): #IMPLEMENTATION ONE, ESTIMATOR, STATE, AND CONTROL UPDATES, 32Hz
-    #     initial_state = np.copy(self.estimated_state)
-
-    #     # Current state and current observed. These get modified at each of the 4 RK4 steps
-    #     s1 = self.estimated_state
-    #     obs_1 = self.observed
-    #     # Grabs Un
-    #     control_input = self.u_w_calculation(s1, obs_1)
-
-    #     # K1 dependent on Kn and Un, S1 is the initial estimated state
-    #     k1, kobs_1 = self.system_dynamics(initial_state, control_input, obs_1)
-
-    #     # Simple updated Xn = S2 for K2 calculation
-    #     s2 = initial_state + k1 * (h/2)
-    #     obs_2 = obs_1 + kobs_1 * (h/2)
-    #     # K2 dependent on Xn + K1(h/2) and Un + h/2? Not sure about the step in the input
-    #     control_input = self.u_w_calculation(s2, obs_2)
-    #     k2, kobs_2 = self.system_dynamics(s2, control_input, obs_2)
-
-    #     s3 = initial_state + k2 * (h/2)
-    #     obs_3 = obs_1 + kobs_2 * (h/2)
-    #     control_input = self.u_w_calculation(s3, obs_3)
-    #     k3, kobs_3 = self.system_dynamics(s3, control_input, obs_3)
-
-    #     s4 = initial_state + k3 * h
-    #     obs_4 = obs_1 + kobs_3 * h
-    #     control_input = self.u_w_calculation(s4, obs_4)
-    #     k4, kobs_1 = self.system_dynamics(s4, control_input, obs_4) # this kobs_1 not used, just labeled to show that it should ideally be the same as the next iteration kobs_1
-
-    #     # Result of RK4 is to calculate the next state
-    #     next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
-    #     self.estimated_state = np.copy(next_state)
-    #     return()
-
-    def RK4_step(self, h=0.03125): #IMPLEMENTATION TWO, JUST ESTIMATOR ITERATING, THIS CODE NEEDS UPDATING NOW TOO
+    def RK4_step(self, h=0.03125): #IMPLEMENTATION ONE, ESTIMATOR, STATE, AND CONTROL UPDATES, 32Hz
         initial_state = np.copy(self.estimated_state)
-        obs = self.observed
+
+        # Current state and current observed. These get modified at each of the 4 RK4 steps
+        s1 = self.estimated_state
+        obs_1 = self.observed
         # Grabs Un
-        control_input = self.u_w_calculation(self.estimated_state, obs)
-    
-        # K1 dependent on Kn and Un
-        k1, _ = self.system_dynamics(initial_state, control_input, obs)
-    
+        control_input = self.u_w_calculation(s1, obs_1)
+
+        # K1 dependent on Kn and Un, S1 is the initial estimated state
+        k1, kobs_1 = self.system_dynamics(initial_state, control_input, obs_1)
+
         # Simple updated Xn = S2 for K2 calculation
         s2 = initial_state + k1 * (h/2)
-    
+        obs_2 = obs_1 + kobs_1 * (h/2)
         # K2 dependent on Xn + K1(h/2) and Un + h/2? Not sure about the step in the input
-        k2, _ = self.system_dynamics(s2, control_input, obs)
-    
+        control_input = self.u_w_calculation(s2, obs_2)
+        k2, kobs_2 = self.system_dynamics(s2, control_input, obs_2)
+
         s3 = initial_state + k2 * (h/2)
-    
-        k3, _ = self.system_dynamics(s3, control_input, obs)
-    
+        obs_3 = obs_1 + kobs_2 * (h/2)
+        control_input = self.u_w_calculation(s3, obs_3)
+        k3, kobs_3 = self.system_dynamics(s3, control_input, obs_3)
+
         s4 = initial_state + k3 * h
-    
-        k4, _ = self.system_dynamics(s4, control_input, obs)
-    
+        obs_4 = obs_1 + kobs_3 * h
+        control_input = self.u_w_calculation(s4, obs_4)
+        k4, kobs_1 = self.system_dynamics(s4, control_input, obs_4) # this kobs_1 not used, just labeled to show that it should ideally be the same as the next iteration kobs_1
+
+        # Result of RK4 is to calculate the next state
         next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
         self.estimated_state = np.copy(next_state)
+        return()
+
+    # def RK4_step(self, h=0.03125): #IMPLEMENTATION TWO, JUST ESTIMATOR ITERATING, THIS CODE NEEDS UPDATING NOW TOO
+    #     initial_state = np.copy(self.estimated_state)
+    #     obs = self.observed
+    #     # Grabs Un
+    #     control_input = self.u_w_calculation(self.estimated_state, obs)
+    
+    #     # K1 dependent on Kn and Un
+    #     k1, _ = self.system_dynamics(initial_state, control_input, obs)
+    
+    #     # Simple updated Xn = S2 for K2 calculation
+    #     s2 = initial_state + k1 * (h/2)
+    
+    #     # K2 dependent on Xn + K1(h/2) and Un + h/2? Not sure about the step in the input
+    #     k2, _ = self.system_dynamics(s2, control_input, obs)
+    
+    #     s3 = initial_state + k2 * (h/2)
+    
+    #     k3, _ = self.system_dynamics(s3, control_input, obs)
+    
+    #     s4 = initial_state + k3 * h
+    
+    #     k4, _ = self.system_dynamics(s4, control_input, obs)
+    
+    #     next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+    #     self.estimated_state = np.copy(next_state)
 
     '''
     Proposed alternative function to self_dynamics
@@ -299,24 +309,33 @@ class Agent:
         v_Y = obsY[1]
         theta_Y = obsY[2]
         # print(theta_Y)
+        if d_Y < self.agent_safety_gains[0]:
+            d_Y = self.agent_safety_gains[0]
         self.observed = np.array([[d_X * cos(theta_X), d_X * sin(theta_X), v_X, theta_X],
                                 [d_Y * cos(theta_Y), d_Y * sin(theta_Y), v_Y, theta_Y]])
 
     def getuw(self):
         return self.u_w_calculation(self.estimated_state, self.observed)
-
-# def run_exp():
-#     agent = Agent()
-#     timeStamp = time.perf_counter()
-#     #Run 1000 steps
-#     for x in range(500):
-#             while((time.perf_counter() - timeStamp) < 0.01):
-#                 pass
-#             agent.RK4_step()
-#             timeStamp = time.perf_counter()
-#
-# if __name__ == "__main__":
-#      run_exp()
-
+    
 def clamp(x, lo, hi):
     return max(lo, min(hi, x))
+
+def run_exp():
+    d = 700
+    v = 1
+    theta = pi/4
+    agent = Agent()
+    timeStamp = time.perf_counter()
+    #Run 1000 steps
+    for x in range(100):
+        while((time.perf_counter() - timeStamp) < 0.01):
+                pass
+        d = d+1
+        updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
+        agent.update_self_state(updated,updated)
+        agent.RK4_step()
+        timeStamp = time.perf_counter()
+
+#if __name__ == "__main__":
+    #run_exp()
+
