@@ -183,7 +183,7 @@ def camera_setup(width=1280, height=720, fps=100):
     print("\nInitializing camera and detector...")
     # Initialize camera and detector
 
-    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)    # 1280 x 720
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

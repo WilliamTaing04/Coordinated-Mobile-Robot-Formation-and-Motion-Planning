@@ -107,7 +107,7 @@ python3 -m jetbot.control_reciever
     
     agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
     
-    jetbot_array = [leader, follower1, follower2, follower3, follower4]
+    jetbot_array = [leader, follower1]
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -309,7 +309,7 @@ python3 -m jetbot.control_reciever
             #if(left < 0) and (left < 0):
              #   left = 0;
               #  right = 0;
-            UDP.Send(left, right)
+            # UDP.Send(left, right)
 
             # Reduce display
             if (frame_count % 4) == 0:
