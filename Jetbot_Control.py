@@ -224,7 +224,9 @@ python3 -m jetbot.control_reciever
                             agent1.update_self_state(updated,updated)
 
                             observed = agent1.observed
-                            if(abs(observed[0,0]/observed[0,3] - d) < 0.05):
+                            safetygain1 = agent1.extra_parameters[1]
+                            safetygain2 = agent1.extra_parameters[2]
+                            if(abs(observed[0,0]/observed[0,3] - np.hypot(safetygain1,safetygain2)) < 0.01):
                                 gain = 0.01
                             else:
                                 gain = 1
