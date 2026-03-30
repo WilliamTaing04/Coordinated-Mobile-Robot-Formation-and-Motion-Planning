@@ -222,6 +222,13 @@ python3 -m jetbot.control_reciever
                             updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
                             #print("distance:", updated[0])
                             agent1.update_self_state(updated,updated)
+
+                            observed = agent1.observed
+                            if(abs(observed[0,0]/observed[0,3] - d) < 0.05):
+                                gain = 0.01
+                            else:
+                                gain = 1
+
                             follower1.visible = 1
 
                             # if collect_data:
@@ -273,7 +280,7 @@ python3 -m jetbot.control_reciever
                     # VW controller:
                     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
                     # UW controller
-                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
+                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[gain*U_GOAL*1000, gain*W_GOAL])
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
 
                 else:
