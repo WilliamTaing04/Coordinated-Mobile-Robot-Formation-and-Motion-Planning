@@ -167,7 +167,6 @@ python3 -m jetbot.control_reciever
                     cv2.putText(color_frame, "No tag detected", 
                                 (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
                                 0.7, (0, 0, 255), 2)
-                
 
             else: 
                 for tag in tags:
@@ -201,37 +200,37 @@ python3 -m jetbot.control_reciever
 
                         # Get pose for data collection
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
-                        
-                        # TODO: multi agent
-                        # for jetbot in jetbot_array:
-                        #     if tag_id == jetbot.id:
-                        #         t_meas = time.perf_counter()
-                        #         jetbot.update_meas(pose, t_meas)
-                        #         jetbot.visible = 1
-                        #         d, v, theta = jetbot.get_dist_theta(leader)
-                        #         updated = np.array([d/1000, v/1000, theta])
-                        #         agent1.update_self_state(updated,updated)
-                                    
-                        if tag_id == leader.id:
-                            t_meas = time.perf_counter()
-                            leader.update_meas(pose, t_meas)
-                            leader.visible = 1
 
-                        if tag_id == follower1.id:
-                            t_meas = time.perf_counter()
-                            follower1.update_meas(pose, t_meas)
-                            d, v, theta = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
-                            updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
-                            agent1.update_self_state(updated,updated)
-                            follower1.visible = 1
+                        # TODO: test this
+                        for i, jetbot in enumerate(jetbot_array):
+                            if tag_id == jetbot.id:
+                                t_meas = time.perf_counter()
+                                jetbot.update_meas(pose, t_meas)
+                                jetbot.visible = 1
+                                d, v, theta = jetbot.get_dist_theta(leader) # [mm, mm/s, radians]
+                                updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
+                                agent_array[i].update_self_state(updated,updated)
+                                    
+                        # if tag_id == leader.id:
+                        #     t_meas = time.perf_counter()
+                        #     leader.update_meas(pose, t_meas)
+                        #     leader.visible = 1
+
+                        # if tag_id == follower1.id:
+                        #     t_meas = time.perf_counter()
+                        #     follower1.update_meas(pose, t_meas)
+                        #     d, v, theta = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
+                        #     updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
+                        #     agent1.update_self_state(updated,updated)
+                        #     follower1.visible = 1
                         
-                        if tag_id == follower2.id:
-                            t_meas = time.perf_counter()
-                            follower2.update_meas(pose, t_meas)
-                            d, v, theta = follower2.get_dist_theta(leader) # [mm, mm/s, radians]
-                            updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
-                            agent2.update_self_state(updated,updated)                            
-                            follower2.visible = 1
+                        # if tag_id == follower2.id:
+                        #     t_meas = time.perf_counter()
+                        #     follower2.update_meas(pose, t_meas)
+                        #     d, v, theta = follower2.get_dist_theta(leader) # [mm, mm/s, radians]
+                        #     updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
+                        #     agent2.update_self_state(updated,updated)                            
+                        #     follower2.visible = 1
 
 
                     if (frame_count % 4) == 0:
@@ -290,31 +289,6 @@ python3 -m jetbot.control_reciever
                 if jetbot.role==0:
                     UDP.Send(jetbot.IP, left, right)
             at_count += 1 #TESTING
-
-            # TODO: uncomment for normal use
-            # if follower1.visible:
-            #     agent1.RK4_step()
-            #     U_GOAL, W_GOAL = agent1.getuw()
-            #     data_lin_acc_des[count-1, 1] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
-            #     data_ang_vel_des[count-1, 1] = W_GOAL
-            #     t_now = time.perf_counter()
-            #     # VW controller:
-            #     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
-            #     # UW controller
-            #     v_cmd , w_cmd = controller.controller_uw([follower1.lin_vel, follower1.ang_vel],[U_GOAL, W_GOAL])
-            #     left, right = controller.motor_controller(v_cmd, w_cmd)
-
-            #     at_count += 1 #TESTING
-            # else:
-            #     left = right = 0.0
-
-            # Send UDP package
-            #left = 0
-            #right = 0
-            #if(left < 0) and (left < 0):
-             #   left = 0;
-              #  right = 0;
-            # UDP.Send(left, right)
 
             # Reduce display
             if (frame_count % 4) == 0:
