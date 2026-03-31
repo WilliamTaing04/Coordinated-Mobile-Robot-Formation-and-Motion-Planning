@@ -142,13 +142,6 @@ class Jetbot():
         d = np.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))
         theta = self.wrap_to_pi(np.atan2(y2-y1, x2-x1) - theta1)
 
-
-        if time.time() - self.last_print_time >= 1.0:
-            print(d, self.lin_vel, theta)
-            print(self.pose)
-            self.last_print_time = time.time()
-
-
         return d, self.lin_vel_f, theta
 
     def reset(self):

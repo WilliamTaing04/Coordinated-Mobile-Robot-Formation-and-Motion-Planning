@@ -88,13 +88,12 @@ Eω + yc
 class Agent:
     def __init__(
         self,
+        _extra_parameters, #T, dx_star(desired lateral distance), dy_star (desired longitudinal distance)
+        _agent_safety_gains, #ds (safety bound), Eu, Ew
         _id=0,
         _n_agents = 1,
-        _estimator_gains=[-6, -2, -1], #gd, gv, p (4,4,2)
+        _estimator_gains=[-6, -2, -1] #gd, gv, p (4,4,2)
         #_estimator_gains=[-2, -2*(-2**2)/9, -2/3],
-        _agent_safety_gains=[0.04, .3, .3], #ds (safety bound), Eu, Ew
-        _extra_parameters=[0.7, 0.2, 0.2] #T, dx_star(desired lateral distance
-                                           # , dy_star (desired longitudinal distance
     ):
         self.observed = np.zeros((2,4))
         self.estimated_state = np.zeros((2, 4)) #store dx, vx, dy, vy hat for each agent (both X and Y edges)

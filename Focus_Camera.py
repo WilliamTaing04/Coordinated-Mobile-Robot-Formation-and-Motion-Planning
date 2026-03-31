@@ -5,7 +5,7 @@ import AprilTags
 def setup():
     detector = AprilTags.AprilTags()
     # cap = cv2.VideoCapture(1, cv2.CAP_MSMF)    
-    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)   # switch to DirectShow
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
 
     # Prefer MJPG for high FPS on Arducam UVC modules
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))

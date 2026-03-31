@@ -89,7 +89,6 @@ python3 -m jetbot.control_reciever
     controller3 = Motion_Control.control(500, 8, 500, control_freq, pidv3, pidw3, alpha=0.75)
     controller4 = Motion_Control.control(500, 8, 500, control_freq, pidv4, pidw4, alpha=0.75)
 
-
     # # Controller goals
     # # min=0 max =400
     # U_GOAL = 0     # mm/s^2
@@ -101,13 +100,16 @@ python3 -m jetbot.control_reciever
     # Jetbots
     leader = Jetbot_Setup.Jetbot(9,"bad",controllerL,role=1,tau_pose=0.2,tau_vel=0.25)
     follower1 = Jetbot_Setup.Jetbot(26,"10.40.109.62",controller1,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower2 = Jetbot_Setup.Jetbot(9992,"10.40.101.192",controller2,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller2,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower3 = Jetbot_Setup.Jetbot(9993,"10.40.122.94",controller3,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower4 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     
-    agent1 = farzan_vishrut_algorithm.Agent() #for farzan_vishrut_algorithm
+    agent0 = farzan_vishrut_algorithm.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
+    agent1 = farzan_vishrut_algorithm.Agent([0.7,-0.2,-0.2], [0.05, 0.3, 0.3]) #for farzan_vishrut_algorithm
+    agent2 = farzan_vishrut_algorithm.Agent([0.7,0.2,0.2], [0.05, 0.3, 0.3]) #for farzan_vishrut_algorithm
     
-    jetbot_array = [leader, follower1]
+    jetbot_array = [leader, follower1, follower2]
+    agent_array = [agent0, agent1, agent2]
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -220,31 +222,17 @@ python3 -m jetbot.control_reciever
                             follower1.update_meas(pose, t_meas)
                             d, v, theta = follower1.get_dist_theta(leader) # [mm, mm/s, radians]
                             updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
-                            #print("distance:", updated[0])
                             agent1.update_self_state(updated,updated)
-
-                            observed = agent1.observed
-                            safetygain1 = agent1.extra_parameters[1]
-                            safetygain2 = agent1.extra_parameters[2]
-                            if(abs(observed[0,0]/observed[0,3] - np.hypot(safetygain1,safetygain2)) < 0.01):
-                                gain = 0.01
-                            else:
-                                gain = 1
-
                             follower1.visible = 1
+                        
+                        if tag_id == follower2.id:
+                            t_meas = time.perf_counter()
+                            follower2.update_meas(pose, t_meas)
+                            d, v, theta = follower2.get_dist_theta(leader) # [mm, mm/s, radians]
+                            updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
+                            agent2.update_self_state(updated,updated)                            
+                            follower2.visible = 1
 
-                            # if collect_data:
-                            #     data_time[count] = t_meas - initial_time         # Time [s]
-                            #     data_pos[count, :] = follower1.pose              # Jetbot pose [x,y,theta] [mm][rad]
-                            #     data_pos_f[count, :] = follower1.pose_f          # Jetbot pose [x,y,theta] [mm][rad] (filtered)
-                            #     data_lin_vel[count] = follower1.lin_vel          # Jetbot lin velocity [mm/s]
-                            #     data_ang_vel[count] = follower1.ang_vel          # Jetbot ang velocity [rad/s]
-                            #     data_lin_vel_f[count] = follower1.lin_vel_f      # Jetbot lin velocity [mm/s] (filtered)
-                            #     data_ang_vel_f[count] = follower1.ang_vel_f      # Jetbot ang velocity [rad/s] (filtered)
-                            #     data_lin_acc[count] = follower1.lin_acc          # Jetbot lin acceleration [mm/s^2]
-                            #     data_ang_acc[count] = follower1.ang_acc          # Jetbot ang acceleration [rad/s^2]
-                            #     count += 1
-                            # Draw detection on image
 
                     if (frame_count % 4) == 0:
                         detector.draw_tags(color_frame, tag)
@@ -274,16 +262,24 @@ python3 -m jetbot.control_reciever
             # TODO: mutli agent
             for i, jetbot in enumerate(jetbot_array):
                 if jetbot.visible and jetbot.role==0:
-                    agent1.RK4_step()   # TODO: change this
-                    U_GOAL, W_GOAL = agent1.getuw()
+                    observed = agent_array[i].observed
+                    safetygain1 = agent_array[i].extra_parameters[1]
+                    safetygain2 = agent_array[i].extra_parameters[2]
+                    if(abs(observed[0,0]/np.cos(observed[0,3]) - np.hypot(safetygain1,safetygain2)) < 0.02):
+                        gain = 0.01
+                        # print("gain set 0")
+                    else:
+                        gain = 1
+                        agent_array[i].RK4_step()   # TODO: change this
+                    U_GOAL, W_GOAL = agent_array[i].getuw()
                     data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
                     data_ang_vel_des[count-1, i] = W_GOAL
                     t_now = time.perf_counter()
                     # VW controller:
                     # v_cmd, w_cmd = controller.controller_vw([follower1.lin_vel, follower1.ang_vel], [V_GOAL, W_GOAL])
                     # UW controller
-                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[gain*U_GOAL*1000, gain*W_GOAL])
-                    left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
+                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
+                    left, right = jetbot.controller.motor_controller(gain*v_cmd, gain*w_cmd)
 
                 else:
                     left = right = 0.0
@@ -427,9 +423,9 @@ def plots():
     # Per agent individual plots
     for i in range(num_bots):
         plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
-        plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
+        # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
         plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
-        plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
+        # plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
         plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
         plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
         plot.plot_accel_and_angvel(t, lin_acc[:, i], ang_vel_f[:, i], lin_acc_des[:, i], ang_vel_des[:, i], title=f"Robot {i} UW actual vs desired")
@@ -439,7 +435,7 @@ def plots():
     # Multiagent plots    
     plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
     plot.plot_all_xy_trajectories(pose_f, title="All Agents XY Trajectories", labels=["Leader", "Follower1", "Follower2", "Follower3"], show_start_end=True)
-    plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
+    # plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
     plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
     plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower1", "Follower2", "Follower3"], window=20)
     
@@ -447,5 +443,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    # main()
-    plots()
+    main()
+    # plots()
