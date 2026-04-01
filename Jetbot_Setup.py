@@ -132,6 +132,7 @@ class Jetbot():
     
     def get_dist_theta(self, agent):
         if self.pose is None or agent is None or agent.pose is None:
+            print('Error: get_dist_theta None return')
             return None
         
         # Slice pose

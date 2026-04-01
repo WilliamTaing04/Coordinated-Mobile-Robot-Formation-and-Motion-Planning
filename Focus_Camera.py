@@ -88,7 +88,7 @@ while count < frames:
     cv2.putText(frame, f"FPS: {fps:.1f}",
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
                 1, (0, 255, 0), 2)
-    # cv2.putText(frame,f"Focus level = {i}", (20,40), cv2.FONT_HERSHEY_COMPLEX, 1, (255,255,255), 2)
+    cv2.putText(frame,f"Focus level = {i}", (20,40), cv2.FONT_HERSHEY_COMPLEX, 1, (255,255,255), 2)
 
     # if count % 3 == 0:
     #     for tag in tags:

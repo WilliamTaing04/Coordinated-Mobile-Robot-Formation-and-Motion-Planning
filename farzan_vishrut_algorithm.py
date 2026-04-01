@@ -92,8 +92,9 @@ class Agent:
         _agent_safety_gains, #ds (safety bound), Eu, Ew
         _id=0,
         _n_agents = 1,
-        _estimator_gains=[-6, -2, -1] #gd, gv, p (4,4,2)
+        _estimator_gains=[-1.5, -0.5, -0.5] #gd, gv, p (4,4,2)
         #_estimator_gains=[-2, -2*(-2**2)/9, -2/3],
+        #p = gd/3, gv = -2(gd^2) / 9, r = -2p
     ):
         self.observed = np.zeros((2,4))
         self.estimated_state = np.zeros((2, 4)) #store dx, vx, dy, vy hat for each agent (both X and Y edges)
@@ -123,11 +124,11 @@ class Agent:
         v1x_hat = estimates[0,1] # X edge
 
         yc = max(((abs(ds)/ds)*(-gd*(dy_star-ds))-Ew), 0)
-        if(yc == 0):
-             print("Yc = 0")
+        # if(yc == 0):
+            #  print("Yc = 0")
         xc = max((-gd*(dx_star-ds) - Eu), 0)
-        if(xc == 0):
-            print("Xc = 0")
+        # if(xc == 0):
+            # print("Xc = 0")
 
         h1 = observation[0,0] - ds - T * v
         alpha = -gd*h1
@@ -146,7 +147,7 @@ class Agent:
 
         control = [u, w]
         if time.time() - self.last_print_time >= 0.3:
-            print(control)
+            # print(control)
             #print("k",k,"v1xhat",v1x_hat,"xc",xc,"v",v,"dy",observation[0,1],"alpha",alpha)
             self.last_print_time = time.time()
         return control
