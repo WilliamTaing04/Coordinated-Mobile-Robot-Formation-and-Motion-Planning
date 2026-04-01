@@ -257,10 +257,10 @@ python3 -m jetbot.control_reciever
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
                     left, right = jetbot.controller.motor_controller(gain*v_cmd, gain*w_cmd)
                 
-                if jetbot.visible and jetbot.role==1:
+                elif jetbot.visible and jetbot.role==1:
                     # VW controller:
                     v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [leader_v, leader_w])
-                    left, right = jetbot.controller.motor_controller(gain*v_cmd, gain*w_cmd)
+                    left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
 
                 else:
                     left = right = 0.0
