@@ -337,8 +337,6 @@ def main():
     points_camera_transformed = T_cam_to_workspace @ points_camera_hom  # Replace with transformed points
     
     # Calculate errors between transformed camera points and workspace points
-    # Hint: Compute differences, then use np.linalg.norm() on each column
-    # YOUR CODE HERE
     errors = points_camera_transformed[:3] - points_workspace  # Replace with error vectors
 
     error_magnitudes = np.linalg.norm(errors, axis=0)

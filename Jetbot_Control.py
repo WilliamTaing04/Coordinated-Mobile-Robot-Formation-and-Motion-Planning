@@ -385,5 +385,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    # main()
-    plots()
+    main()
+    # plots()
