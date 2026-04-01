@@ -84,25 +84,28 @@ python3 -m jetbot.control_reciever
     pidv4 = Motion_Control.PID(0.5,0.1,0) # PID for v
     pidw4 = Motion_Control.PID(1.0,0.75,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controllerL = Motion_Control.control(500, 8, 500, control_freq, pidvL, pidwL, alpha=0.75)
-    controller1 = Motion_Control.control(500, 8, 500, control_freq, pidv1, pidw1, alpha=0.75)
-    controller2 = Motion_Control.control(500, 8, 500, control_freq, pidv2, pidw2, alpha=0.75)
-    controller3 = Motion_Control.control(500, 8, 500, control_freq, pidv3, pidw3, alpha=0.75)
-    controller4 = Motion_Control.control(500, 8, 500, control_freq, pidv4, pidw4, alpha=0.75)
+    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.75)
+    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.75)
+    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.75)
+    controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.75)
+    controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.75)
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    #follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     
+    # Agents
     agentL = farzan_vishrut_algorithm.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
     agent1 = farzan_vishrut_algorithm.Agent([1,0.3,-0.3], [-0.05, 0.07, 0.07]) 
     agent2 = farzan_vishrut_algorithm.Agent([1,0.3,0.3], [0.05, 0.07, 0.07]) 
 
+    # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]
     agent_array = [agentL, agent1, agent2]
 
+    # Desired Leader Movement
     leader_v, leader_w = 100, 0.5
 
     if collect_data:
@@ -132,28 +135,18 @@ python3 -m jetbot.control_reciever
             start_time = time.perf_counter()
             frame_count += 1
             for jetbot in jetbot_array:
-                jetbot.visible = 0   # reset visible 
+                jetbot.visible = 0   # reset visibility
 
-            # -----------------------------------------------------------------
-            # STEP 1: CAPTURE FRAME
-            # -----------------------------------------------------------------
-            
+            # CAPTURE FRAME
             # Get camera frame
             ret, color_frame = cap.read()
-
             if not ret:
                 continue
 
-            # -----------------------------------------------------------------
-            # STEP 2: DETECT APRILTAGS
-            # -----------------------------------------------------------------
-            
-            # Use detector.detect_tags(color_frame)
+            # STEP 2: DETECT APRILTAGS            
             tags = detector.detect_tags(color_frame)  # Replace with detected tags
             
-            # -----------------------------------------------------------------
             # STEP 3: PROCESS DETECTED TAGS
-            # -----------------------------------------------------------------
             # If no tags are detected 
             if len(tags)==0:
                 # No tags detected      
@@ -165,8 +158,7 @@ python3 -m jetbot.control_reciever
             else: 
                 tags.sort(reverse=True) # Sort tags to match jetbot array
                 for tag in tags:
-                    
-                    # Use detector.get_tag_pose(tag.corners, intrinsics, TAG_SIZE)
+                    # Get tag pose                    
                     rot_matrix, trans_vector = detector.get_tag_pose(tag.corners, intrinsics, TAG_SIZE)
                     
                     # Check if pose estimation was successful
@@ -196,7 +188,7 @@ python3 -m jetbot.control_reciever
                         # Get pose for data collection
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
 
-                        # Update pose and rk4 and alg
+                        # Update jetbot pose, agent rk4 and alg
                         for i, jetbot in enumerate(jetbot_array):
                             if (tag_id == jetbot.id):
                                 t_meas = time.perf_counter()
@@ -209,9 +201,9 @@ python3 -m jetbot.control_reciever
                                     updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
                                     updated2 = np.array([d2/1000, v2/1000, theta2]) # mm to m [m, m/s, radians]
                                     agent_array[i].update_self_state(updated,updated2)
-                        firstloop = False
+                        firstloop = False   # All jetbot pose initialized
 
-
+                    # Reduce display output
                     if (frame_count % 4) == 0:
                         detector.draw_tags(color_frame, tag)
                         corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
@@ -232,11 +224,10 @@ python3 -m jetbot.control_reciever
                 count += 1
 
 
-            # -----------------------------------------------------------------
             # STEP 4: CONTROLLER AND COMMUNICATION
-            # -----------------------------------------------------------------
-            # TODO: mutli agent
+            # Jetbot Motion Control and Algorithm
             for i, jetbot in enumerate(jetbot_array):
+                # Follwer Control
                 if jetbot.visible and jetbot.role==0:
                     observed = agent_array[i].observed
                     safetygain1 = agent_array[i].extra_parameters[1]
@@ -247,14 +238,14 @@ python3 -m jetbot.control_reciever
                     else:
                         gain = 1
                         agent_array[i].RK4_step()
-                    U_GOAL, W_GOAL = agent_array[i].getuw()
+                    U_GOAL, W_GOAL = agent_array[i].getuw()     # Get goal UW from alg
+                    # Record desired UW
                     data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
                     data_ang_vel_des[count-1, i] = W_GOAL
                     t_now = time.perf_counter()
-                    # VW controller:
-                    # v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [200, 0])
                     # UW controller
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
+                    # Convert Desired VW to LR motor speed
                     left, right = jetbot.controller.motor_controller(gain*v_cmd, gain*w_cmd)
                 
                 elif jetbot.visible and jetbot.role==1:
@@ -262,22 +253,16 @@ python3 -m jetbot.control_reciever
                     data_lin_acc_des[count-1, i] = None
                     data_ang_vel_des[count-1, i] = leader_w
                     v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [leader_v, leader_w])
+                    # Convert Desired VW to LR motor speed
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
 
-                else:
+                else:   # If jetbot is not visible then stop movement
                     left = right = 0.0
-                    
-                # Send UDP package
-                # left = 0.2
-                # right = 0.2
-                # if jetbot.role==0:
-                #     # print(f"left: {left}")
-                #     # print(f"right: {right}"
-                #     UDP.Send(jetbot.IP, left, right)
-                # if jetbot.role==1:
+                
+                # Send command to jetbot
                 UDP.Send(jetbot.IP, left, right)
 
-            at_count += 1 #TESTING
+            at_count += 1 # TESTING at frame count
 
             # Reduce display
             if (frame_count % 4) == 0:
@@ -295,9 +280,7 @@ python3 -m jetbot.control_reciever
                 print("\nQuitting...")
                 break
 
-            # -----------------------------------------------------------------
             # MAINTAIN FIXED TIMESTEP
-            # -----------------------------------------------------------------
             elapsed = time.perf_counter() - start_time
             if elapsed < 1/control_freq:
                 time.sleep(1/control_freq - elapsed)
@@ -316,9 +299,7 @@ python3 -m jetbot.control_reciever
         traceback.print_exc()
     
     finally:
-        # =====================================================================
         # CLEANUP
-        # =====================================================================
         print("\n[STOP] Sending stop command and exiting...")
         for jetbot in jetbot_array:
             if jetbot.role==0:
@@ -380,7 +361,6 @@ def plots():
     ang_acc = data["ang_acc"]
     lin_acc_des = data["lin_acc_des"]
     ang_vel_des = data["ang_vel_des"]
-
     num_bots = pose_f.shape[1]
 
     # Per agent individual plots
