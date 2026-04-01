@@ -105,8 +105,9 @@ python3 -m jetbot.control_reciever
     jetbot_array = [leader, follower1, follower2]
     agent_array = [agentL, agent1, agent2]
 
-    # Desired Leader Movement
-    leader_v, leader_w = 100, 0.5
+    # Desired Leader Movement [m/s] [rad/s] [s]
+    leader_movement= [[100, 0.0, 1], [100, 0.5, 1], [100,-0.5, 1], [100, 0.5, 1], [0.0, 0.0, 10]]
+    move = 0
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -126,6 +127,8 @@ python3 -m jetbot.control_reciever
         count = 0  # Sample counter
 
     initial_time = time.perf_counter()
+    move_start = time.perf_counter()
+
 # =====================================================================
 # MAIN TRACKING LOOP
 # =====================================================================
@@ -249,12 +252,19 @@ python3 -m jetbot.control_reciever
                     left, right = jetbot.controller.motor_controller(gain*v_cmd, gain*w_cmd)
                 
                 elif jetbot.visible and jetbot.role==1:
-                    # VW controller:
-                    data_lin_acc_des[count-1, i] = None
-                    data_ang_vel_des[count-1, i] = leader_w
-                    v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [leader_v, leader_w])
-                    # Convert Desired VW to LR motor speed
-                    left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
+                    if move < len(leader_movement):
+                        leader_v, leader_w, move_duration = leader_movement[move]
+                        if time.perf_counter() - move_start < move_duration:
+                            data_lin_acc_des[count-1, i] = None
+                            data_ang_vel_des[count-1, i] = leader_w
+                            v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [leader_v, leader_w])
+                            # Convert Desired VW to LR motor speed
+                            left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
+                        else:
+                            move += 1
+                            move_start = time.perf_counter()
+                    else:
+                        left = right = 0.0
 
                 else:   # If jetbot is not visible then stop movement
                     left = right = 0.0
