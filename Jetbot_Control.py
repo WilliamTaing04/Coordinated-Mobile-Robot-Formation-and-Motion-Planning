@@ -74,7 +74,7 @@ python3 -m jetbot.control_reciever
 
     # Controllers
     pidvL = Motion_Control.PID(0,0,0) # PID for v
-    pidwL = Motion_Control.PID(0,0,0) # PID for w
+    pidwL = Motion_Control.PID(1,0.75,0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0,0,0) # PID for w
     pidv2 = Motion_Control.PID(0,0,0) # PID for v
@@ -93,20 +93,20 @@ python3 -m jetbot.control_reciever
     # Jetbots
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     
     # Agents
     agentL = farzan_vishrut_algorithm.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
-    agent1 = farzan_vishrut_algorithm.Agent([1,0.3,-0.3], [-0.05, 0.07, 0.07]) 
-    agent2 = farzan_vishrut_algorithm.Agent([1,0.3,0.3], [0.05, 0.07, 0.07]) 
+    agent1 = farzan_vishrut_algorithm.Agent([1.3,0.3,-0.3], [-0.05, 0.07, 0.07]) 
+    agent2 = farzan_vishrut_algorithm.Agent([1.3,0.3,0.3], [0.05, 0.07, 0.07]) 
 
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]
     agent_array = [agentL, agent1, agent2]
 
     # Desired Leader Movement
-    leader_v, leader_w = 100, 0.5
+    leader_v, leader_w = 100, 0.0
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -386,4 +386,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    # plots()
+    #plots()

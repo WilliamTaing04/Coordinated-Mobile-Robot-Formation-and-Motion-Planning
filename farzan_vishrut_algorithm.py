@@ -92,7 +92,7 @@ class Agent:
         _agent_safety_gains, #ds (safety bound), Eu, Ew
         _id=0,
         _n_agents = 1,
-        _estimator_gains=[-1.5, -0.5, -0.5] #gd, gv, p (4,4,2)
+        _estimator_gains=[-2, -0.5, -0.5] #gd, gv, p (4,4,2)
         #_estimator_gains=[-2, -2*(-2**2)/9, -2/3],
         #p = gd/3, gv = -2(gd^2) / 9, r = -2p
     ):
