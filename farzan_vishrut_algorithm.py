@@ -3,7 +3,7 @@ from math import *
 import time as time
 '''
 State Variables:
-d - Euclidean distance between follower and its predecessor
+d - Euclidean distance between follower and it's predecessor
 theta - angle between line-of-sight from follower to predecessor and follower's heading
 v1 - predecessor linear velocity
 v - follower linear velocity
