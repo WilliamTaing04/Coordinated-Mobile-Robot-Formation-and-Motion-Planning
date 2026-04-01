@@ -7,10 +7,12 @@ import math
 import AprilTags
 
 class Jetbot():
-    def __init__(self, id, IP, controller, role=0, tau_pose=0.2, tau_vel=0.0):
+    def __init__(self, id, IP, controller, X_lead, Y_lead, role=0, tau_pose=0.2, tau_vel=0.0):
         self.id = id                    # tag id
         self.IP = str(IP)               # network IP addr
         self.controller = controller    # controller
+        self.X_lead = X_lead            # X edge leader
+        self.Y_lead = Y_lead            # Y edge leader
         self.role = role                # 0-follower 1-leader
         self.visible = 0                # 0-not seen 1-seen
         self.time_meas = None           # time of measurement

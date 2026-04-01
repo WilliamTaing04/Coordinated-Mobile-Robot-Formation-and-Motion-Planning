@@ -59,13 +59,13 @@ def main():
     # UDP communication
     UDP = Jetbot_Setup.UDP(Freq=control_freq)
     '''
-follower1:
+Leader:
 ssh jetbot@10.40.109.62
-follower2:
+follower1:
 ssh jetbot@10.40.101.192
-follower3:
+follower2:
 ssh jetbot@10.40.122.94
-follower4:
+follower3:
 ssh jetbot@10.40.122.89
 
 cd ~/jetbot
@@ -73,8 +73,8 @@ python3 -m jetbot.control_reciever
     '''
 
     # Controllers
-    pidvL = Motion_Control.PID(0.5,0.1,0) # PID for v
-    pidwL = Motion_Control.PID(0.5,0.1,0) # PID for w
+    pidvL = Motion_Control.PID(0,0,0) # PID for v
+    pidwL = Motion_Control.PID(0,0,0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0,0,0) # PID for w
     pidv2 = Motion_Control.PID(0,0,0) # PID for v
@@ -91,20 +91,17 @@ python3 -m jetbot.control_reciever
     controller4 = Motion_Control.control(500, 8, 500, control_freq, pidv4, pidw4, alpha=0.75)
 
     # Jetbots
-    # leader = Jetbot_Setup.Jetbot(9,"bad",controllerL,role=1,tau_pose=0.2,tau_vel=0.25)
-    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL,role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    # follower1 = Jetbot_Setup.Jetbot(26,"10.40.109.62",controller1,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower2 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller2,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower3 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller3,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    #follower4 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    #follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     
-    agent0 = farzan_vishrut_algorithm.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
-    # agent1 = farzan_vishrut_algorithm.Agent([0.7,-0.2,-0.2], [0.05, 0.3, 0.3]) 
-    agent2 = farzan_vishrut_algorithm.Agent([1,0.3,-0.3], [-0.05, 0.07, 0.07]) 
-    agent3 = farzan_vishrut_algorithm.Agent([1,0.3,0.3], [0.05, 0.07, 0.07]) 
+    agentL = farzan_vishrut_algorithm.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
+    agent1 = farzan_vishrut_algorithm.Agent([1,0.3,-0.3], [-0.05, 0.07, 0.07]) 
+    agent2 = farzan_vishrut_algorithm.Agent([1,0.3,0.3], [0.05, 0.07, 0.07]) 
 
-    jetbot_array = [leader, follower2, follower3]
-    agent_array = [agent0, agent2, agent3]
+    jetbot_array = [leader, follower1, follower2]
+    agent_array = [agentL, agent1, agent2]
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -203,10 +200,13 @@ python3 -m jetbot.control_reciever
                                 t_meas = time.perf_counter()
                                 jetbot.update_meas(pose, t_meas)
                                 jetbot.visible = 1
-                                if(firstloop == False):
-                                    d, v, theta = jetbot.get_dist_theta(leader) # [mm, mm/s, radians]
+                                if(firstloop == False) and (jetbot.role==0):
+                                    #d, v, theta = jetbot.get_dist_theta(leader) # [mm, mm/s, radians]
+                                    d, v, theta = jetbot.get_dist_theta(jetbot.X_lead) # [mm, mm/s, radians]
+                                    d2, v2, theta2 = jetbot.get_dist_theta(jetbot.Y_lead) # [mm, mm/s, radians]
                                     updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
-                                    agent_array[i].update_self_state(updated,updated)
+                                    updated2 = np.array([d2/1000, v2/1000, theta2]) # mm to m [m, m/s, radians]
+                                    agent_array[i].update_self_state(updated,updated2)
                         firstloop = False
 
 
@@ -241,6 +241,7 @@ python3 -m jetbot.control_reciever
                     safetygain2 = agent_array[i].extra_parameters[2]
                     if(abs(observed[0,0]/np.cos(observed[0,3]) - np.hypot(safetygain1,safetygain2)) < 0.02):
                         gain = 1
+                        agent_array[i].RK4_step() #remember to remove
                     else:
                         gain = 1
                         agent_array[i].RK4_step()

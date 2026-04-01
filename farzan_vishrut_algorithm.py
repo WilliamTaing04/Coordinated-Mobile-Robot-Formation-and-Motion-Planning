@@ -113,7 +113,7 @@ class Agent:
 
     def u_w_calculation(self, estimates, observation):
         gd, gv, p = self.estimator_gains
-        ds, Eu, Ew = self.agent_safety_gains
+        ds, Eu, Ew = self.agent_safety_gains # Add ds for each predecessor
         T, dx_star, dy_star = self.extra_parameters
 
         dx = observation[1,0] # Y edge
