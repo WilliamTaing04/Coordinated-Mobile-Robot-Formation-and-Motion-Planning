@@ -131,6 +131,9 @@ class Agent:
             # print("Xc = 0")
 
         h1 = observation[0,0] - ds - T * v
+
+        h2 = (dy - ds) * abs(ds)/ds
+
         alpha = -gd*h1
         k = 1/T
 
@@ -141,15 +144,24 @@ class Agent:
         #print("v1x_hat:",v1x_hat, "v:", v, "alpha:", alpha)
         u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
-
-       # u = clamp(u, -0.5, 0.5)
-        #w = clamp(w , -4, 4)
+        if h1 < 0 or h2 < 0:
+            print("\n[INFO] CONTROLS:", self.controls) # [u, w]
+            print(
+                "[ERROR] h1: ",
+                h1,
+                " h2: ",
+                h2,
+                " dx: ",
+                dx,
+                " v: ",
+                v,
+                " d_safe_x: ",
+                self.dsafe_x,
+                " dy: ",
+                dy,
+            )
 
         control = [u, w]
-        if time.time() - self.last_print_time >= 0.3:
-            # print(control)
-            #print("k",k,"v1xhat",v1x_hat,"xc",xc,"v",v,"dy",observation[0,1],"alpha",alpha)
-            self.last_print_time = time.time()
         return control
 
 
