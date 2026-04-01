@@ -259,6 +259,8 @@ python3 -m jetbot.control_reciever
                 
                 elif jetbot.visible and jetbot.role==1:
                     # VW controller:
+                    data_lin_acc_des[count-1, i] = None
+                    data_ang_vel_des[count-1, i] = leader_w
                     v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [leader_v, leader_w])
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
 
@@ -390,8 +392,7 @@ def plots():
         plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
         plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
         plot.plot_accel_and_angvel(t, lin_acc[:, i], ang_vel_f[:, i], lin_acc_des[:, i], ang_vel_des[:, i], title=f"Robot {i} UW actual vs desired")
-        
-        plt.show()
+    plt.show()
 
     # Multiagent plots    
     plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
@@ -404,5 +405,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    main()
-    #plots()
+    # main()
+    plots()
