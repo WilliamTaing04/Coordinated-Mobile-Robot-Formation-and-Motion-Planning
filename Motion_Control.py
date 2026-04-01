@@ -27,14 +27,12 @@ class PID:
         self.integral += error * dt
         self.integral = clamp(self.integral, -self.i_max, self.i_max)
 
-
         # Calculate derivative
         if self.error_prev is not None:
             derivative = (error - self.error_prev) / dt
         else:
             derivative = 0.0
         self.error_prev = error
-
 
         # Compute PID output
         output = (self.kp * error +

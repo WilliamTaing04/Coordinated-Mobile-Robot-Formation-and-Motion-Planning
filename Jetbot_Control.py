@@ -103,6 +103,8 @@ python3 -m jetbot.control_reciever
     jetbot_array = [leader, follower1, follower2]
     agent_array = [agentL, agent1, agent2]
 
+    leader_v, leader_w = 100, 0.5
+
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
         num_bots = len(jetbot_array)
@@ -161,7 +163,7 @@ python3 -m jetbot.control_reciever
                                 0.7, (0, 0, 255), 2)
 
             else: 
-                tags.sort(reverse=True)
+                tags.sort(reverse=True) # Sort tags to match jetbot array
                 for tag in tags:
                     
                     # Use detector.get_tag_pose(tag.corners, intrinsics, TAG_SIZE)
@@ -194,7 +196,7 @@ python3 -m jetbot.control_reciever
                         # Get pose for data collection
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
 
-                        # TODO: test this
+                        # Update pose and rk4 and alg
                         for i, jetbot in enumerate(jetbot_array):
                             if (tag_id == jetbot.id):
                                 t_meas = time.perf_counter()
@@ -241,18 +243,23 @@ python3 -m jetbot.control_reciever
                     safetygain2 = agent_array[i].extra_parameters[2]
                     if(abs(observed[0,0]/np.cos(observed[0,3]) - np.hypot(safetygain1,safetygain2)) < 0.02):
                         gain = 1
-                        agent_array[i].RK4_step() #remember to remove
+                        agent_array[i].RK4_step() # TODO: remember to remove
                     else:
                         gain = 1
                         agent_array[i].RK4_step()
                     U_GOAL, W_GOAL = agent_array[i].getuw()
-                    data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2 if that's what U_GOAL is
+                    data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
                     data_ang_vel_des[count-1, i] = W_GOAL
                     t_now = time.perf_counter()
                     # VW controller:
                     # v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [200, 0])
                     # UW controller
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
+                    left, right = jetbot.controller.motor_controller(gain*v_cmd, gain*w_cmd)
+                
+                if jetbot.visible and jetbot.role==1:
+                    # VW controller:
+                    v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [leader_v, leader_w])
                     left, right = jetbot.controller.motor_controller(gain*v_cmd, gain*w_cmd)
 
                 else:
@@ -261,12 +268,12 @@ python3 -m jetbot.control_reciever
                 # Send UDP package
                 # left = 0.2
                 # right = 0.2
-                if jetbot.role==0:
-                    # print(f"left: {left}")
-                    # print(f"right: {right}")
-                    UDP.Send(jetbot.IP, left, right)
-                if jetbot.role==1:
-                    UDP.Send(jetbot.IP, 0.2, 0.225)
+                # if jetbot.role==0:
+                #     # print(f"left: {left}")
+                #     # print(f"right: {right}"
+                #     UDP.Send(jetbot.IP, left, right)
+                # if jetbot.role==1:
+                UDP.Send(jetbot.IP, left, right)
 
             at_count += 1 #TESTING
 
