@@ -106,7 +106,11 @@ python3 -m jetbot.control_reciever
     agent_array = [agentL, agent1, agent2]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    leader_movement= [[100, 0.0, 1], [100, 0.5, 1], [100,-0.5, 1], [100, 0.5, 1], [0.0, 0.0, 10]]
+    leader_movement= [[150, 0.0, 3], 
+                      [150, 0.5, 3], 
+                      [150,-0.5, 3], 
+                      [150, 0.5, 3], 
+                      [0.0, 0.0, 10]]
     move = 0
 
     if collect_data:
