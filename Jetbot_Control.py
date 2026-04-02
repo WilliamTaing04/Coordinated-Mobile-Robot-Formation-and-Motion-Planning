@@ -81,14 +81,14 @@ python3 -m jetbot.control_reciever
     pidw2 = Motion_Control.PID(0,0,0) # PID for w
     pidv3 = Motion_Control.PID(0,0,0) # PID for v
     pidw3 = Motion_Control.PID(0,0,0) # PID for w
-    pidv4 = Motion_Control.PID(0,0,0) # PID for v
-    pidw4 = Motion_Control.PID(0,0,0) # PID for w
+    # pidv4 = Motion_Control.PID(0,0,0) # PID for v
+    # pidw4 = Motion_Control.PID(0,0,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
     controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.05)
     controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.05)
     controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.05)
     controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.05)
-    controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.05)
+    # controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.05)
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
@@ -100,6 +100,8 @@ python3 -m jetbot.control_reciever
     agentL = farzan_vishrut_algorithm.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
     agent1 = farzan_vishrut_algorithm.Agent([1.3,0.3,-0.3], [-0.05, 0.07, 0.07]) 
     agent2 = farzan_vishrut_algorithm.Agent([1.3,0.3,0.3], [0.05, 0.07, 0.07]) 
+    # agent3 = farzan_vishrut_algorithm.Agent([1.3,0.3,0.3], [0.05, 0.07, 0.07]) 
+    
 
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]
