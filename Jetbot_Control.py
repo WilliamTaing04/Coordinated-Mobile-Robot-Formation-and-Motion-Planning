@@ -73,27 +73,27 @@ python3 -m jetbot.control_reciever
     '''
 
     # Controllers
-    pidvL = Motion_Control.PID(0,0,0) # PID for v
-    pidwL = Motion_Control.PID(1,0.75,0) # PID for w
+    pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
+    pidwL = Motion_Control.PID(1.75,2,0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0,0,0) # PID for w
     pidv2 = Motion_Control.PID(0,0,0) # PID for v
     pidw2 = Motion_Control.PID(0,0,0) # PID for w
     pidv3 = Motion_Control.PID(0,0,0) # PID for v
     pidw3 = Motion_Control.PID(0,0,0) # PID for w
-    pidv4 = Motion_Control.PID(0.5,0.1,0) # PID for v
-    pidw4 = Motion_Control.PID(1.0,0.75,0) # PID for w
+    pidv4 = Motion_Control.PID(0,0,0) # PID for v
+    pidw4 = Motion_Control.PID(0,0,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.75)
-    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.75)
-    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.75)
-    controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.75)
-    controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.75)
+    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.1)
+    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.1)
+    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.1)
+    controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.1)
+    controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.1)
 
     # Jetbots
-    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     
     # Agents
@@ -106,10 +106,11 @@ python3 -m jetbot.control_reciever
     agent_array = [agentL, agent1, agent2]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    leader_movement= [[150, 0.0, 3], 
-                      [150, 0.5, 3], 
-                      [150,-0.5, 3], 
-                      [150, 0.5, 3], 
+    leader_movement= [[150, 0.0, 2], 
+                      [150, 0.75, 2], 
+                      [150,-0.75, 2], 
+                      [150, 0.75, 2], 
+                      [150, -0.75, 2], 
                       [0.0, 0.0, 10]]
     move = 0
 
@@ -261,6 +262,7 @@ python3 -m jetbot.control_reciever
                         if time.perf_counter() - move_start < move_duration:
                             data_lin_acc_des[count-1, i] = None
                             data_ang_vel_des[count-1, i] = leader_w
+                            # VW controller
                             v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [leader_v, leader_w])
                             # Convert Desired VW to LR motor speed
                             left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
@@ -400,4 +402,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    #plots()
+    plots()

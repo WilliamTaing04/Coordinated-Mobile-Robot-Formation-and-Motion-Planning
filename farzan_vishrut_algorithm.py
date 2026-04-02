@@ -145,7 +145,7 @@ class Agent:
         u = k*(v1x_hat - Eu - xc - v + observation[0,1] * w + alpha) #X edge traits
 
         if h1 < 0 or h2 < 0:
-            print("\n[INFO] CONTROLS:", self.controls) # [u, w]
+            print("\n[INFO] CONTROLS:") # [u, w]
             print(
                 "[ERROR] h1: ",
                 h1,
@@ -156,7 +156,7 @@ class Agent:
                 " v: ",
                 v,
                 " d_safe_x: ",
-                self.dsafe_x,
+                ds,
                 " dy: ",
                 dy,
             )
