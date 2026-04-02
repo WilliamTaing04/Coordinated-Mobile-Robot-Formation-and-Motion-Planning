@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 import pickle
 from pathlib import Path
 import Data_Visualization as plot
-import farzan_vishrut_algorithm
+import controller
+import agent
 
 # Directory where this file lives
 HERE = Path(__file__).parent
@@ -96,10 +97,10 @@ python3 -m jetbot.control_reciever
     follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     
-    # Agents
-    agentL = farzan_vishrut_algorithm.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
-    agent1 = farzan_vishrut_algorithm.Agent([1.3,0.3,-0.3], [-0.05, 0.07, 0.07]) 
-    agent2 = farzan_vishrut_algorithm.Agent([1.3,0.3,0.3], [0.05, 0.07, 0.07]) 
+    # Agents TODO: update agent parameters
+    agentL = agent.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
+    agent1 = agent.Agent([1.3,0.3,-0.3], [-0.05, 0.07, 0.07])
+    agent2 = agent.Agent([1.3,0.3,0.3], [0.05, 0.07, 0.07])
 
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]
@@ -234,18 +235,11 @@ python3 -m jetbot.control_reciever
             # STEP 4: CONTROLLER AND COMMUNICATION
             # Jetbot Motion Control and Algorithm
             for i, jetbot in enumerate(jetbot_array):
-                # Follwer Control
-                if jetbot.visible and jetbot.role==0:
-                    observed = agent_array[i].observed
-                    safetygain1 = agent_array[i].extra_parameters[1]
-                    safetygain2 = agent_array[i].extra_parameters[2]
-                    if(abs(observed[0,0]/np.cos(observed[0,3]) - np.hypot(safetygain1,safetygain2)) < 0.02):
-                        gain = 1
-                        agent_array[i].RK4_step() # TODO: remember to remove
-                    else:
-                        gain = 1
-                        agent_array[i].RK4_step()
-                    U_GOAL, W_GOAL = agent_array[i].getuw()     # Get goal UW from alg
+                # Follower Control
+                if jetbot.visible and jetbot.role==0: # For followers
+                    observed = agent_array[i].observed # Get observed states
+                    agent_array[i].RK4_step() # RK4 step good
+                    U_GOAL, W_GOAL = agent_array[i].getuw() # Get goal UW from alg
                     # Record desired UW
                     data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
                     data_ang_vel_des[count-1, i] = W_GOAL
@@ -253,9 +247,9 @@ python3 -m jetbot.control_reciever
                     # UW controller
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
                     # Convert Desired VW to LR motor speed
-                    left, right = jetbot.controller.motor_controller(gain*v_cmd, gain*w_cmd)
+                    left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                 
-                elif jetbot.visible and jetbot.role==1:
+                elif jetbot.visible and jetbot.role==1: # For leaders
                     if move < len(leader_movement):
                         leader_v, leader_w, move_duration = leader_movement[move]
                         if time.perf_counter() - move_start < move_duration:

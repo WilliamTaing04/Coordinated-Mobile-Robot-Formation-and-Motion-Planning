@@ -1,9 +1,10 @@
 import numpy as np
 from math import *
+from scipy.optimize import linear_sum_assignment
 
 EW = 1.4
 EU = 1.4
-DR = 0.3
+DR = 0.75
 T = 1.0
 ALPHA = 5.0
 INF = 100
@@ -123,7 +124,7 @@ class Controller:
         raise ValueError
 
     def get_safety_controls_bound(
-        self, control, state, agent_metadata, estimation_error=None
+            self, control, state, agent_metadata, estimation_error=None
     ):
         bounds = [[self.u_min, self.u_max], [self.w_min, self.w_max]]
         estimates, observations, n_agents, id = tuple(agent_metadata)
@@ -163,12 +164,12 @@ class Controller:
         return bounds
 
     def get_control(
-        self,
-        t=0,
-        state=None,
-        desired_state=None,
-        agent_metadata=None,
-        estimation_error=None,
+            self,
+            t=0,
+            state=None,
+            desired_state=None,
+            agent_metadata=None,
+            estimation_error=None,
     ):
         controls = self.calc_control(t, state, desired_state)
         bounds = None
@@ -182,21 +183,6 @@ class Controller:
 
     def calc_control(self, t=0, state=None, desired_state=None):
         raise NotImplementedError()
-
-
-class RandomController(Controller):
-    def __init__(self, u_max=0.25, w_max=1.0, v_max=0.5, safety=False):
-        super().__init__(u_max, w_max, v_max, safety)
-        self.controls = [0, 0]
-        self.t_ns = 0
-
-    def calc_control(self, t=0, state=None, desired_state=None):
-        if t - self.t_ns > 2.0:
-            u = np.random.random() * 2 * self.u_max - self.u_max
-            w = np.random.random() * 2 * self.w_max - self.w_max
-            self.controls = [u, w]
-            self.t_ns = t
-        return self.controls
 
 
 class StateFeedbackController(Controller):
@@ -229,7 +215,7 @@ class StateFeedbackController(Controller):
         e_x = desired_state[0] - state[0]
         e_y = desired_state[1] - state[1]
         e_v = desired_state[2] - state[2]
-        r = sqrt(e_x**2 + e_y**2)
+        r = sqrt(e_x ** 2 + e_y ** 2)
         if r <= 0.1:
             r = 0
 
@@ -268,10 +254,10 @@ class SafeFormationController(SimpleController):
     def __init__(self, float_lst):
         x_id = int(float_lst[0])
         y_id = int(float_lst[1])
-        ds_x = float_lst[2]
-        ds_y = float_lst[3]
-        self.dsafe_x = DR
-        self.dsafe_y = float_lst[4]
+        ds_x = float_lst[2]  # ds for x edge?
+        ds_y = float_lst[3]  # ds for y edge?
+        self.dsafe_x = DR  # dx star?
+        self.dsafe_y = float_lst[4]  # dy star?
         gd = float_lst[5]
         self.controls = [0, 0]
         self.sgn_s = 1
@@ -309,7 +295,7 @@ class SafeFormationController(SimpleController):
 
         self.controls = [u, w]
         if h1 < 0 or h2 < 0:
-            print("[INFO] CONTROLS:", self.controls)
+            print("\n[INFO] CONTROLS:", self.controls)  # [u, w]
             print(
                 "[ERROR] h1: ",
                 h1,
@@ -327,73 +313,113 @@ class SafeFormationController(SimpleController):
         return [u, w], dx - T * v, dy * self.sgn_s
 
 
-class SinosodialController(SimpleController):
-    def __init__(self, float_list):
-        self.t = 0
-        self.f = 0.5 * 2 * pi
-        self.amp = float_list[0]
-
-    def calc_control(self, t, state, agent_metadata):
-        return [self.amp * sin(t * self.f), 0], 0, 0
-
-
-class ConstantController(SimpleController):
-    def __init__(self, float_list):
-        self.controls = float_list
-
-    def calc_control(self, t, state, agent_metadata):
-        if t > 2.0:
-            self.controls[0] = 0.0
-        
-        return self.controls, 0, 0
-
-
-class TrajectoryController(SimpleController):
+class SafeObstacleAvoidanceController(SafeFormationController):
     def __init__(self, float_lst):
-        self.t = 0
-        self.t_step = float_lst[0]
-        self.x_traj = [1, 1.5, 2, 3, 3.5, 4, 4, 3, 1.5, 0, 0]
-        self.y_traj = [0, 0.5, 1, 1, 0.5, 0, -1, -2, -1, 0, 0]
-        self.theta_traj = [0, 45, 0, 0, -45, -90, -90, -180, 135, 90, 0]
-        self.t_max_idx = len(self.x_traj) - 1
-        self.controller = StateFeedbackController()
+        super().__init__(float_lst)
+        self.obstacle_data = None
+        self.last_obstacle_distance = None
+
+    def set_obstacles(self, obstacles):
+        '''Store obstacles as a list of (x, y, r, v, heading) tuples.'''
+        self.obstacle_data = obstacles
+
+    def get_obstacles(self):
+        return self.obstacle_data
 
     def calc_control(self, t, state, agent_metadata):
-        self.t = t
-        idx = int(t // self.t_step)
-        if idx > self.t_max_idx:
-            idx = self.t_max_idx
-        xd = self.x_traj[idx]
-        yd = self.y_traj[idx]
-        vd = 0
-        td = self.theta_traj[idx] * pi / 180
-        desired_state = [xd, yd, vd, td]
-        controls = self.controller.calc_control(t, state, desired_state)
-        #if abs(controls[1]) > 0.1:
-        #    controls[1] = 0.1* controls[1]/abs(controls[1])
-        return controls, 0, 0
+        '''Compute the control inputs while avoiding obstacles.'''
+        cluster_state = agent_metadata[0]  # Other agents' states
+        observations = agent_metadata[1]  # Relative distances to other agents
 
+        v = state[2]  # Robot's velocity
+        theta = state[3]  # Robot's heading
 
-# class Trash():
-##def coop_localize(self):
-##    global a_max
-##    del_t = self.t_cur - self.t_cp
-##    if del_t > self.t_cp_thres:
-##        v = self.state[2]
-##        theta = self.observations[:,1]
-##        del_d = self.observations[:,0] - self.old_observations_cp
-##        self.error_estimates = del_d/del_t + v*cos(theta)
+        obs_gd = self.gd * 5.5
 
-# def safety_control(self,state=None):
-#    global t_head, d_r, u_max
-#    if state is None:
-#        state = self.cluster_state
-#    v = state[self.id,2]
-#    theta = self.observations[:,1]
-#    v1_hat = np.sqrt(state[:,1]**2 + state[:,3]**2)
-#    phi_hat = np.arctan2(state[:,3],state[:,1])
-#    h = self.observations[:,0] - d_r - t_head*v
+        # Formation terms for predecessor:
+        dx = observations[self.x_id, 0] * cos(observations[self.x_id, 1])
+        obs_dy = observations[self.y_id, 0]
+        if obs_dy < self.ds_y:
+            obs_dy = self.ds_y
+        dy = obs_dy * sin(observations[self.y_id, 1])
 
-#    limits = ((v1_hat*np.cos(theta-phi_hat) + self.error_estimates - v*np.cos(theta) + alpha(h))/t_head).T
-#    limits[self.id] = u_max
-#    return max(min(limits),-1*u_max)
+        # Compute formation-based angular velocity (w) and linear acceleration (u)
+        h2 = (dy - self.dsafe_y) * self.sgn_s
+        w_predecessor = (cluster_state[self.y_id, 3] - self.gd * (dy - self.dsafe_y) - self.sgn_s * (self.yc + EW)) / dx
+
+        h1 = dx - self.dsafe_x - T * v
+        alpha_h = -1 * self.gd * h1
+        u_predecessor = (cluster_state[self.x_id, 1] - EU - self.xc - v + dy * w_predecessor + alpha_h) / T
+
+        # Initialize obstacle avoidance commands
+        w_obstacle = None
+        u_obstacle = None
+        d_edge = None
+
+        # Define threshold distance
+        D_OBS_THRESHOLD = 1.5
+
+        if self.obstacle_data:
+            for obs in self.obstacle_data:
+                obs_x, obs_y, obs_radius, obs_v, obs_heading = obs
+                v_obs_x = obs_v * cos(obs_heading)
+                v_obs_y = obs_v * sin(obs_heading)
+                dt = T
+                pred_obs_x = obs_x + v_obs_x * dt
+                pred_obs_y = obs_y + v_obs_y * dt
+                d_obs_x = pred_obs_x - state[0]
+                d_obs_y = pred_obs_y - state[1]
+
+                d_obs = sqrt(d_obs_x ** 2 + d_obs_y ** 2)
+                d_edge = d_obs - obs_radius
+
+                if d_edge < D_OBS_THRESHOLD:
+                    theta_obs = atan2(d_obs_y, d_obs_x)
+                    theta_rel = (theta_obs - theta + pi) % (2 * pi) - pi
+
+                    scale = (D_OBS_THRESHOLD - d_edge) / D_OBS_THRESHOLD
+                    # scale = 1
+
+                    # Calculate w_obs
+                    w_obs_candidate = (scale * ((v_obs_y - obs_gd * (d_obs_y - self.dsafe_y)) / d_obs_x)) - (
+                                (self.sgn_s * (self.yc + EW)) / d_obs_x)
+
+                    if theta_rel > 0:
+                        w_obs_candidate = -abs(w_obs_candidate)
+                    else:
+                        w_obs_candidate = abs(w_obs_candidate)
+
+                    # If multiple obstacles are present, pick strongest.
+                    if w_obstacle is None or abs(w_obs_candidate) > abs(w_obstacle):
+                        w_obstacle = w_obs_candidate
+
+                    # Calculate u_obs
+                    u_obs_candidate = (v_obs_x - EU - self.xc - v + d_obs_y * w_obs_candidate + alpha_h) / T
+                    if u_obstacle is None or u_obs_candidate < u_obstacle:
+                        u_obstacle = u_obs_candidate
+
+        # Control predecessor vs obstacle control
+        if w_obstacle is not None:
+            if self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD:
+                w = w_predecessor
+            else:
+                w = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
+            # w = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
+
+        else:
+            w = w_predecessor
+
+        if u_obstacle is not None:
+            # u = min(u_predecessor, u_obstacle)
+            if self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD:
+                u = u_predecessor
+            else:
+                u = min(u_predecessor, u_obstacle)
+        else:
+            u = u_predecessor
+
+        if d_edge is not None:
+            self.last_obstacle_distance = d_edge
+
+        self.controls = [u, w]
+        return [u, w], dx - T * v, dy * self.sgn_s
