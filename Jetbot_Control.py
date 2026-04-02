@@ -148,7 +148,6 @@ python3 -m jetbot.control_reciever
                 jetbot.visible = 0   # reset visibility
 
             # CAPTURE FRAME
-            # Get camera frame
             ret, color_frame = cap.read()
             if not ret:
                 continue
