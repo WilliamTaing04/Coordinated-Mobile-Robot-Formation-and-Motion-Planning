@@ -41,14 +41,15 @@ def testing():
     jetbot_array = [leader, follower1, follower2]
 
     while True:
-        update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace)
-        print(jetbot_array[0].pose_f)
-        time.sleep(1)
+        pose = update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace)
+        print(pose)
+        time.sleep(0.1)
 
 
 
 
 def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
+    output = np.zeros((len(jetbot_array),4))
     TAG_SIZE = 65       # mm
 
     for jetbot in jetbot_array:
@@ -61,7 +62,7 @@ def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
 
     # STEP 2: DETECT APRILTAGS            
     tags = detector.detect_tags(color_frame)  # Replace with detected tags
-    
+    print(len(tags))
     # STEP 3: PROCESS DETECTED TAGS
     # If no tags are detected 
     if len(tags)==0:
@@ -70,7 +71,7 @@ def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
                     (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
                     0.7, (0, 0, 255), 2)
     
-
+        
     else: 
         tags.sort(reverse=True) # Sort tags to match jetbot array
         for tag in tags:
@@ -103,20 +104,24 @@ def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
 
                 # Get pose for data collection
                 pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
-
+                print(tag_id)
                 # Update jetbot pose
                 for i, jetbot in enumerate(jetbot_array):
+                    
                     if (tag_id == jetbot.id):
                         t_meas = time.perf_counter()
                         jetbot.update_meas(pose, t_meas)
                         jetbot.visible = 1
+                        output[i,:] = [jetbot.pose_f[0],jetbot.pose_f[1],jetbot.lin_vel_f,jetbot.pose_f[2]]
 
-    cv2.putText(color_frame, "Press 'q' to quit", 
-                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
-                0.7, (0, 255, 0), 2)
+    return(output)
+
+    #cv2.putText(color_frame, "Press 'q' to quit", 
+                #(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+               # 0.7, (0, 255, 0), 2)
     
     # Display frame
-    cv2.imshow('Camera', color_frame)
+    #cv2.imshow('Camera', color_frame)
 
 
 
