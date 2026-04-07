@@ -6,11 +6,53 @@ import AprilTags
 import Motion_Control
 import Jetbot_Setup
 
+def testing():
+    cap = Jetbot_Setup.camera_setup(1280, 720)
+    detector = AprilTags.AprilTags()
+
+    intrinsics = np.load('camera_intrinsics.npy')  # Replace with loaded transformation
+    T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
+
+    control_freq = 30
+
+    # Controllers
+    pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
+    pidwL = Motion_Control.PID(1.75,2,0) # PID for w
+    pidv1 = Motion_Control.PID(0,0,0) # PID for v
+    pidw1 = Motion_Control.PID(0,0,0) # PID for w
+    pidv2 = Motion_Control.PID(0,0,0) # PID for v
+    pidw2 = Motion_Control.PID(0,0,0) # PID for w
+    # pidv3 = Motion_Control.PID(0,0,0) # PID for v
+    # pidw3 = Motion_Control.PID(0,0,0) # PID for w
+
+    # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
+    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.05)
+    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.05)
+    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.05)
+    # controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.05)
+
+    # Jetbots
+    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower    
+
+    # Jetbot/Agent Arrays
+    jetbot_array = [leader, follower1, follower2]
+
+    while True:
+        update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace)
+        print(jetbot_array[0].pose_f)
+        time.sleep(1)
+
+
+
+
 def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
     TAG_SIZE = 65       # mm
 
     for jetbot in jetbot_array:
-                jetbot.visible = 0   # reset visibility
+        jetbot.visible = 0   # reset visibility
 
     # CAPTURE FRAME
     ret, color_frame = cap.read()
@@ -27,6 +69,7 @@ def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
         cv2.putText(color_frame, "No tag detected", 
                     (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
                     0.7, (0, 0, 255), 2)
+    
 
     else: 
         tags.sort(reverse=True) # Sort tags to match jetbot array
@@ -67,7 +110,15 @@ def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
                         t_meas = time.perf_counter()
                         jetbot.update_meas(pose, t_meas)
                         jetbot.visible = 1
+
+    cv2.putText(color_frame, "Press 'q' to quit", 
+                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+                0.7, (0, 255, 0), 2)
     
+    # Display frame
+    cv2.imshow('Camera', color_frame)
+
+
 
 
 def command_jetbots(UDP, jetbot_array, UW_goals):
@@ -106,3 +157,5 @@ def command_jetbots(UDP, jetbot_array, UW_goals):
             UDP.Send(jetbot.IP, left, right)
 
 
+if __name__ == "__main__":
+    testing()
