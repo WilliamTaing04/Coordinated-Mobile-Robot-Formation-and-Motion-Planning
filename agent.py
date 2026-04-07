@@ -1,9 +1,6 @@
 import numpy as np
 from math import *
 
-# import matplotlib.pyplot as plt
-from controller import RandomController, StateFeedbackController
-
 WHEEL_SPEED_RPM = 200
 WHEEL_RADIUS = 0.05
 BOT_RADIUS = 0.08
@@ -25,7 +22,8 @@ color_list = ["r", "g", "b", "k", "c", "p"]
 def alpha(h):
     return 10 * h
 
-
+# We are going to keep this for now because it allows the rk4 iteration to have
+# An extrapolated estimate for the self state during iterative control input calculations
 def state_dynamics(state, control):
     v = state[2]
     alp = state[3]
@@ -35,7 +33,6 @@ def state_dynamics(state, control):
     state_dot[0, 2] = control[0]
     state_dot[0, 3] = control[1]
     return state_dot
-
 
 def estimator_dynamics(state, estimates, control, observation, gains):
     v = state[2]
@@ -67,7 +64,7 @@ def estimator_dynamics(state, estimates, control, observation, gains):
 class Agent:
     def __init__(
             self,
-            state=None,
+            state=None, # state[0] is x, state[1] is y, state[2] is self v, state[3] is alp which is absolute heading angle
             _id=0,
             _cluster_size=1,
             _estimator_gains=[-15, -50, -5],
@@ -87,11 +84,9 @@ class Agent:
         self.cluster_state[_id, :] = np.copy(self.state)
         self.cluster_init = False
 
-        self.t_cur = 0
-        self.controls = [0, 0]
-        self.t_ns = -2.0
+        self.controls = [0, 0] #u, w
 
-        self.observations = np.zeros((_cluster_size, 3))
+        self.observations = np.zeros((_cluster_size, 3)) # d, relative angle, global angle theta
         self.agent_metadata = [
             self.cluster_state,
             self.observations,
@@ -128,12 +123,11 @@ class Agent:
             )
 
         self.agent_metadata[0] = self.cluster_state
-        self.t_cur = 0
 
     def set_observations(self, observations):
         theta = self.state[3]
-        for _id, pos in enumerate(observations):
-            diff = pos - self.state[0:2]
+        for _id, pos in enumerate(observations): # 0,
+            diff = pos - self.state[0:2] # dx, dy, dv
             self.observations[_id, 0] = sqrt(diff[0] ** 2 + diff[1] ** 2)
             self.observations[_id, 1] = atan2(diff[1], diff[0]) - theta
             self.observations[_id, 2] = theta
@@ -142,10 +136,9 @@ class Agent:
             for _id, pos in enumerate(observations):
                 if _id == self.id:
                     continue
-                diff = pos - self.state[0:2]
-                d = sqrt(diff[0] ** 2 + diff[1] ** 2)
-                phi = atan2(diff[1], diff[0]) - theta
-                self.cluster_state[_id, 0] = d * cos(phi)
+                diff = pos - self.state[0:2] #x,y,v
+                d = sqrt(diff[0] ** 2 + diff[1] ** 2) #distance
+                phi = atan2(diff[1], diff[0]) - theta #
                 self.cluster_state[_id, 2] = d * sin(phi)
         self.agent_metadata[1] = self.observations[:, 0:2].copy()
 
@@ -168,12 +161,12 @@ class Agent:
 
         initial_state = np.copy(self.cluster_state)
 
+        # Each rk4 iteration, initial_state[self.id, :] must be initialized to x,y,v,theta
+
         h2 = h / 2
-        t = self.t_cur
         self.agent_metadata[0] = initial_state
         control_input, safeh_1, safeh_2 = self.controller.get_control(
             # These safety bounds used to be plotted, but what do we do with them now?
-            t,
             initial_state[self.id, :],
             self.agent_metadata,
         )
@@ -182,7 +175,6 @@ class Agent:
         s2 = initial_state + k1 * (h2)
         self.agent_metadata[0] = s2
         control_input, safeh_1, safeh_2 = self.controller.get_control(
-            t + h2,
             s2[self.id, :],
             self.agent_metadata,
         )
@@ -191,7 +183,6 @@ class Agent:
         s3 = initial_state + k2 * (h2)
         self.agent_metadata[0] = s3
         control_input, safeh_1, safeh_2 = self.controller.get_control(
-            t + h2,
             s3[self.id, :],
             self.agent_metadata,
         )
@@ -200,7 +191,6 @@ class Agent:
         s4 = initial_state + k3 * h
         self.agent_metadata[0] = s4
         control_input, safeh_1, safeh_2 = self.controller.get_control(
-            t + h,
             s4[self.id, :],
             self.agent_metadata,
         )
@@ -208,16 +198,24 @@ class Agent:
 
         next_state = initial_state + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
-        # print('initial_state',initial_state)
-        # print('next_state',next_state)
-
         self.cluster_state = np.copy(next_state)
 
+        # Clamp velocity
         if self.cluster_state[self.id, 2] < 0:
             self.cluster_state[self.id, 2] = 0
         elif self.cluster_state[self.id, 2] > v_max:
             self.cluster_state[self.id, 2] = v_max
 
         self.state = np.copy(self.cluster_state[self.id, :])
-        self.t_cur += h
+        #Pretty sure this advances position based on control inputs and also updates estimator
+        #We only want the estimator update component
+
+        #Finally, update self.controls internally in this call
+        self.agent_metadata[0] = next_state
+        control_input, safeh_1, safeh_2 = self.controller.get_control(
+            next_state[self.id, :],
+            self.agent_metadata,
+        )
+    def get_controls(self): #We want this to be previous RK4 result with freshly updated observed values
+        return self.controls
 

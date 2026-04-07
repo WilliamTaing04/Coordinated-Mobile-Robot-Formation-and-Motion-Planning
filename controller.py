@@ -1,6 +1,5 @@
 import numpy as np
 from math import *
-from scipy.optimize import linear_sum_assignment
 
 EW = 1.4
 EU = 1.4
@@ -165,13 +164,12 @@ class Controller:
 
     def get_control(
             self,
-            t=0,
             state=None,
             desired_state=None,
             agent_metadata=None,
             estimation_error=None,
     ):
-        controls = self.calc_control(t, state, desired_state)
+        controls = self.calc_control(state, desired_state)
         bounds = None
         if self.safety:
             if agent_metadata is None:
@@ -181,7 +179,7 @@ class Controller:
             )
         return self.clip_controls(controls, state, bounds)
 
-    def calc_control(self, t=0, state=None, desired_state=None):
+    def calc_control(self, state=None, desired_state=None):
         raise NotImplementedError()
 
 
@@ -189,7 +187,6 @@ class StateFeedbackController(Controller):
     def __init__(self, u_max=0.25, w_max=1.0, v_max=0.5, safety=False):
         super().__init__(u_max, w_max, v_max, safety)
         self.controls = [0, 0]
-        self.t_ns = 0
         self.gains = {"kw": 0.6, "kv": 1.0, "kr": 0.6}
 
     def set_gains(self, kw, kv, kr):
@@ -197,7 +194,7 @@ class StateFeedbackController(Controller):
         self.gains["kv"] = abs(kv)
         self.gains["kr"] = abs(kr)
 
-    def calc_control(self, t=0, state=None, desired_state=None):
+    def calc_control(self, state=None, desired_state=None):
         e_r, e_v, e_alp = StateFeedbackController.state_feedback_errors(
             state, desired_state
         )
@@ -206,7 +203,6 @@ class StateFeedbackController(Controller):
         u = self.gains["kv"] * e_v + self.gains["kr"] * e_r
 
         self.controls = [u, w]
-        self.t_ns = t
         return self.controls
 
     @staticmethod
@@ -235,8 +231,8 @@ class StateFeedbackController(Controller):
 
 
 class SimpleController:
-    def get_control(self, t, state, agent_metadata):
-        controls, out1, out2 = self.calc_control(t, state, agent_metadata)
+    def get_control(self, state, agent_metadata):
+        controls, out1, out2 = self.calc_control(state, agent_metadata)
         clipped_controls = self.clip_control(controls)
         return clipped_controls, out1, out2
 
@@ -246,7 +242,7 @@ class SimpleController:
         clipped_control[1] = min(max(-1 * W_MAX, control[1]), W_MAX)
         return clipped_control
 
-    def calc_control(self, t, state, agent_metadata):
+    def calc_control(self, state, agent_metadata):
         raise NotImplementedError
 
 
@@ -273,7 +269,7 @@ class SafeFormationController(SimpleController):
         self.x_id = x_id
         self.y_id = y_id
 
-    def calc_control(self, t, state, agent_metadata):
+    def calc_control(self, state, agent_metadata):
         cluster_state = agent_metadata[0]
         observations = agent_metadata[1]
         v1x_hat = cluster_state[self.x_id, 1]
@@ -326,7 +322,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
     def get_obstacles(self):
         return self.obstacle_data
 
-    def calc_control(self, t, state, agent_metadata):
+    def calc_control(self, state, agent_metadata):
         '''Compute the control inputs while avoiding obstacles.'''
         cluster_state = agent_metadata[0]  # Other agents' states
         observations = agent_metadata[1]  # Relative distances to other agents

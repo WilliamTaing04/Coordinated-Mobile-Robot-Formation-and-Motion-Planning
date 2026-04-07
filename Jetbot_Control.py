@@ -237,9 +237,8 @@ python3 -m jetbot.control_reciever
             for i, jetbot in enumerate(jetbot_array):
                 # Follower Control
                 if jetbot.visible and jetbot.role==0: # For followers
-                    observed = agent_array[i].observed # Get observed states
                     agent_array[i].RK4_step() # RK4 step good
-                    U_GOAL, W_GOAL = agent_array[i].getuw() # Get goal UW from alg
+                    U_GOAL, W_GOAL = agent_array[i].get_controls() # Get goal UW from alg
                     # Record desired UW
                     data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
                     data_ang_vel_des[count-1, i] = W_GOAL
