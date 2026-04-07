@@ -47,7 +47,7 @@ def estimator_dynamics(state, estimates, control, observation, gains):
     if d == 0:
         return state_dot
 
-    theta = observation[1] + observation[2] - state[3]
+    theta = observation[1] + observation[2] - state[3] # Relative + absolute - absolute?
     # print(estimates,d*cos(theta),d*sin(theta))
     dx_del = estimates[0] - d * cos(theta)
     dy_del = estimates[2] - d * sin(theta)
@@ -66,26 +66,25 @@ class Agent:
             self,
             state=None, # state[0] is x, state[1] is y, state[2] is self v, state[3] is alp which is absolute heading angle
             _id=0,
+            X_id = 0,
+            Y_id = 0,
             _cluster_size=1,
-            _estimator_gains=[-15, -50, -5],
-            _c_freq=5,
-            safety=False,
+            _estimator_gains=[-15, -50, -5], #gd, gv, p
             controller=None,
     ):
         global xlim, ylim, v_max, e_max, u_max, w_max
         if state is None:
             print("Error")
         self.id = _id
+        self.X_id = X_id
+        self.Y_id = Y_id
         self.n_agents = _cluster_size
         self.estimator_gains = _estimator_gains
 
         self.cluster_state = np.zeros((_cluster_size, 4))
-        self.state = np.array(state)
-        self.cluster_state[_id, :] = np.copy(self.state)
-        self.cluster_init = False
+        self.cluster_state[_id, :] = np.array(state)
 
         self.controls = [0, 0] #u, w
-
         self.observations = np.zeros((_cluster_size, 3)) # d, relative angle, global angle theta
         self.agent_metadata = [
             self.cluster_state,
@@ -97,50 +96,26 @@ class Agent:
             print("ERROR")
         else:
             self.controller = controller
+        self.initialized == False
 
-    def get_state(self):
-        return self.state
-
-    def get_pos(self):
-        return self.state[0:2]
-
-    def get_rotation(self):
-        theta = self.state[3]
-        R = np.array([[cos(theta), -sin(theta)], [sin(theta), cos(theta)]])
-        return R
-
-    def init_estimates(self, observations):
-        self.set_observations(observations)
-
-        for idx in range(self.n_agents):
-            if idx == self.id:
-                continue
-            self.cluster_state[idx, 0] = self.observations[idx, 0] * cos(
-                self.observations[idx, 1]
-            )
-            self.cluster_state[idx, 2] = self.observations[idx, 0] * sin(
-                self.observations[idx, 1]
-            )
-
-        self.agent_metadata[0] = self.cluster_state
-
-    def set_observations(self, observations):
-        theta = self.state[3]
-        for _id, pos in enumerate(observations): # 0,
-            diff = pos - self.state[0:2] # dx, dy, dv
-            self.observations[_id, 0] = sqrt(diff[0] ** 2 + diff[1] ** 2)
-            self.observations[_id, 1] = atan2(diff[1], diff[0]) - theta
-            self.observations[_id, 2] = theta
-        if not self.cluster_init:
-            self.cluster_init = True
-            for _id, pos in enumerate(observations):
-                if _id == self.id:
+    # Observations is x y v theta for self
+    # Observations is d, phi (relative), theta (absolute) for others
+    def init_estimates(self):
+        if(self.initialized == False):
+            #self.update_edges(observations) TODO: RUN THIS IN JETBOT CONTROL BEFORE INIT ESTIMATES
+            for idx in range(self.n_agents):
+                if idx == self.id:
                     continue
-                diff = pos - self.state[0:2] #x,y,v
-                d = sqrt(diff[0] ** 2 + diff[1] ** 2) #distance
-                phi = atan2(diff[1], diff[0]) - theta #
-                self.cluster_state[_id, 2] = d * sin(phi)
-        self.agent_metadata[1] = self.observations[:, 0:2].copy()
+                self.cluster_state[idx, 0] = self.observations[idx, 0] * cos(
+                    self.observations[idx, 1] # Relative x coordinate from self to agent idx d cos(phi)
+                )
+                self.cluster_state[idx, 2] = self.observations[idx, 0] * sin(
+                    self.observations[idx, 1] #Relative y coordinate from self to agent idx d sin(phi)
+                )
+
+            self.agent_metadata[0] = self.cluster_state
+            self.initialized == True
+
 
     def system_dynamics(self, system_state, controls):
         dynamics = np.zeros(system_state.shape)
@@ -206,10 +181,6 @@ class Agent:
         elif self.cluster_state[self.id, 2] > v_max:
             self.cluster_state[self.id, 2] = v_max
 
-        self.state = np.copy(self.cluster_state[self.id, :])
-        #Pretty sure this advances position based on control inputs and also updates estimator
-        #We only want the estimator update component
-
         #Finally, update self.controls internally in this call
         self.agent_metadata[0] = next_state
         control_input, safeh_1, safeh_2 = self.controller.get_control(
@@ -219,3 +190,11 @@ class Agent:
     def get_controls(self): #We want this to be previous RK4 result with freshly updated observed values
         return self.controls
 
+    def update_edges(self, X_upd, Y_upd):
+        self.observations[self.X_id, 0] = X_upd[0]  # Distance to x edge agent
+        self.observations[self.X_id, 1] = X_upd[2]  # Relative angle to x edge agent
+        #self.observations[X_id, 2] = theta  # self heading angle
+        self.observations[self.Y_id, 0] = Y_upd[0]  # Distance to y edge agent
+        self.observations[self.Y_id, 1] = Y_upd[2]  # Relative angle to y edge agent
+        #self.observations[Y_id, 2] = theta  # self heading angle
+        self.agent_metadata[1] = self.observations[:, 0:2].copy()  # Store distance and relative angle

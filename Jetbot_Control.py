@@ -80,28 +80,28 @@ python3 -m jetbot.control_reciever
     pidw1 = Motion_Control.PID(0,0,0) # PID for w
     pidv2 = Motion_Control.PID(0,0,0) # PID for v
     pidw2 = Motion_Control.PID(0,0,0) # PID for w
-    pidv3 = Motion_Control.PID(0,0,0) # PID for v
-    pidw3 = Motion_Control.PID(0,0,0) # PID for w
-    pidv4 = Motion_Control.PID(0.5,0.1,0) # PID for v
-    pidw4 = Motion_Control.PID(1.0,0.75,0) # PID for w
+    #pidv3 = Motion_Control.PID(0,0,0) # PID for v
+    #pidw3 = Motion_Control.PID(0,0,0) # PID for w
+    #pidv4 = Motion_Control.PID(0.5,0.1,0) # PID for v
+    #pidw4 = Motion_Control.PID(1.0,0.75,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
     controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.75)
     controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.75)
     controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.75)
-    controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.75)
-    controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.75)
+    #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.75)
+    #controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.75)
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    
-    # Agents TODO: update agent parameters
-    agentL = agent.Agent([0.0,0.0,0.0], [0,0,0]) #for farzan_vishrut_algorithm
-    agent1 = agent.Agent([1.3,0.3,-0.3], [-0.05, 0.07, 0.07])
-    agent2 = agent.Agent([1.3,0.3,0.3], [0.05, 0.07, 0.07])
 
+    # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y TODO: state may have to be measured at init
+    agentL = agent.Agent([0,0,0,0], 0, 0, 0, 3, [-15, -50, -5], controller.SafeFormationController(0, 0, 0.0, 0.0, 0.05))
+    agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-15, -50, -5], controller.SafeFormationController(0, 0, 0.3, -0.3, -0.05))
+    agent2 = agent.Agent([0,0,0,0], 2, 1, 0, 3, [-15, -50, -5], controller.SafeFormationController(0, 0, 0.3, 0.3, 0.05))
+    #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]
     agent_array = [agentL, agent1, agent2]
@@ -203,12 +203,12 @@ python3 -m jetbot.control_reciever
                                 jetbot.update_meas(pose, t_meas)
                                 jetbot.visible = 1
                                 if(firstloop == False) and (jetbot.role==0):
-                                    #d, v, theta = jetbot.get_dist_theta(leader) # [mm, mm/s, radians]
-                                    d, v, theta = jetbot.get_dist_theta(jetbot.X_lead) # [mm, mm/s, radians]
-                                    d2, v2, theta2 = jetbot.get_dist_theta(jetbot.Y_lead) # [mm, mm/s, radians]
-                                    updated = np.array([d/1000, v/1000, theta]) # mm to m [m, m/s, radians]
-                                    updated2 = np.array([d2/1000, v2/1000, theta2]) # mm to m [m, m/s, radians]
-                                    agent_array[i].update_self_state(updated,updated2)
+                                    d_X, v_X, theta_X = jetbot.get_dist_theta(jetbot.X_lead) # [mm, mm/s, radians]
+                                    d_Y, v_Y, theta_Y = jetbot.get_dist_theta(jetbot.Y_lead) # [mm, mm/s, radians]
+                                    X_upd = np.array([d_X/1000, v_X/1000, theta_X]) # mm to m [m, m/s, radians]
+                                    Y_upd = np.array([d_Y/1000, v_Y/1000, theta_Y]) # mm to m [m, m/s, radians]
+                                    agent_array[i].update_edges(X_upd,Y_upd)
+                                    agent_array[i].init_estimates() # only runs the first time
                         firstloop = False   # All jetbot pose initialized
 
                     # Reduce display output
