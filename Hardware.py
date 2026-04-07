@@ -104,7 +104,6 @@ def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
 
                 # Get pose for data collection
                 pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
-                print(tag_id)
                 # Update jetbot pose
                 for i, jetbot in enumerate(jetbot_array):
                     

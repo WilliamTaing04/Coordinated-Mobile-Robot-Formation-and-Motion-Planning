@@ -1,10 +1,10 @@
 import numpy as np
 from math import *
 
-EW = 1.4
-EU = 1.4
+EW = 0.07
+EU = 0.07
 DR = 0.3
-T = 1.0
+T = 1.3
 ALPHA = 5.0
 INF = 100
 
@@ -267,7 +267,7 @@ class SimpleController:
 
 class SafeFormationController(SimpleController):
     def __init__(self, float_lst):
-        x_id = int(float_lst[0])
+        x_id = int(float_lst[0]) # TODO: FIND WHAT EACH OF THESE VALUES REPRESENT
         y_id = int(float_lst[1])
         ds_x = float_lst[2]
         ds_y = float_lst[3]
@@ -287,6 +287,7 @@ class SafeFormationController(SimpleController):
         self.ds_y = ds_y
         self.x_id = x_id
         self.y_id = y_id
+        
 
     def calc_control(self, t, state, agent_metadata):
         cluster_state = agent_metadata[0]

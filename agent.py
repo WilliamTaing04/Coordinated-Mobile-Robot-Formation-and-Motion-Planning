@@ -71,7 +71,7 @@ class Agent:
         state=None,
         _id=0,
         _cluster_size=1,
-        _estimator_gains=[-15, -50, -5],
+        _estimator_gains=[-2, -0.5, -0.5],
         _c_freq=5,
         safety=False,
         controller=None,

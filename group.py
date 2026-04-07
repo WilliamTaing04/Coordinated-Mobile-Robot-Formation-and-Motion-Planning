@@ -1,6 +1,10 @@
 import numpy as np
 from math import *
+import Hardware
+import Motion_Control
+import Jetbot_Setup
 import matplotlib.pyplot as plt
+import AprilTags
 from agent import Agent
 from controller import (
     SafeFormationController,
@@ -79,6 +83,40 @@ class Group:
             # print(agent.get_position_estimates())
 
     def run_experiment(self, t_end=10.0, t_jump=0.001, visualize=False, save=False):
+
+        cap = Jetbot_Setup.camera_setup(1280, 720)
+        detector = AprilTags.AprilTags()
+
+        intrinsics = np.load('camera_intrinsics.npy')  # Replace with loaded transformation
+        T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
+
+        control_freq = 30
+
+        # Controllers
+        pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
+        pidwL = Motion_Control.PID(1.75,2,0) # PID for w
+        pidv1 = Motion_Control.PID(0,0,0) # PID for v
+        pidw1 = Motion_Control.PID(0,0,0) # PID for w
+        pidv2 = Motion_Control.PID(0,0,0) # PID for v
+        pidw2 = Motion_Control.PID(0,0,0) # PID for w
+        pidv3 = Motion_Control.PID(0,0,0) # PID for v
+        pidw3 = Motion_Control.PID(0,0,0) # PID for w
+
+        # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
+        controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.05)
+        controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.05)
+        controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.05)
+        controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.05)
+
+        # Jetbots
+        leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
+        follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+        follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+        follower3 = Jetbot_Setup.Jetbot(65,"10.40.122.89",controller3, follower1, follower2, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower    
+
+        # Jetbot/Agent Arrays
+        jetbot_array = [leader, follower1, follower2, follower3]
+        
         t = 0
         for idx in range(self.n_agents):
             self.group_pos[idx, :] = self.agent_list[idx].get_pos()
@@ -97,12 +135,12 @@ class Group:
         while t < t_end:
             for idx, agent in enumerate(self.agent_list):
                 # get camera pose for all robots
-                camera_states = agent.get_camera_state()
+                camera_states = Hardware.update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace)
 
                 # update internal agent state using camera data
-                agent.state[0] = camera_states[idx,0]   # x
-                agent.state[1] = camera_states[idx,1]   # y
-                agent.state[2] = camera_states[idx,2]   # v
+                agent.state[0] = camera_states[idx,0]/1000   # x
+                agent.state[1] = camera_states[idx,1]/1000   # y
+                agent.state[2] = camera_states[idx,2]/1000   # v
                 agent.state[3] = camera_states[idx,3]   # theta
 
                 # build observation matrix (x,y of all robots)
@@ -381,7 +419,7 @@ def read_test(idx):
     if idx == 1:
         file_name = "trajectory.txt"
     if idx == 2:
-        file_name = "scripts\circular.txt"
+        file_name = "circular.txt"
     if idx == 3:
         file_name = "estimator.txt"
 
