@@ -109,9 +109,9 @@ python3 -m jetbot.control_reciever
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     leader_movement= [[150, 0.0, 3], 
-                      [150, 0.5, 3], 
-                      [150,-0.5, 3], 
-                      [150, 0.5, 3], 
+                      [150, 0.3, 3], 
+                      [150,-0.3, 3], 
+                      [150, 0.3, 3], 
                       [0.0, 0.0, 10]]
     move = 0
 
@@ -246,7 +246,7 @@ python3 -m jetbot.control_reciever
                     data_ang_vel_des[count-1, i] = W_GOAL
                     t_now = time.perf_counter()
                     # UW controller
-                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL]) #TODO: test out changing vels to filtered
+                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f],[U_GOAL*1000, W_GOAL]) #TODO: test out changing vels to filtered
                     # Convert Desired VW to LR motor speed
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                 
@@ -256,7 +256,7 @@ python3 -m jetbot.control_reciever
                         if time.perf_counter() - move_start < move_duration:
                             data_lin_acc_des[count-1, i] = None
                             data_ang_vel_des[count-1, i] = leader_w
-                            v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel, jetbot.ang_vel], [leader_v, leader_w])
+                            v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
                             # Convert Desired VW to LR motor speed
                             left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                         else:
@@ -269,7 +269,6 @@ python3 -m jetbot.control_reciever
                     left = right = 0.0
                 
                 # Send command to jetbot
-                print(left,right)
                 UDP.Send(jetbot.IP, left, right)
 
             at_count += 1 # TESTING at frame count

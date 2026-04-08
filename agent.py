@@ -113,7 +113,7 @@ class Agent:
                 )
 
             self.agent_metadata[0] = self.cluster_state
-            self.initialized == True
+            self.initialized = True
 
 
     def system_dynamics(self, system_state, controls):
@@ -175,10 +175,10 @@ class Agent:
         self.cluster_state = np.copy(next_state)
 
         # Clamp velocity TODO: This clamps simulated velocity not real
-        # if self.cluster_state[self.id, 2] < 0:
-        #     self.cluster_state[self.id, 2] = 0
-        # elif self.cluster_state[self.id, 2] > v_max:
-        #     self.cluster_state[self.id, 2] = v_max
+        if self.cluster_state[self.id, 2] < 0:
+            self.cluster_state[self.id, 2] = 0
+        elif self.cluster_state[self.id, 2] > v_max:
+            self.cluster_state[self.id, 2] = v_max
 
         #Finally, update self.controls internally in this call
         self.agent_metadata[0] = next_state
@@ -187,7 +187,6 @@ class Agent:
             self.agent_metadata,
         )
     def get_controls(self): #We want this to be previous RK4 result with freshly updated observed values
-        print(self.controller.controls)
         return self.controller.controls
 
     def update_edges(self, X_upd, Y_upd):
@@ -197,4 +196,5 @@ class Agent:
         self.observations[self.Y_id, 0] = Y_upd[0]  # Distance to y edge agent
         self.observations[self.Y_id, 1] = Y_upd[2]  # Relative angle to y edge agent
         #self.observations[Y_id, 2] = theta  # self heading angle
+        self.cluster_state[self.id, 2] = X_upd[1] # same as Y_upd[1]
         self.agent_metadata[1] = self.observations[:, 0:2].copy()  # Store distance and relative angle
