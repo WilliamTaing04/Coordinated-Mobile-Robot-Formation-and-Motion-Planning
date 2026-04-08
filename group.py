@@ -5,6 +5,7 @@ import Motion_Control
 import Jetbot_Setup
 import matplotlib.pyplot as plt
 import AprilTags
+import time
 from agent import Agent
 from controller import (
     SafeFormationController,
@@ -91,6 +92,8 @@ class Group:
         T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
 
         control_freq = 30
+        uw_array = np.zeros((4,2))
+        UDP = Jetbot_Setup.UDP(Freq=control_freq)
 
         # Controllers
         pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
@@ -133,6 +136,7 @@ class Group:
         new_pos = np.copy(self.group_pos)
         image_idx = 0
         while t < t_end:
+            start_time = time.perf_counter()
             for idx, agent in enumerate(self.agent_list):
                 # get camera pose for all robots
                 camera_states = Hardware.update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace)
@@ -149,19 +153,29 @@ class Group:
                 agent.set_observations(self.group_pos)
 
                 agent.RK4_step(t_jump)
+                #print("idx:",idx,", val:",agent.controller.controls)
+                uw_array[idx,:] = agent.controller.controls
+            print(uw_array)
+            Hardware.command_jetbots(UDP, jetbot_array, uw_array)
+
+
             #     agent.set_observations(self.group_pos) # self.group_pos,  HERE IS APRILTAG DATA
             #     print(self.group_pos)
             #     agent.RK4_step(t_jump)
             #     new_pos[idx, :] = agent.get_pos() # agent.get_pos(),
 
-            #     print("idx:",idx,", val:",agent.controller.controls)
+            #     #print("idx:",idx,", val:",agent.controller.controls)
+            #     uw_array[idx,:] = agent.controller.controls
 
             #     if visualize:
             #         agent.visualize(ax)
             #     # print(agent.get_position_estimates())
-            # t += t_jump
-            # self.group_pos_history.append(new_pos)
-            # self.group_pos = np.copy(new_pos)
+            # print(uw_array)
+            t += t_jump
+            self.group_pos_history.append(new_pos)
+            self.group_pos = np.copy(new_pos)
+
+
             if visualize:
                 plt.show(block=False)
                 plt.pause(t_jump / 10)
@@ -173,6 +187,15 @@ class Group:
             if save:
                 fig.savefig(self.folder + "/file%03d.png" % image_idx)
                 image_idx += 1
+
+            elapsed = time.perf_counter() - start_time
+            if elapsed < 1/control_freq:
+                time.sleep(1/control_freq - elapsed)
+            else:
+                dt_break += 1
+                # print("Loop period exceeded")
+                # break
+                pass
 
     def plot_history(self):
         fig, ax = plt.subplots(self.n_agents, 6)
