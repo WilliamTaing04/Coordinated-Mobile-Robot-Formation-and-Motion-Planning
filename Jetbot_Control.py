@@ -74,8 +74,8 @@ python3 -m jetbot.control_reciever
     '''
 
     # Controllers
-    pidvL = Motion_Control.PID(0,0,0) # PID for v
-    pidwL = Motion_Control.PID(1,0.75,0) # PID for w
+    pidvL = Motion_Control.PID(0.075,0.5,0) # PID for v
+    pidwL = Motion_Control.PID(1.75,2,0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0,0,0) # PID for w
     pidv2 = Motion_Control.PID(0,0,0) # PID for v
@@ -85,22 +85,22 @@ python3 -m jetbot.control_reciever
     #pidv4 = Motion_Control.PID(0.5,0.1,0) # PID for v
     #pidw4 = Motion_Control.PID(1.0,0.75,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.75)
-    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.75)
-    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.75)
+    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.05)
+    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.05)
+    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.05)
     #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.75)
     #controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.75)
 
     # Jetbots
-    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
-    agentL = agent.Agent([0,0,0,0], 0, 0, 0, 3, [-2, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.0, 0.0, 0.0,-2])))
-    agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-2, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, -0.3, -0.05,-2])))
-    agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-2, -0.5, -0.5], controller.SafeFormationController(np.array([0, 1, 0.3, 0.3, 0.05,-2])))
+    agentL = agent.Agent([0,0,0,0], 0, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.0, 0.0, 0.0,-4])))
+    agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, -0.3, -0.05,-4])))
+    agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]

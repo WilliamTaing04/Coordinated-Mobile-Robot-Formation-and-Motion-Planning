@@ -131,7 +131,7 @@ class Agent:
             )
         return dynamics
 
-    def RK4_step(self, h=0.01):
+    def RK4_step(self, h=0.0333333):
         global v_max
 
         initial_state = np.copy(self.cluster_state)
