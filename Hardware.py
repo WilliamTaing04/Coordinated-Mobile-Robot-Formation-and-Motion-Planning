@@ -9,11 +9,15 @@ import Jetbot_Setup
 def testing():
     cap = Jetbot_Setup.camera_setup(1280, 720)
     detector = AprilTags.AprilTags()
+    control_freq = 30
+
+
+    # UDP communication
+    UDP = Jetbot_Setup.UDP(Freq=control_freq)
 
     intrinsics = np.load('camera_intrinsics.npy')  # Replace with loaded transformation
     T_cam_to_workspace = np.load('camera_workspace_transform.npy')  # Replace with loaded transformation
 
-    control_freq = 30
 
     # Controllers
     pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
@@ -40,12 +44,96 @@ def testing():
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]
 
-    while True:
-        pose = update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace)
-        print(pose)
-        time.sleep(0.1)
+    UW_goals = [[200, 1], [100, -1], [300, 1]]
 
+    # Pre-allocate arrays for data collection (over-allocate for safety)
+    num_bots = len(jetbot_array)
+    max_samples = 7200                              
+    data_time = np.zeros(max_samples)                         # Time [s]
+    data_pos   = np.full((max_samples, num_bots, 3), np.nan)  # Jetbot pose [x,y,theta] [mm][rad]
+    data_pos_f = np.full((max_samples, num_bots, 3), np.nan)  # Jetbot pose [x,y,theta] [mm][rad] (filtered)
+    data_lin_vel = np.zeros((max_samples, num_bots))          # Jetbot lin velocity [mm/s]
+    data_ang_vel = np.zeros((max_samples, num_bots))          # Jetbot ang velocity [rad/s]
+    data_lin_vel_f = np.zeros((max_samples, num_bots))        # Jetbot lin velocity [mm/s] (filtered)
+    data_ang_vel_f = np.zeros((max_samples, num_bots))        # Jetbot ang velocity [rad/s] (filtered)
+    data_lin_acc = np.zeros((max_samples, num_bots))          # Jetbot lin acceleration [mm/s^2]
+    data_ang_acc = np.zeros((max_samples, num_bots))          # Jetbot ang acceleration [rad/s^2]
+    data_lin_acc_des = np.zeros((max_samples, num_bots))      # Jetbot lin acceleration [mm/s^2] (desired)
+    data_ang_vel_des = np.zeros((max_samples, num_bots))      # Jetbot ang velocity [rad/s] (desired)
+    count = 0  # Sample counter
 
+    data_array = [data_time, data_pos, data_pos_f, data_lin_vel, data_ang_vel, data_lin_vel_f, data_ang_vel_f, data_lin_acc, data_ang_acc, data_lin_acc_des, data_ang_vel_des]
+    
+
+    initial_time = time.perf_counter()
+
+    update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace)
+
+    command_jetbots(UDP, jetbot_array, UW_goals)
+    
+    data_array = collect_data(jetbot_array, data_array, initial_time, UW_goals, count)
+    data_array = trim_data(data_array, count)
+    data_time, data_pos, data_pos_f, data_lin_vel, data_ang_vel, data_lin_vel_f, data_ang_vel_f, data_lin_acc, data_ang_acc, data_lin_acc_des, data_ang_vel_des = data_array
+
+def collect_data(jetbot_array, data_array, initial_time, UW_goals, count):
+    data_time = data_array[0]
+    data_pos = data_array[1]
+    data_pos_f = data_array[2]
+    data_lin_vel = data_array[3]
+    data_ang_vel = data_array[4]
+    data_lin_vel_f = data_array[5]
+    data_ang_vel_f = data_array[6]
+    data_lin_acc = data_array[7]
+    data_ang_acc = data_array[8]
+    data_lin_acc_des = data_array[9]
+    data_ang_vel_des = data_array[10]
+    
+    t_meas = time.perf_counter()
+    data_time[count] = t_meas - initial_time                 # Time [s]
+    for i, jetbot in enumerate(jetbot_array):
+        if jetbot.visible:
+            data_pos[count, i, :] = jetbot.pose              # Jetbot pose [x,y,theta] [mm][rad]
+            data_pos_f[count, i, :] = jetbot.pose_f          # Jetbot pose [x,y,theta] [mm][rad] (filtered)
+            data_lin_vel[count, i] = jetbot.lin_vel          # Jetbot lin velocity [mm/s]
+            data_ang_vel[count, i] = jetbot.ang_vel          # Jetbot ang velocity [rad/s]
+            data_lin_vel_f[count, i] = jetbot.lin_vel_f      # Jetbot lin velocity [mm/s] (filtered)
+            data_ang_vel_f[count, i] = jetbot.ang_vel_f      # Jetbot ang velocity [rad/s] (filtered)
+            data_lin_acc[count, i] = jetbot.lin_acc          # Jetbot lin acceleration [mm/s^2]
+            data_ang_acc[count, i] = jetbot.ang_acc          # Jetbot ang acceleration [rad/s^2]
+            data_lin_acc_des[count-1, i] = UW_goals[i][0] * 1000  # m/s^2 -> mm/s^2
+            data_ang_vel_des[count-1, i] = UW_goals[i][0]
+    count += 1
+    
+    data_array = [data_time, data_pos, data_pos_f, data_lin_vel, data_ang_vel, data_lin_vel_f, data_ang_vel_f, data_lin_acc, data_ang_acc, data_lin_acc_des, data_ang_vel_des]
+    return data_array
+
+def trim_data(data_array, count):
+    data_time = data_array[0]
+    data_pos = data_array[1]
+    data_pos_f = data_array[2]
+    data_lin_vel = data_array[3]
+    data_ang_vel = data_array[4]
+    data_lin_vel_f = data_array[5]
+    data_ang_vel_f = data_array[6]
+    data_lin_acc = data_array[7]
+    data_ang_acc = data_array[8]
+    data_lin_acc_des = data_array[9]
+    data_ang_vel_des = data_array[10]
+    # Trim unused portions of pre-allocated arrays
+    data_time = data_time[:count]
+    data_pos = data_pos[:count]
+    data_pos_f = data_pos_f[:count]
+    data_lin_vel = data_lin_vel[:count]
+    data_ang_vel = data_ang_vel[:count]
+    data_lin_vel_f = data_lin_vel_f[:count]
+    data_ang_vel_f = data_ang_vel_f[:count]
+    data_lin_acc = data_lin_acc[:count]
+    data_ang_acc = data_ang_acc[:count]
+    data_lin_acc_des = data_lin_acc_des[:count]
+    data_ang_vel_des = data_ang_vel_des[:count]
+    
+    data_array = [data_time, data_pos, data_pos_f, data_lin_vel, data_ang_vel, data_lin_vel_f, data_ang_vel_f, data_lin_acc, data_ang_acc, data_lin_acc_des, data_ang_vel_des]
+    return data_array
 
 
 def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
@@ -62,7 +150,6 @@ def update_pose(jetbot_array, cap, detector, intrinsics, T_cam_to_workspace):
 
     # STEP 2: DETECT APRILTAGS            
     tags = detector.detect_tags(color_frame)  # Replace with detected tags
-    print(len(tags))
     # STEP 3: PROCESS DETECTED TAGS
     # If no tags are detected 
     if len(tags)==0:
