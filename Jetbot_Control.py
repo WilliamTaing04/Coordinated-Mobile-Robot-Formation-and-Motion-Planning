@@ -74,7 +74,7 @@ python3 -m jetbot.control_reciever
     '''
 
     # Controllers
-    pidvL = Motion_Control.PID(0.075,0.5,0) # PID for v
+    pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
     pidwL = Motion_Control.PID(1.75,2,0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0,0,0) # PID for w
@@ -92,6 +92,9 @@ python3 -m jetbot.control_reciever
     #controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.75)
 
     # Jetbots
+    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
@@ -147,7 +150,6 @@ python3 -m jetbot.control_reciever
                 jetbot.visible = 0   # reset visibility
 
             # CAPTURE FRAME
-            # Get camera frame
             ret, color_frame = cap.read()
             if not ret:
                 continue
@@ -395,4 +397,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    #plots()
+    plots()
