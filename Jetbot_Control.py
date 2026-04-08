@@ -97,10 +97,10 @@ python3 -m jetbot.control_reciever
     follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
-    # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y TODO: state may have to be measured at init
-    agentL = agent.Agent([0,0,0,0], 0, 0, 0, 3, [-15, -50, -5], controller.SafeFormationController(np.array([0, 0, 0.0, 0.0, 0.05,-15])))
-    agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-15, -50, -5], controller.SafeFormationController(np.array([0, 0, 0.3, -0.3, -0.05,-15])))
-    agent2 = agent.Agent([0,0,0,0], 2, 1, 0, 3, [-15, -50, -5], controller.SafeFormationController(np.array([0, 0, 0.3, 0.3, 0.05,-15])))
+    # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
+    agentL = agent.Agent([0,0,0,0], 0, 0, 0, 3, [-2, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.0, 0.0, 0.0,-2])))
+    agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-2, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, -0.3, -0.05,-2])))
+    agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-2, -0.5, -0.5], controller.SafeFormationController(np.array([0, 1, 0.3, 0.3, 0.05,-2])))
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]
@@ -239,6 +239,7 @@ python3 -m jetbot.control_reciever
                 if jetbot.visible and jetbot.role==0: # For followers
                     agent_array[i].RK4_step() # RK4 step good
                     U_GOAL, W_GOAL = agent_array[i].get_controls() # Get goal UW from alg
+                    
                     # Record desired UW
                     data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
                     data_ang_vel_des[count-1, i] = W_GOAL
@@ -267,6 +268,7 @@ python3 -m jetbot.control_reciever
                     left = right = 0.0
                 
                 # Send command to jetbot
+                print(left,right)
                 UDP.Send(jetbot.IP, left, right)
 
             at_count += 1 # TESTING at frame count

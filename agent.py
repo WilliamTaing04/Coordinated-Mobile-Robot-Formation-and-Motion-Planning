@@ -64,13 +64,13 @@ def estimator_dynamics(state, estimates, control, observation, gains):
 class Agent:
     def __init__(
             self,
-            state=None, # state[0] is x, state[1] is y, state[2] is self v, state[3] is alp which is absolute heading angle
-            _id=0,
-            X_id = 0,
-            Y_id = 0,
-            _cluster_size=1,
-            _estimator_gains=[-15, -50, -5], #gd, gv, p
-            controller=None,
+            state, # state[0] is x, state[1] is y, state[2] is self v, state[3] is alp which is absolute heading angle
+            _id,
+            X_id,
+            Y_id,
+            _cluster_size,
+            _estimator_gains, #gd, gv, p
+            controller,
     ):
         global xlim, ylim, v_max, e_max, u_max, w_max
         if state is None:
@@ -96,7 +96,7 @@ class Agent:
             print("ERROR")
         else:
             self.controller = controller
-        self.initialized == False
+        self.initialized = False
 
     # Observations is x y v theta for self
     # Observations is d, phi (relative), theta (absolute) for others
@@ -188,7 +188,8 @@ class Agent:
             self.agent_metadata,
         )
     def get_controls(self): #We want this to be previous RK4 result with freshly updated observed values
-        return self.controls
+        print(self.controller.controls)
+        return self.controller.controls
 
     def update_edges(self, X_upd, Y_upd):
         self.observations[self.X_id, 0] = X_upd[0]  # Distance to x edge agent

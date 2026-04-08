@@ -1,9 +1,9 @@
 import numpy as np
 from math import *
 
-EW = 1.4
-EU = 1.4
-DR = 0.75
+EW = 0.07
+EU = 0.07
+DR = 0.1
 T = 1.0
 ALPHA = 5.0
 INF = 100
@@ -290,22 +290,22 @@ class SafeFormationController(SimpleController):
         u = (v1x_hat - EU - self.xc - v + dy * w + alpha_h) / T
 
         self.controls = [u, w]
-        if h1 < 0 or h2 < 0:
-            print("\n[INFO] CONTROLS:", self.controls)  # [u, w]
-            print(
-                "[ERROR] h1: ",
-                h1,
-                " h2: ",
-                h2,
-                " dx: ",
-                dx,
-                " v: ",
-                v,
-                " d_safe_x: ",
-                self.dsafe_x,
-                " dy: ",
-                dy,
-            )
+        # if h1 < 0 or h2 < 0:
+        #     print("\n[INFO] CONTROLS:", self.controls)  # [u, w]
+        #     print(
+        #         "[ERROR] h1: ",
+        #         h1,
+        #         " h2: ",
+        #         h2,
+        #         " dx: ",
+        #         dx,
+        #         " v: ",
+        #         v,
+        #         " d_safe_x: ",
+        #         self.dsafe_x,
+        #         " dy: ",
+        #         dy,
+        #     )
         return [u, w], dx - T * v, dy * self.sgn_s
 
 
