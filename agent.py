@@ -174,11 +174,11 @@ class Agent:
 
         self.cluster_state = np.copy(next_state)
 
-        # Clamp velocity
-        if self.cluster_state[self.id, 2] < 0:
-            self.cluster_state[self.id, 2] = 0
-        elif self.cluster_state[self.id, 2] > v_max:
-            self.cluster_state[self.id, 2] = v_max
+        # Clamp velocity TODO: This clamps simulated velocity not real
+        # if self.cluster_state[self.id, 2] < 0:
+        #     self.cluster_state[self.id, 2] = 0
+        # elif self.cluster_state[self.id, 2] > v_max:
+        #     self.cluster_state[self.id, 2] = v_max
 
         #Finally, update self.controls internally in this call
         self.agent_metadata[0] = next_state
