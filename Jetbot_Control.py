@@ -100,7 +100,7 @@ python3 -m jetbot.control_reciever
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
     agentL = agent.Agent([0,0,0,0], 0, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.0, 0.0, 0.0,-4])))
     agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, -0.3, -0.05,-4])))
-    agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
+    agent2 = agent.Agent([0,0,0,0], 2, 0, 1, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2]
@@ -245,7 +245,7 @@ python3 -m jetbot.control_reciever
                     data_ang_vel_des[count-1, i] = W_GOAL
                     t_now = time.perf_counter()
                     # UW controller
-                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL])
+                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel, jetbot.ang_vel],[U_GOAL*1000, W_GOAL]) #TODO: test out changing vels to filtered
                     # Convert Desired VW to LR motor speed
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                 

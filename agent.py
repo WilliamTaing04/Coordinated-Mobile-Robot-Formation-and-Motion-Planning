@@ -6,7 +6,7 @@ WHEEL_RADIUS = 0.05
 BOT_RADIUS = 0.08
 LINEAR_SPEED = WHEEL_SPEED_RPM * 2 * pi * WHEEL_RADIUS / 60
 ANGULAR_SPEED = LINEAR_SPEED / BOT_RADIUS
-DR = 0.3
+DR = 0.1
 
 xlim = 2.0
 ylim = 2.0
@@ -15,7 +15,6 @@ e_max = LINEAR_SPEED  # 0.5
 u_max = 0.5
 w_max = ANGULAR_SPEED  # 1
 t_head = 1.0
-d_r = 0.5
 color_list = ["r", "g", "b", "k", "c", "p"]
 
 
