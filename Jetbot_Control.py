@@ -98,7 +98,8 @@ python3 -m jetbot.control_reciever
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
-    agentL = agent.Agent([0,0,0,0], 0, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.0, 0.0, 0.0,-4])))
+    agentL = None
+    #agentL = agent.Agent([0,0,0,0], 0, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.0, 0.0, 0.0,-4])))
     agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, -0.3, -0.05,-4])))
     agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,

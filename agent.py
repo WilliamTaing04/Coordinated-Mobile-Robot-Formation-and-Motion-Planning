@@ -15,7 +15,6 @@ e_max = LINEAR_SPEED  # 0.5
 u_max = 0.5
 w_max = ANGULAR_SPEED  # 1
 t_head = 1.0
-d_r = 0.5
 color_list = ["r", "g", "b", "k", "c", "p"]
 
 
@@ -175,11 +174,11 @@ class Agent:
 
         self.cluster_state = np.copy(next_state)
 
-        # Clamp velocity
-        if self.cluster_state[self.id, 2] < 0:
-            self.cluster_state[self.id, 2] = 0
-        elif self.cluster_state[self.id, 2] > v_max:
-            self.cluster_state[self.id, 2] = v_max
+        # Clamp velocity TODO: This clamps simulated velocity not real
+        # if self.cluster_state[self.id, 2] < 0:
+        #     self.cluster_state[self.id, 2] = 0
+        # elif self.cluster_state[self.id, 2] > v_max:
+        #     self.cluster_state[self.id, 2] = v_max
 
         #Finally, update self.controls internally in this call
         self.agent_metadata[0] = next_state
