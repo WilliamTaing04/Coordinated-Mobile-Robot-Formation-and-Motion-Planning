@@ -7,7 +7,7 @@ import math
 import AprilTags
 
 class Jetbot():
-    def __init__(self, id, IP, controller, X_lead, Y_lead, role=0, tau_pose=0.2, tau_vel=0.0):
+    def __init__(self, id, IP, controller, X_lead, Y_lead, role=0, tau_pose=0.2, tau_vel=0.0, radius=0.0):
         self.id = id                    # tag id
         self.IP = str(IP)               # network IP addr
         self.controller = controller    # controller
@@ -37,6 +37,7 @@ class Jetbot():
         self.prev_ang_acc = 0           # rad/s^2
         self.tau_pose = tau_pose        # sec
         self.tau_vel  = tau_vel         # sec 0 disables vel filtering
+        self.radius = radius            # radius of obstacle
         self.last_print_time = time.time()
 
     def update_meas(self, pose, time_meas):
@@ -146,6 +147,32 @@ class Jetbot():
         theta = self.wrap_to_pi(np.atan2(y2-y1, x2-x1) - theta1)
 
         return d, self.lin_vel_f, theta
+
+    def get_obst_meas(self, jetbot_array):
+        dt = self.time_meas - self.prev_time_meas
+
+        obst_meas = []  # create array for obstacle measurements
+
+        for i, obstacle in jetbot_array:
+            if obstacle.id == 2:    # check for obstacle
+                obs_radius = obstacle.radius
+                obs_x, obs_y, obs_heading = obstacle.pose_f
+
+                v_obs_x = obstacle.lin_vel_f * np.cos(obs_heading)
+                v_obs_y = obstacle.lin_vel_f * np.sin(obs_heading)
+
+                pred_obs_x = obs_x + v_obs_x * dt
+                pred_obs_y = obs_y + v_obs_y * dt
+
+                d_obs_x = pred_obs_x - self.pose_f[0]
+                d_obs_y = pred_obs_y - self.pose_f[1]
+
+                theta_obs = np.atan2(d_obs_y, d_obs_x)
+                theta_rel = (theta_obs - self.pose_f[2] + np.pi) % (2 * np.pi) - np.pi
+
+                obst_meas.append([v_obs_x, v_obs_y, d_obs_x, d_obs_y, theta_rel, obs_radius])   # array for [i] object
+
+        return obst_meas
 
     def reset(self):
         self.time_meas = None
