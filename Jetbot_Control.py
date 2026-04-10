@@ -108,12 +108,21 @@ python3 -m jetbot.control_reciever
     agent_array = [agentL, agent1, agent2]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    leader_movement= [[150, 0.0, 3], 
-                      [150, 0.3, 3], 
-                      [150,-0.3, 3], 
-                      [150, 0.3, 3], 
-                      [0.0, 0.0, 10]]
-    move = 0
+    leader_movement = [[150, 0.0, 3], 
+                       [150, 0.3, 3], 
+                       [150,-0.3, 3], 
+                       [150, 0.3, 3], 
+                       [0.0, 0.0, 10]]
+    
+    obstace1_movemet = [[150, 0.0, 3], 
+                       [150, 0.3, 3], 
+                       [150,-0.3, 3], 
+                       [150, 0.3, 3], 
+                       [0.0, 0.0, 10]]
+    
+    leader_move = 0
+    obstacle1_move = 0
+    obstacle1_move_start = 0
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -133,7 +142,7 @@ python3 -m jetbot.control_reciever
         count = 0  # Sample counter
 
     initial_time = time.perf_counter()
-    move_start = time.perf_counter()
+    leader_move_start = time.perf_counter()
 
 # =====================================================================
 # MAIN TRACKING LOOP
@@ -250,40 +259,41 @@ python3 -m jetbot.control_reciever
                     data_ang_vel_des[count-1, i] = W_GOAL
                     t_now = time.perf_counter()
                     # UW controller
-                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f],[U_GOAL*1000, W_GOAL]) #TODO: test out changing vels to filtered
+                    v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f],[U_GOAL*1000, W_GOAL])
                     # Convert Desired VW to LR motor speed
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                 
                 elif jetbot.visible and jetbot.role==1: # For leaders
-                    if move < len(leader_movement):
-                        leader_v, leader_w, move_duration = leader_movement[move]
-                        if time.perf_counter() - move_start < move_duration:
-                            data_lin_acc_des[count-1, i] = None
+                    if leader_move < len(leader_movement):
+                        leader_v, leader_w, move_duration = leader_movement[leader_move]
+                        if time.perf_counter() - leader_move_start < move_duration:
+                            data_lin_acc_des[count-1, i] = None # TODO: maybe record leader desired lin vel
                             data_ang_vel_des[count-1, i] = leader_w
                             v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
                             # Convert Desired VW to LR motor speed
                             left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                         else:
-                            move += 1
-                            move_start = time.perf_counter()
+                            leader_move += 1
+                            leader_move_start = time.perf_counter()
                     else:
                         left = right = 0.0
+
                 # TODO: obstacle movement:
                 elif jetbot.visible and jetbot.role==2: # For obstacles
-                    continue
-                    # if move < len(leader_movement):
-                    #     leader_v, leader_w, move_duration = leader_movement[move]
-                    #     if time.perf_counter() - move_start < move_duration:
-                    #         data_lin_acc_des[count-1, i] = None
-                    #         data_ang_vel_des[count-1, i] = leader_w
-                    #         v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
-                    #         # Convert Desired VW to LR motor speed
-                    #         left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
-                    #     else:
-                    #         move += 1
-                    #         move_start = time.perf_counter()
-                    # else:
-                    #     left = right = 0.0
+                    if jetbot.id == 9999:   # TODO: change with obstacle id
+                        if obstacle1_move < len(obstacle1_move):
+                            obstacle_v, obstacle_w, move_duration = leader_movement[obstacle1_move]
+                            if time.perf_counter() - obstacle1_move_start < move_duration:
+                                data_lin_acc_des[count-1, i] = None
+                                data_ang_vel_des[count-1, i] = leader_w
+                                v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
+                                # Convert Desired VW to LR motor speed
+                                left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
+                            else:
+                                obstacle1_move += 1
+                                obstacle1_move_start = time.perf_counter()
+                        else:
+                            left = right = 0.0
 
                 else:   # If jetbot is not visible then stop movement
                     left = right = 0.0
@@ -331,8 +341,7 @@ python3 -m jetbot.control_reciever
         # CLEANUP
         print("\n[STOP] Sending stop command and exiting...")
         for jetbot in jetbot_array:
-            if jetbot.role==0:
-                UDP.Close(jetbot.IP)
+            UDP.Close(jetbot.IP)
         UDP.Shutdown()
         cap.release()
         cv2.destroyAllWindows()
