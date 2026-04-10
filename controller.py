@@ -312,8 +312,7 @@ class SafeFormationController(SimpleController):
 class SafeObstacleAvoidanceController(SafeFormationController):
     def __init__(self, float_lst):
         super().__init__(float_lst)
-        self.obstacle_data = None # [obs_x, obs_y, obs_radius, obs_v, obs_heading]
-        #TODO: we want [v_obs_x, v_obs_y, d_obs_x, d_obs_y, theta_rel, obs_radius]
+        self.obstacle_data = None # [v_obs_x, v_obs_y, d_obs_x, d_obs_y, theta_rel, obs_radius]
         self.last_obstacle_distance = None
 
     def set_obstacles(self, obstacles):
@@ -329,7 +328,6 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         observations = agent_metadata[1]  # Relative distances to other agents
 
         v = state[2]  # Robot's velocity
-        #theta = state[3]  # Robot's heading TODO: remove
 
         obs_gd = self.gd * 5.5
 
@@ -357,24 +355,12 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         D_OBS_THRESHOLD = 1.5
 
         if self.obstacle_data:
-            for obs in self.obstacle_data: #[v_obs_x, v_obs_y, d_obs_x, d_obs_y, theta_rel]
-                #obs_x, obs_y, obs_radius, obs_v, obs_heading = obs
+            for obs in self.obstacle_data:
                 v_obs_x, v_obs_y, d_obs_x, d_obs_y, theta_rel, obs_radius = obs
-                #v_obs_x = obs_v * cos(obs_heading)
-                #v_obs_y = obs_v * sin(obs_heading)
-                dt = T
-                #pred_obs_x = obs_x + v_obs_x * dt #todo: remove
-                #pred_obs_y = obs_y + v_obs_y * dt #todo: remove
-                #d_obs_x = pred_obs_x - state[0] #todo: get from obstacle data
-                #d_obs_y = pred_obs_y - state[1] #todo: get from obstacle data
-
                 d_obs = sqrt(d_obs_x ** 2 + d_obs_y ** 2)
                 d_edge = d_obs - obs_radius
 
                 if d_edge < D_OBS_THRESHOLD:
-                    #theta_obs = atan2(d_obs_y, d_obs_x)
-                    #theta_rel = (theta_obs - theta + pi) % (2 * pi) - pi #todo theta_rel in obstacle data
-
                     scale = (D_OBS_THRESHOLD - d_edge) / D_OBS_THRESHOLD
                     # scale = 1
 

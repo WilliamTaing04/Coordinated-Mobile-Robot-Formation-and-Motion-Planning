@@ -101,7 +101,6 @@ class Agent:
     # Observations is d, phi (relative), theta (absolute) for others
     def init_estimates(self):
         if(self.initialized == False):
-            #self.update_edges(observations) TODO: RUN THIS IN JETBOT CONTROL BEFORE INIT ESTIMATES
             for idx in range(self.n_agents):
                 if idx == self.id:
                     continue
