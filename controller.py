@@ -352,7 +352,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         d_edge = None
 
         # Define threshold distance
-        D_OBS_THRESHOLD = 1.5
+        D_OBS_THRESHOLD = 0.25
 
         if self.obstacle_data:
             for obs in self.obstacle_data:

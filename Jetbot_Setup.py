@@ -153,8 +153,8 @@ class Jetbot():
 
         obst_meas = []  # create array for obstacle measurements
 
-        for i, obstacle in jetbot_array:
-            if obstacle.id == 2:    # check for obstacle
+        for obstacle in jetbot_array:
+            if obstacle.role == 2:    # check for obstacle
                 obs_radius = obstacle.radius
                 obs_x, obs_y, obs_heading = obstacle.pose_f
 
@@ -170,7 +170,7 @@ class Jetbot():
                 theta_obs = np.atan2(d_obs_y, d_obs_x)
                 theta_rel = (theta_obs - self.pose_f[2] + np.pi) % (2 * np.pi) - np.pi
 
-                obst_meas.append([v_obs_x, v_obs_y, d_obs_x, d_obs_y, theta_rel, obs_radius])   # array for [i] object
+                obst_meas.append([v_obs_x / 1000, v_obs_y / 1000, d_obs_x / 1000, d_obs_y / 1000, theta_rel, obs_radius])   # array for [i] object
 
         return obst_meas
 
