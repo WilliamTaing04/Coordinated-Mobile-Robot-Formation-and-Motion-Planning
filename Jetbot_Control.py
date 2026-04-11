@@ -34,7 +34,7 @@ def main():
 # Setup
 # =====================================================================
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720)
+    cap = Jetbot_Setup.camera_setup(1280, 720, 0)
     frame_count = 0
 
     # Testing
@@ -44,7 +44,7 @@ def main():
     np.set_printoptions(precision=4, suppress=True)
 
     # Settings
-    collect_data = 1    # 0=no collect 1=collect
+    collect_data = True
     control_freq = 30   # Hz
     TAG_SIZE = 65       # mm
 
@@ -82,30 +82,31 @@ python3 -m jetbot.control_reciever
     pidw2 = Motion_Control.PID(0,0,0) # PID for w
     #pidv3 = Motion_Control.PID(0,0,0) # PID for v
     #pidw3 = Motion_Control.PID(0,0,0) # PID for w
-    pidv4 = Motion_Control.PID(0.5,0.1,0) # PID for v
-    pidw4 = Motion_Control.PID(1.0,0.75,0) # PID for w
+    pidvobs = Motion_Control.PID(0.75,0.5,0) # PID for v
+    pidwobs = Motion_Control.PID(1.75,2,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
     controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.05)
     controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.05)
     controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.05)
-    #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.75)
-    controller4 = Motion_Control.control(500, 8, 800, control_freq, pidv4, pidw4, alpha=0.75)
+    #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.05)
+    controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=0.05)
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    obstacle1 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4, leader, follower1, role=2,tau_pose=0.0075,tau_vel=0.0075, radius = 0.1)   #TODO: check ip and tag id
+    obstacle1 = Jetbot_Setup.Jetbot(61,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius = 0.1)   #TODO: check ip and tag id
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
     agentL = None
     agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, -0.3, -0.05,-4])))
     agent2 = agent.Agent([0,0,0,0], 2, 0, 1, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
+    agentobst1 = None
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2, obstacle1]
-    agent_array = [agentL, agent1, agent2]
+    agent_array = [agentL, agent1, agent2, agentobst1]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     leader_movement = [[150, 0.0, 3], 
@@ -114,15 +115,12 @@ python3 -m jetbot.control_reciever
                        [150, 0.3, 3], 
                        [0.0, 0.0, 10]]
     
-    obstace1_movemet = [[150, 0.0, 3], 
-                       [150, 0.3, 3], 
-                       [150,-0.3, 3], 
-                       [150, 0.3, 3], 
-                       [0.0, 0.0, 10]]
+    obstacle1_movement = [[0.0, 0.0, 2], 
+                        [200, 0.0, 3],
+                        [0.0, 0.0, 10]]
     
     leader_move = 0
     obstacle1_move = 0
-    obstacle1_move_start = 0
 
     if collect_data:
         # Pre-allocate arrays for data collection (over-allocate for safety)
@@ -143,6 +141,7 @@ python3 -m jetbot.control_reciever
 
     initial_time = time.perf_counter()
     leader_move_start = time.perf_counter()
+    obstacle1_move_start = time.perf_counter()
 
 # =====================================================================
 # MAIN TRACKING LOOP
@@ -280,13 +279,13 @@ python3 -m jetbot.control_reciever
 
                 # TODO: obstacle movement:
                 elif jetbot.visible and jetbot.role==2: # For obstacles
-                    if jetbot.id == 9999:   # TODO: change with obstacle id
-                        if obstacle1_move < len(obstacle1_move):
-                            obstacle_v, obstacle_w, move_duration = leader_movement[obstacle1_move]
+                    if jetbot.id == 61:   # TODO: change with obstacle id
+                        if obstacle1_move < len(obstacle1_movement):
+                            obstacle_v, obstacle_w, move_duration = obstacle1_movement[obstacle1_move]
                             if time.perf_counter() - obstacle1_move_start < move_duration:
                                 data_lin_acc_des[count-1, i] = None
-                                data_ang_vel_des[count-1, i] = leader_w
-                                v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
+                                data_ang_vel_des[count-1, i] = None
+                                v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [obstacle_v, obstacle_w])
                                 # Convert Desired VW to LR motor speed
                                 left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                             else:
@@ -424,4 +423,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    plots()
+    # plots()
