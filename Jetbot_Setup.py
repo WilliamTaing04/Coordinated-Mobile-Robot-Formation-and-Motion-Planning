@@ -134,13 +134,13 @@ class Jetbot():
         self.ang_acc = (vel_for_acc_ang - prev_vel_for_acc_ang) / dt
     
     def get_dist_theta(self, agent):
-        if self.pose is None or agent is None or agent.pose is None:
+        if self.pose_f is None or agent is None or agent.pose_f is None:
             print('Error: get_dist_theta None return')
             return None
         
         # Slice pose
-        x1, y1, theta1 = self.pose
-        x2, y2, theta2 = agent.pose
+        x1, y1, theta1 = self.pose_f
+        x2, y2, theta2 = agent.pose_f
 
         # Calculate dist and theta
         d = np.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))

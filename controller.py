@@ -329,7 +329,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
 
         v = state[2]  # Robot's velocity
 
-        obs_gd = self.gd
+        obs_gd = self.gd*5.5
 
         # Formation terms for predecessor:
         dx = observations[self.x_id, 0] * cos(observations[self.x_id, 1])
@@ -352,7 +352,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         d_edge = None
 
         # Define threshold distance
-        D_OBS_THRESHOLD = 0.25
+        D_OBS_THRESHOLD = 0.1
 
         if self.obstacle_data:
             for obs in self.obstacle_data:
@@ -365,7 +365,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     # scale = 1
 
                     # Calculate w_obs
-                    w_obs_candidate = (scale * ((v_obs_y - obs_gd * (d_obs_y - self.dsafe_y)) / d_obs_x)) - (
+                    w_obs_candidate = (scale/10 * ((v_obs_y - obs_gd * (d_obs_y - self.dsafe_y)) / d_obs_x)) - (
                                 (self.sgn_s * (self.yc + EW)) / d_obs_x)
 
                     if theta_rel > 0:

@@ -95,7 +95,7 @@ python3 -m jetbot.control_reciever
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    obstacle1 = Jetbot_Setup.Jetbot(61,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.5)   #TODO: check ip and tag id
+    obstacle1 = Jetbot_Setup.Jetbot(61,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.2)   #TODO: check ip and tag id
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
