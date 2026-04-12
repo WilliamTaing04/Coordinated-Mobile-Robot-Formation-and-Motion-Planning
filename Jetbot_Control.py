@@ -40,7 +40,6 @@ def main():
     # Testing
     at_count = 0
     dt_break = 0
-    firstloop = True
     np.set_printoptions(precision=4, suppress=True)
 
     # Settings
@@ -77,7 +76,7 @@ python3 -m jetbot.control_reciever
     pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
     pidwL = Motion_Control.PID(1.75,2,0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
-    pidw1 = Motion_Control.PID(0,0,0) # PID for w
+    pidw1 = Motion_Control.PID(0,2,0) # PID for w
     pidv2 = Motion_Control.PID(0,0,0) # PID for v
     pidw2 = Motion_Control.PID(0,0,0) # PID for w
     #pidv3 = Motion_Control.PID(0,0,0) # PID for v
@@ -210,7 +209,7 @@ python3 -m jetbot.control_reciever
                                 t_meas = time.perf_counter()
                                 jetbot.update_meas(pose, t_meas)
                                 jetbot.visible = 1
-                                if(firstloop == False) and (jetbot.role==0):
+                                if(Jetbot_Setup.check_init(jetbot_array)) and (jetbot.role==0):   # check if all poses are initialized
                                     d_X, v_X, theta_X = jetbot.get_dist_theta(jetbot.X_lead) # [mm, mm/s, radians]
                                     d_Y, v_Y, theta_Y = jetbot.get_dist_theta(jetbot.Y_lead) # [mm, mm/s, radians]
                                     X_upd = np.array([d_X/1000, v_X/1000, theta_X]) # mm to m [m, m/s, radians]
@@ -222,8 +221,6 @@ python3 -m jetbot.control_reciever
                                         #UPDATE OBSTACLES:
                                         print(f"Jetbot{jetbot.id}: {jetbot.get_obst_meas(jetbot_array)}")
                                         agent_array[i].controller.obstacle_data = jetbot.get_obst_meas(jetbot_array)
-
-                        firstloop = False   # All jetbot pose initialized
 
                     # Reduce display output
                     if (frame_count % 4) == 0:

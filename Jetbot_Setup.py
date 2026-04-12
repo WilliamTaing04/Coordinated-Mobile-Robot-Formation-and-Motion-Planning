@@ -174,18 +174,6 @@ class Jetbot():
 
         return obst_meas
 
-    def check_init(jetbot_array):
-        init_array = []
-        for jetbot in jetbot_array:
-            if jetbot.pose_f is not None:
-                init_array.append(True)
-        
-        if all(init_array):
-            return True
-        else:
-            return False
-
-
     def reset(self):
         self.time_meas = None
         self.prev_time_meas = None
@@ -211,8 +199,17 @@ class Jetbot():
     def wrap_to_pi(self, a: float) -> float:
         # Wrap angle to [-pi, pi]
         return (a + np.pi) % (2 * np.pi) - np.pi
-        
-        
+          
+def check_init(jetbot_array):
+    init_array = []
+    for jetbot in jetbot_array:
+        if jetbot.pose_f is not None:
+            init_array.append(True)
+    
+    if all(init_array):
+        return True
+    else:
+        return False
 
 def camera_setup(width=1280, height=720, output=0, fps=100):
     print("\nInitializing camera and detector...")
