@@ -85,11 +85,11 @@ python3 -m jetbot.control_reciever
     pidvobs = Motion_Control.PID(0.75,0.5,0) # PID for v
     pidwobs = Motion_Control.PID(1.75,2,0) # PID for w
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.05)
-    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.05)
-    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.05)
-    #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.05)
-    controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=0.05)
+    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.95)
+    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.95)
+    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.95)
+    #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.95)
+    controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=0.95)
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
