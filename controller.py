@@ -329,7 +329,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
 
         v = state[2]  # Robot's velocity
 
-        obs_gd = self.gd * 5.5
+        obs_gd = self.gd
 
         # Formation terms for predecessor:
         dx = observations[self.x_id, 0] * cos(observations[self.x_id, 1])
