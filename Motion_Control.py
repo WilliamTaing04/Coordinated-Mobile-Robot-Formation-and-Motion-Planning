@@ -233,9 +233,24 @@ class control():
         v_r = v_cmd + w_cmd * wheel_len / 2
         v_l = v_cmd - w_cmd * wheel_len / 2
 
-        # Apply calibralion
-        r_n = (v_r - self.B_V) / self.K_V
-        l_n = (v_l - self.B_V) / self.K_V
+        # Convert left wheel speed to motor command
+        if abs(v_l) < 1e-9:
+            l_n = 0.0
+        else:
+            s_l = 1.0 if v_l > 0 else -1.0
+            l_n = (abs(v_l) - self.B_V) / self.K_V
+            l_n = max(0.0, l_n)
+            l_n *= s_l
+
+        # Convert right wheel speed to motor command
+        if abs(v_r) < 1e-9:
+            r_n = 0.0
+        else:
+            s_r = 1.0 if v_r > 0 else -1.0
+            r_n = (abs(v_r) - self.B_V) / self.K_V
+            r_n = max(0.0, r_n)
+            r_n *= s_r
+
 
         # Preserve curvature
         m = max(abs(r_n), abs(l_n), 1e-9)
