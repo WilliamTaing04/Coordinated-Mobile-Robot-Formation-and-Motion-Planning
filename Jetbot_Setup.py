@@ -205,7 +205,9 @@ def check_init(jetbot_array):
     for jetbot in jetbot_array:
         if jetbot.pose_f is not None:
             init_array.append(True)
-    
+        else:
+            init_array.append(False)
+
     if all(init_array):
         return True
     else:

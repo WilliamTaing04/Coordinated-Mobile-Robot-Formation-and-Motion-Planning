@@ -1,4 +1,5 @@
 import numpy as np
+import Motion_Control
 from math import *
 
 EW = 0.07
@@ -16,7 +17,7 @@ ANGULAR_SPEED = LINEAR_SPEED / BOT_RADIUS
 
 V_MAX = LINEAR_SPEED  # 0.5
 U_MAX = 0.5
-W_MAX = 2.0  # ANGULAR_SPEED  # 1
+W_MAX = 1.0  # ANGULAR_SPEED  # 1
 
 
 def safety_candidate_u(state, observation, estimate, err=0):
@@ -329,7 +330,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
 
         v = state[2]  # Robot's velocity
 
-        obs_gd = self.gd*5.5
+        obs_gd = self.gd*0.5
 
         # Formation terms for predecessor:
         dx = observations[self.x_id, 0] * cos(observations[self.x_id, 1])
@@ -352,7 +353,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         d_edge = None
 
         # Define threshold distance
-        D_OBS_THRESHOLD = 0.1
+        D_OBS_THRESHOLD = 0.3
 
         if self.obstacle_data:
             for obs in self.obstacle_data:
@@ -365,7 +366,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     # scale = 1
 
                     # Calculate w_obs
-                    w_obs_candidate = (scale/10 * ((v_obs_y - obs_gd * (d_obs_y - self.dsafe_y)) / d_obs_x)) - (
+                    w_obs_candidate = (scale*((v_obs_y - obs_gd * (d_obs_y - self.dsafe_y)) / d_obs_x)) - (
                                 (self.sgn_s * (self.yc + EW)) / d_obs_x)
 
                     if theta_rel > 0:
@@ -404,6 +405,10 @@ class SafeObstacleAvoidanceController(SafeFormationController):
 
         if d_edge is not None:
             self.last_obstacle_distance = d_edge
+
+
+        w = Motion_Control.clamp(w, -W_MAX, W_MAX)
+        u = Motion_Control.clamp(u, -U_MAX, 0.25*U_MAX)
 
         self.controls = [u, w]
         return [u, w], dx - T * v, dy * self.sgn_s
