@@ -110,7 +110,7 @@ class control():
 
         # Integrate to velocity reference
         self.v_ref += a_cmd * dt
-        # self.v_ref = clamp(self.v_ref, -self.v_max, self.v_max) #TODO: orginal
+        #self.v_ref = clamp(self.v_ref, -self.v_max, self.v_max) #TODO: orginal
         self.v_ref = clamp(self.v_ref, 0.0, self.v_max)
 
         v_g = self.v_ref

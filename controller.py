@@ -315,6 +315,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         super().__init__(float_lst)
         self.obstacle_data = None # [v_obs_x, v_obs_y, d_obs_x, d_obs_y, theta_rel, obs_radius]
         self.last_obstacle_distance = None
+        self.last_chosen = None
 
     def set_obstacles(self, obstacles):
         '''Store obstacles as a list of (x, y, r, v, heading) tuples.'''
@@ -383,9 +384,9 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     if u_obstacle is None or u_obs_candidate < u_obstacle:
                         u_obstacle = u_obs_candidate
 
-        # Control predecessor vs obstacle control
+        # Control predecessor vs obstacle control     and d_edge > self.last_obstacle_distance
         if w_obstacle is not None:
-            if self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD:
+            if self.last_obstacle_distance is not None and d_edge > D_OBS_THRESHOLD:
                 w = w_predecessor
             else:
                 w = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
@@ -395,8 +396,8 @@ class SafeObstacleAvoidanceController(SafeFormationController):
             w = w_predecessor
 
         if u_obstacle is not None:
-            # u = min(u_predecessor, u_obstacle)
-            if self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD:
+            # u = min(u_predecessor, u_obstacle)    and d_edge > self.last_obstacle_distance
+            if self.last_obstacle_distance is not None and d_edge > D_OBS_THRESHOLD:
                 u = u_predecessor
             else:
                 u = min(u_predecessor, u_obstacle)
@@ -406,9 +407,21 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         if d_edge is not None:
             self.last_obstacle_distance = d_edge
 
+        if (((w == w_predecessor) and (self.last_chosen == False)) or ((w == w_obstacle) and (self.last_chosen == True))) and (w_predecessor is not None and w_obstacle is not None):
+            w = (w_predecessor + w_obstacle)/2
+
+        if w == w_predecessor:
+            self.last_chosen = True #True = w pred
+        else:
+            self.last_chosen = False
+        
+
 
         w = Motion_Control.clamp(w, -W_MAX, W_MAX)
         u = Motion_Control.clamp(u, -U_MAX, 0.25*U_MAX)
+
+        #print("u_pred",u_predecessor, "w_pred", w_predecessor)
+        #print("u_obs", u_obstacle, "w_obs", w_obstacle)
 
         self.controls = [u, w]
         return [u, w], dx - T * v, dy * self.sgn_s
