@@ -1,6 +1,7 @@
 import numpy as np
 import Motion_Control
 from math import *
+import time
 
 EW = 0.07
 EU = 0.07
@@ -17,7 +18,7 @@ ANGULAR_SPEED = LINEAR_SPEED / BOT_RADIUS
 
 V_MAX = LINEAR_SPEED  # 0.5
 U_MAX = 0.5
-W_MAX = 1.0  # ANGULAR_SPEED  # 1
+W_MAX = 2.0  # ANGULAR_SPEED  # 1
 
 
 def safety_candidate_u(state, observation, estimate, err=0):
@@ -316,6 +317,8 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         self.obstacle_data = None # [v_obs_x, v_obs_y, d_obs_x, d_obs_y, theta_rel, obs_radius]
         self.last_obstacle_distance = None
         self.last_chosen = None
+        self.last_switch_time = None
+        self.f_cooldown = False
 
     def set_obstacles(self, obstacles):
         '''Store obstacles as a list of (x, y, r, v, heading) tuples.'''
@@ -354,7 +357,8 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         d_edge = None
 
         # Define threshold distance
-        D_OBS_THRESHOLD = 0.3
+        D_OBS_THRESHOLD = 0.2
+        D_OBS_Y_THRESHOLD = 0.6
 
         if self.obstacle_data:
             for obs in self.obstacle_data:
@@ -362,7 +366,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                 d_obs = sqrt(d_obs_x ** 2 + d_obs_y ** 2)
                 d_edge = d_obs - obs_radius
 
-                if d_edge < D_OBS_THRESHOLD:
+                if (d_edge < D_OBS_THRESHOLD): #or ((d_obs_y < D_OBS_Y_THRESHOLD) and d_obs_x < D_OBS_THRESHOLD):
                     scale = (D_OBS_THRESHOLD - d_edge) / D_OBS_THRESHOLD
                     # scale = 1
 
@@ -384,44 +388,62 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     if u_obstacle is None or u_obs_candidate < u_obstacle:
                         u_obstacle = u_obs_candidate
 
-        # Control predecessor vs obstacle control     and d_edge > self.last_obstacle_distance
+        # Control predecessor vs obstacle control     
         if w_obstacle is not None:
-            if self.last_obstacle_distance is not None and d_edge > D_OBS_THRESHOLD:
+            if self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD:
                 w = w_predecessor
             else:
                 w = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
+                #TODO: Prob remove this
+                if (w == w_obstacle):
+                    scale = ((D_OBS_THRESHOLD - d_edge) / D_OBS_THRESHOLD) ** 2
+                    w = (scale)*w_obstacle + (1-scale)*w_predecessor
             # w = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
 
         else:
             w = w_predecessor
 
         if u_obstacle is not None:
-            # u = min(u_predecessor, u_obstacle)    and d_edge > self.last_obstacle_distance
-            if self.last_obstacle_distance is not None and d_edge > D_OBS_THRESHOLD:
+            # u = min(u_predecessor, u_obstacle)     
+            if self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD :
                 u = u_predecessor
             else:
                 u = min(u_predecessor, u_obstacle)
+                #TODO: Prob remove this
+                if (u == u_obstacle):
+                    scale = ((D_OBS_THRESHOLD - d_edge) / D_OBS_THRESHOLD) ** 2
+                    u = (scale)*u_obstacle + (1-scale)*u_predecessor
         else:
             u = u_predecessor
 
         if d_edge is not None:
             self.last_obstacle_distance = d_edge
 
-        if (((w == w_predecessor) and (self.last_chosen == False)) or ((w == w_obstacle) and (self.last_chosen == True))) and (w_predecessor is not None and w_obstacle is not None):
-            w = (w_predecessor + w_obstacle)/2
+        # if ((w == w_predecessor) and (self.last_chosen == False)) and (w_predecessor is not None and w_obstacle is not None):
+        #     # If there is a switch, mark the time and start a cooldown period
+        #     self.last_switch_time = time.perf_counter()
+        #     self.f_cooldown = True
+        # if(self.f_cooldown):
+        #     if ((time.perf_counter() - self.last_switch_time) < 0.3):
+        #         w = w_predecessor
+        #         u = u_predecessor
+        #     else:
+        #         self.f_cooldown = False
 
-        if w == w_predecessor:
-            self.last_chosen = True #True = w pred
-        else:
-            self.last_chosen = False
+        # if w == w_predecessor:
+        #     self.last_chosen = True #True = w pred
+        # else:
+        #     self.last_chosen = False
         
 
 
         w = Motion_Control.clamp(w, -W_MAX, W_MAX)
-        u = Motion_Control.clamp(u, -U_MAX, 0.25*U_MAX)
+        u = Motion_Control.clamp(u, -U_MAX*100, 0.25*U_MAX)
 
-        #print("u_pred",u_predecessor, "w_pred", w_predecessor)
-        #print("u_obs", u_obstacle, "w_obs", w_obstacle)
+        # if(w == w_predecessor):
+        #     print("u_pred",u_predecessor, "w_pred", w_predecessor)
+        # else:
+        #     print("u_obs", u_obstacle, "w_obs", w_obstacle)
 
         self.controls = [u, w]
         return [u, w], dx - T * v, dy * self.sgn_s

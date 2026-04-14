@@ -186,6 +186,7 @@ class control():
         self.last_v_cmd = v_cmd
         self.last_w_cmd = w_cmd
 
+
         return v_cmd, w_cmd
 
     # def controller_xyt(self, pose, goal):
@@ -227,6 +228,7 @@ class control():
     #     return float(v), float(w)
     
     def motor_controller(self, v_cmd, w_cmd):
+        
         wheel_len = self.wheel_len
 
         # Wheel linear speeds

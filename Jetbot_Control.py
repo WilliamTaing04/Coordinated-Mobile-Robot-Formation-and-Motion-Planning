@@ -74,7 +74,7 @@ python3 -m jetbot.control_reciever
 
     # Controllers
     pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
-    pidwL = Motion_Control.PID(1.75,2,0) # PID for w
+    pidwL = Motion_Control.PID(1.0,2,0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0,0,0) # PID for w
     pidv2 = Motion_Control.PID(0,0,0) # PID for v
@@ -113,11 +113,12 @@ python3 -m jetbot.control_reciever
     #                    [150,-0.3, 3], 
     #                    [150, 0.3, 3], 
     #                    [0.0, 0.0, 10]]
+
     leader_movement = [[150, 0.0, 3], 
                        [150, 0.0, 3], 
                        [150, 0.0, 3], 
-                       [150, 0.0, 3], 
-                       [0.0, 0.0, 10]]
+                       [150, 0.0, 0], 
+                       [0.0, 1.0, 0]]
     
     obstacle1_movement = [[0.0, 0.0, 2], 
                         [0.0, 0.0, 3],
@@ -262,8 +263,10 @@ python3 -m jetbot.control_reciever
                     t_now = time.perf_counter()
                     # UW controller
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f],[U_GOAL*1000, W_GOAL])
+                    print("jetbot:",jetbot.id, "v:", v_cmd, "w:", w_cmd)
                     # Convert Desired VW to LR motor speed
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
+                    print("jetbot:",jetbot.id, "l:", left, "r:", right)
                 
                 elif jetbot.visible and jetbot.role==1: # For leaders
                     if leader_move < len(leader_movement):
