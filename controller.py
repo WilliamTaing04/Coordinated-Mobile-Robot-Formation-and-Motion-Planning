@@ -356,9 +356,12 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         u_obstacle = None
         d_edge = None
 
-        # Define threshold distance
-        D_OBS_THRESHOLD = 0.2
-        D_OBS_Y_THRESHOLD = 0.6
+        # Define threshold distance [m]
+        D_OBS_R_THRESHOLD = 0.15
+        D_OBS_X_THRESHOLD = 0.7
+        D_OBS_Y_THRESHOLD = 0.5
+
+        scale_avg = [0,0]
 
         if self.obstacle_data:
             for obs in self.obstacle_data:
@@ -366,9 +369,17 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                 d_obs = sqrt(d_obs_x ** 2 + d_obs_y ** 2)
                 d_edge = d_obs - obs_radius
 
-                if (d_edge < D_OBS_THRESHOLD): #or ((d_obs_y < D_OBS_Y_THRESHOLD) and d_obs_x < D_OBS_THRESHOLD):
-                    scale = (D_OBS_THRESHOLD - d_edge) / D_OBS_THRESHOLD
-                    # scale = 1
+                if (d_obs_x > 0) and ((d_edge < D_OBS_R_THRESHOLD) or ((d_obs_x < D_OBS_X_THRESHOLD) and (abs(d_obs_y) < D_OBS_Y_THRESHOLD))):
+                    scale_x = ((D_OBS_X_THRESHOLD - d_obs_x) / D_OBS_X_THRESHOLD)
+                    scale_y = ((D_OBS_Y_THRESHOLD - abs(d_obs_y)) / D_OBS_Y_THRESHOLD)
+                    scale_r = ((D_OBS_R_THRESHOLD - d_obs) / D_OBS_R_THRESHOLD)
+                    x_weight = 2
+                    y_weight = 1
+                    r_weight = 0
+                    # scale_avg is the [0,1] weight of the obstacle avoidance control against predecessor control
+                    scale_avg_candidate = (x_weight*scale_x + y_weight*scale_y + r_weight*scale_r) / (x_weight + y_weight + r_weight)
+
+                    scale = abs((D_OBS_R_THRESHOLD - d_edge) / D_OBS_R_THRESHOLD)
 
                     # Calculate w_obs
                     w_obs_candidate = (scale*((v_obs_y - obs_gd * (d_obs_y - self.dsafe_y)) / d_obs_x)) - (
@@ -382,37 +393,47 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     # If multiple obstacles are present, pick strongest.
                     if w_obstacle is None or abs(w_obs_candidate) > abs(w_obstacle):
                         w_obstacle = w_obs_candidate
+                        scale_avg[1] = scale_avg_candidate
+                        print(f"{scale_avg[1]=}")
+
 
                     # Calculate u_obs
                     u_obs_candidate = (v_obs_x - EU - self.xc - v + d_obs_y * w_obs_candidate + alpha_h) / T
                     if u_obstacle is None or u_obs_candidate < u_obstacle:
                         u_obstacle = u_obs_candidate
+                        scale_avg[0] = scale_avg_candidate
+
 
         # Control predecessor vs obstacle control     
         if w_obstacle is not None:
-            if self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD:
-                w = w_predecessor
+            if (d_edge > D_OBS_R_THRESHOLD):
+                # If outside of all thresholds, consider predecessor command
+                if ((d_obs_x > D_OBS_X_THRESHOLD) or (d_obs_x < 0) or abs(d_obs_y) > D_OBS_R_THRESHOLD): #self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD:
+                    w = w_predecessor
+                # If outside of radial threshold, but within extended safety bound, weight the commands
+                else:
+                    w = (scale_avg[1])*w_obstacle + (1-scale_avg[1])*w_predecessor
+            # If within radial threshold, consider obstacle command if stronger (safer) than predecessor command
             else:
-                w = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
-                #TODO: Prob remove this
-                if (w == w_obstacle):
-                    scale = ((D_OBS_THRESHOLD - d_edge) / D_OBS_THRESHOLD) ** 2
-                    w = (scale)*w_obstacle + (1-scale)*w_predecessor
-            # w = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
-
+                w1 = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
+                w2 = w_obstacle if w1 == w_predecessor else w_predecessor
+                w = 0.7*w1 + 0.3*w2
         else:
             w = w_predecessor
 
         if u_obstacle is not None:
-            # u = min(u_predecessor, u_obstacle)     
-            if self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD :
-                u = u_predecessor
+            if (d_edge > D_OBS_R_THRESHOLD):
+                # If outside of all thresholds, consider predecessor command
+                if ((d_obs_x > D_OBS_X_THRESHOLD) or (d_obs_x < 0) or abs(d_obs_y) > D_OBS_R_THRESHOLD): #self.last_obstacle_distance is not None and d_edge > self.last_obstacle_distance and d_edge > D_OBS_THRESHOLD:
+                    u = u_predecessor
+                # If outside of radial threshold, but within extended safety bound, weight the commands
+                else:
+                    u = (scale_avg[0])*u_obstacle + (1-scale_avg[0])*u_predecessor
+            # If within radial threshold, consider obstacle command
             else:
-                u = min(u_predecessor, u_obstacle)
-                #TODO: Prob remove this
-                if (u == u_obstacle):
-                    scale = ((D_OBS_THRESHOLD - d_edge) / D_OBS_THRESHOLD) ** 2
-                    u = (scale)*u_obstacle + (1-scale)*u_predecessor
+                u1 = min(u_predecessor, u_obstacle)
+                u2 = max(u_predecessor, u_obstacle)
+                u = 0.7*u1 + 0.3*u2
         else:
             u = u_predecessor
 

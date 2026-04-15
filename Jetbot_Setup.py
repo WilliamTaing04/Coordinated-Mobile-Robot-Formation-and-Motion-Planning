@@ -155,22 +155,25 @@ class Jetbot():
 
         for obstacle in jetbot_array:
             if obstacle.role == 2:    # check for obstacle
+                R_g2a = np.array([[np.cos(self.pose_f[2]), np.sin(self.pose_f[2])], 
+                                  [-np.sin(self.pose_f[2]),  np.cos(self.pose_f[2])]])
+                
                 obs_radius = obstacle.radius
-                obs_x, obs_y, obs_heading = obstacle.pose_f
+                obs_x_glob, obs_y_glob, obs_heading = obstacle.pose_f
+                # Relative distance between obstacle and agent in agent's frame
+                obs_x_ag, obs_y_ag = R_g2a @ np.array([obs_x_glob - self.pose_f[0], obs_y_glob - self.pose_f[1]])
+                # Relative (magnitude and direction) velocity between obstacle and agent in global frame
+                v_obs_x_glob = (obstacle.lin_vel_f * np.cos(obs_heading)) - (self.lin_vel_f * np.cos(self.pose_f[2]))
+                v_obs_y_glob = (obstacle.lin_vel_f * np.sin(obs_heading)) - (self.lin_vel_f * np.sin(self.pose_f[2]))
+                # Relative (magnitude and direction) velocity between obstacle and agent in agent's frame
+                v_obs_x_ag, v_obs_y_ag = R_g2a @ np.array([v_obs_x_glob, v_obs_y_glob])
+                # Predicted distance between obstacle and agent in agent's frame after one time step
+                pred_obs_x_rel = obs_x_ag + v_obs_x_ag * dt
+                pred_obs_y_rel = obs_y_ag + v_obs_y_ag * dt
 
-                v_obs_x = obstacle.lin_vel_f * np.cos(obs_heading)
-                v_obs_y = obstacle.lin_vel_f * np.sin(obs_heading)
+                theta_rel = np.atan2(pred_obs_y_rel, pred_obs_x_rel) #(obs_heading - self.pose_f[2] + np.pi) % (2 * np.pi) - np.pi
 
-                pred_obs_x = obs_x + v_obs_x * dt
-                pred_obs_y = obs_y + v_obs_y * dt
-
-                d_obs_x = pred_obs_x - self.pose_f[0]
-                d_obs_y = pred_obs_y - self.pose_f[1]
-
-                theta_obs = np.atan2(d_obs_y, d_obs_x)
-                theta_rel = (theta_obs - self.pose_f[2] + np.pi) % (2 * np.pi) - np.pi
-
-                obst_meas.append([v_obs_x / 1000, v_obs_y / 1000, d_obs_x / 1000, d_obs_y / 1000, theta_rel, obs_radius])   # array for [i] object
+                obst_meas.append([v_obs_x_ag / 1000, v_obs_y_ag / 1000, pred_obs_x_rel / 1000, pred_obs_y_rel / 1000, theta_rel, obs_radius])   # array for [i] object, TODO: Check for non-predictd relative positions performance
 
         return obst_meas
 

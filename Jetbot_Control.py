@@ -92,15 +92,15 @@ python3 -m jetbot.control_reciever
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
-    follower1 = Jetbot_Setup.Jetbot(61,"10.40.122.89",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    obstacle1 = Jetbot_Setup.Jetbot(11,"10.40.122.8",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)   #TODO: check ip and tag id
+    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    obstacle1 = Jetbot_Setup.Jetbot(61,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
     agentL = None
     agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, -0.3, -0.05,-4])))
-    agent2 = agent.Agent([0,0,0,0], 2, 0, 1, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
+    agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
     agentobst1 = None
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
     # Jetbot/Agent Arrays
@@ -114,15 +114,10 @@ python3 -m jetbot.control_reciever
     #                    [150, 0.3, 3], 
     #                    [0.0, 0.0, 10]]
 
-    leader_movement = [[150, 0.0, 3], 
-                       [150, 0.0, 3], 
-                       [150, 0.0, 3], 
-                       [150, 0.0, 0], 
-                       [0.0, 1.0, 0]]
+    leader_movement = [[125.0, 0.0, 12],
+                       [0.0, 0.0, 100]]
     
-    obstacle1_movement = [[0.0, 0.0, 2], 
-                        [0.0, 0.0, 3],
-                        [0.0, 0.0, 10]]
+    obstacle1_movement = [[0.0, 0.0, 2]]
     
     leader_move = 0
     obstacle1_move = 0
@@ -225,7 +220,6 @@ python3 -m jetbot.control_reciever
 
                                     if isinstance(agent_array[i].controller, controller.SafeObstacleAvoidanceController):
                                         #UPDATE OBSTACLES:
-                                        #print(f"Jetbot{jetbot.id}: {jetbot.get_obst_meas(jetbot_array)}")
                                         agent_array[i].controller.obstacle_data = jetbot.get_obst_meas(jetbot_array)
 
                     # Reduce display output
@@ -263,10 +257,8 @@ python3 -m jetbot.control_reciever
                     t_now = time.perf_counter()
                     # UW controller
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f],[U_GOAL*1000, W_GOAL])
-                    print("jetbot:",jetbot.id, "v:", v_cmd, "w:", w_cmd)
                     # Convert Desired VW to LR motor speed
                     left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
-                    print("jetbot:",jetbot.id, "l:", left, "r:", right)
                 
                 elif jetbot.visible and jetbot.role==1: # For leaders
                     if leader_move < len(leader_movement):
@@ -429,4 +421,4 @@ def plots():
 
 if __name__ == "__main__":
     main()
-    # plots()
+    #plots()
