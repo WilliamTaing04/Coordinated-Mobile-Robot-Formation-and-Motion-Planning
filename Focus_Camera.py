@@ -80,10 +80,10 @@ while count < frames:
 
     for tag in tags:
         detector.draw_tags(frame, tag)
-        #y_offset = 60
-        # cv2.putText(frame, f"Tag ID: {tag.tag_id}",
-        #     (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX,
-        #     0.6, (0, 255, 0), 2)
+        y_offset = 60
+        cv2.putText(frame, f"Tag ID: {tag.tag_id}",
+            (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX,
+            0.6, (0, 255, 0), 2)
 
     cv2.putText(frame, f"FPS: {fps:.1f}",
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX,

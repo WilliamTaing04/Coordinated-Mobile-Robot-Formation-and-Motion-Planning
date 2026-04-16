@@ -36,12 +36,12 @@ def main():
     # Testing
     at_count = 0
     dt_break = 0
-    np.set_printoptions(precision=4, suppress=True)
 
     # Settings
     collect_data = True
     control_freq = 30   # Hz
-    TAG_SIZE = 65       # mm
+    TAG_SIZE = 96       # mm
+    np.set_printoptions(precision=4, suppress=True)
 
     # Setup camera
     cap = Jetbot_Setup.camera_setup(1280, 720, 0)
@@ -92,11 +92,13 @@ python3 -m jetbot.control_reciever
     controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=0.95)
 
     # Jetbots
-    leader = Jetbot_Setup.Jetbot(26,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
-    follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    obstacle1 = Jetbot_Setup.Jetbot(61,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
-    obstacle2 = Jetbot_Setup.Jetbot(57,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+    leader = Jetbot_Setup.Jetbot(0,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    obstacle1 = Jetbot_Setup.Jetbot(4,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+    obstacle2 = Jetbot_Setup.Jetbot(5,"BAD",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+    obstacle3 = Jetbot_Setup.Jetbot(6,"BAD",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+
     # 11 is 10 61 is 65 65 is 61. ID x_labeled is ID actual
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
@@ -106,14 +108,15 @@ python3 -m jetbot.control_reciever
     agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
     agentobst1 = None
     agentobst2 = None
+    agentobst3 = None
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
 
     # Jetbot/Agent Arrays
-    jetbot_array = [leader, follower1, follower2, obstacle1, obstacle2]
-    agent_array = [agentL, agent1, agent2, agentobst1, agentobst2]
+    jetbot_array = [leader, follower1, follower2, obstacle1, obstacle2, obstacle3]
+    agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    leader_movement = [[125.0, 0.0, 12],
+    leader_movement = [[0, 0.0, 20], #125
                        [0.0, 0.0, 100]]
     
     obstacle1_movement = [[0.0, 0.0, 2]]
@@ -199,6 +202,7 @@ python3 -m jetbot.control_reciever
 
                         # convert rotation matrix to rpy (radians)
                         roll, pitch, yaw = Jetbot_Setup.rot_to_rpy(rot_workspace)
+                        print(f"{tag_id=}, {yaw=}")
 
                         # Get pose for data collection
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
