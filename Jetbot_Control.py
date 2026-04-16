@@ -96,6 +96,8 @@ python3 -m jetbot.control_reciever
     follower1 = Jetbot_Setup.Jetbot(11,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     follower2 = Jetbot_Setup.Jetbot(9,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     obstacle1 = Jetbot_Setup.Jetbot(61,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+    obstacle2 = Jetbot_Setup.Jetbot(57,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+    # 11 is 10 61 is 65 65 is 61. ID x_labeled is ID actual
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
@@ -103,11 +105,12 @@ python3 -m jetbot.control_reciever
     agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, -0.3, -0.05,-4])))
     agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
     agentobst1 = None
+    agentobst2 = None
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
 
     # Jetbot/Agent Arrays
-    jetbot_array = [leader, follower1, follower2, obstacle1]
-    agent_array = [agentL, agent1, agent2, agentobst1]
+    jetbot_array = [leader, follower1, follower2, obstacle1, obstacle2]
+    agent_array = [agentL, agent1, agent2, agentobst1, agentobst2]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     leader_movement = [[125.0, 0.0, 12],

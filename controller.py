@@ -355,13 +355,16 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         w_obstacle = None
         u_obstacle = None
         d_edge = None
+        w_choice_d_edge = None
+        u_choice_d_edge = None
 
         # Define threshold distance [m]
-        D_OBS_R_THRESHOLD = 0.5
+        D_OBS_R_THRESHOLD = 0.2
         D_OBS_X_THRESHOLD = 0.7
         D_OBS_Y_THRESHOLD = 0.5
 
         scale_avg = [0,0]
+
 
         if self.obstacle_data:
             for obs in self.obstacle_data:
@@ -393,6 +396,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     # If multiple obstacles are present, pick strongest.
                     if w_obstacle is None or abs(w_obs_candidate) > abs(w_obstacle):
                         w_obstacle = w_obs_candidate
+                        w_choice_d_edge = d_edge
                         scale_avg[1] = scale_avg_candidate
 
 
@@ -400,6 +404,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     u_obs_candidate = (v_obs_x - EU - self.xc - v + d_obs_y * w_obs_candidate + alpha_h) / T
                     if u_obstacle is None or u_obs_candidate < u_obstacle:
                         u_obstacle = u_obs_candidate
+                        u_choice_d_edge = d_edge
                         scale_avg[0] = scale_avg_candidate
 
 
@@ -424,7 +429,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         # else:
         #     w = w_predecessor
         if w_obstacle is not None:
-            if (d_edge < D_OBS_R_THRESHOLD):
+            if (w_choice_d_edge < D_OBS_R_THRESHOLD):
                 w = scale_avg[1]*w_obstacle + (1-scale_avg[1])*w_predecessor
             else:
                 w = w_predecessor
@@ -432,7 +437,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
             w = w_predecessor
 
         if u_obstacle is not None:
-            if (d_edge < D_OBS_R_THRESHOLD):
+            if (u_choice_d_edge < D_OBS_R_THRESHOLD):
                 v_max = 0.3
                 v_scale = 1 if v > v_max else 0 #(v_max - v) / v_max #TODO: TUNE THIS!
                 u = v_scale*u_obstacle + (1-v_scale)*u_predecessor #scale_avg[0]*u_obstacle + (1-scale_avg[0])*u_predecessor
