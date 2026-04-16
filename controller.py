@@ -373,13 +373,13 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     scale_x = ((D_OBS_X_THRESHOLD - d_obs_x) / D_OBS_X_THRESHOLD)
                     scale_y = ((D_OBS_Y_THRESHOLD - abs(d_obs_y)) / D_OBS_Y_THRESHOLD)
                     scale_r = ((D_OBS_R_THRESHOLD - d_obs) / D_OBS_R_THRESHOLD)
-                    x_weight = 2
+                    x_weight = 1
                     y_weight = 1
                     r_weight = 0
                     # scale_avg is the [0,1] weight of the obstacle avoidance control against predecessor control
                     scale_avg_candidate = (x_weight*scale_x + y_weight*scale_y + r_weight*scale_r) / (x_weight + y_weight + r_weight)
 
-                    scale = abs((D_OBS_R_THRESHOLD - d_edge) / D_OBS_R_THRESHOLD)
+                    scale = abs((D_OBS_R_THRESHOLD - d_edge) / D_OBS_R_THRESHOLD) 
 
                     # Calculate w_obs
                     w_obs_candidate = (scale*((v_obs_y - obs_gd * (d_obs_y - self.dsafe_y)) / d_obs_x)) - (
@@ -394,7 +394,6 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     if w_obstacle is None or abs(w_obs_candidate) > abs(w_obstacle):
                         w_obstacle = w_obs_candidate
                         scale_avg[1] = scale_avg_candidate
-                        print(f"{scale_avg[1]=}")
 
 
                     # Calculate u_obs
@@ -415,9 +414,13 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     w = (scale_avg[1])*w_obstacle + (1-scale_avg[1])*w_predecessor
             # If within radial threshold, consider obstacle command if stronger (safer) than predecessor command
             else:
-                w1 = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
-                w2 = w_obstacle if w1 == w_predecessor else w_predecessor
-                w = 0.7*w1 + 0.3*w2
+                if(d_obs_x < 0) or (abs(theta_rel) > 1):
+                    w = w_predecessor
+                else:
+                   # w1 = w_obstacle if abs(w_obstacle) > abs(w_predecessor) else w_predecessor
+                    #w2 = w_obstacle if w1 == w_predecessor else w_predecessor
+                    # w = 0.7*w1 + 0.3*w2   # TODO: restore original
+                    w = scale_avg[1]*w_obstacle + (1-scale_avg[1])*w_predecessor
         else:
             w = w_predecessor
 
@@ -431,9 +434,13 @@ class SafeObstacleAvoidanceController(SafeFormationController):
                     u = (scale_avg[0])*u_obstacle + (1-scale_avg[0])*u_predecessor
             # If within radial threshold, consider obstacle command
             else:
-                u1 = min(u_predecessor, u_obstacle)
-                u2 = max(u_predecessor, u_obstacle)
-                u = 0.7*u1 + 0.3*u2
+                if(d_obs_x < 0) or (abs(theta_rel) > 1):
+                    u = u_predecessor
+                else:
+                    #u1 = min(u_predecessor, u_obstacle)
+                    #u2 = max(u_predecessor, u_obstacle)
+                    # u = 0.7*u1 + 0.3*u2   # TODO: restore original
+                    u = scale_avg[0]*u_obstacle + (1-scale_avg[0])*u_predecessor
         else:
             u = u_predecessor
 

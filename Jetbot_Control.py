@@ -33,10 +33,6 @@ def main():
 # =====================================================================
 # Setup
 # =====================================================================
-    # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720, 0)
-    frame_count = 0
-
     # Testing
     at_count = 0
     dt_break = 0
@@ -46,6 +42,10 @@ def main():
     collect_data = True
     control_freq = 30   # Hz
     TAG_SIZE = 65       # mm
+
+    # Setup camera
+    cap = Jetbot_Setup.camera_setup(1280, 720, 0)
+    frame_count = 0
 
     # AprilTag detector
     detector = AprilTags.AprilTags()
@@ -83,6 +83,7 @@ python3 -m jetbot.control_reciever
     #pidw3 = Motion_Control.PID(0,0,0) # PID for w
     pidvobs = Motion_Control.PID(0.75,0.5,0) # PID for v
     pidwobs = Motion_Control.PID(1.75,2,0) # PID for w
+
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
     controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.95)
     controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.95)
@@ -103,17 +104,12 @@ python3 -m jetbot.control_reciever
     agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
     agentobst1 = None
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
+
     # Jetbot/Agent Arrays
     jetbot_array = [leader, follower1, follower2, obstacle1]
     agent_array = [agentL, agent1, agent2, agentobst1]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    # leader_movement = [[150, 0.0, 3], 
-    #                    [150, 0.3, 3], 
-    #                    [150,-0.3, 3], 
-    #                    [150, 0.3, 3], 
-    #                    [0.0, 0.0, 10]]
-
     leader_movement = [[125.0, 0.0, 12],
                        [0.0, 0.0, 100]]
     
@@ -172,7 +168,7 @@ python3 -m jetbot.control_reciever
                                 0.7, (0, 0, 255), 2)
 
             else: 
-                tags.sort(reverse=True) # Sort tags to match jetbot array
+                tags.sort(reverse=True) # Sort tags to match jetbot array TODO: may not be nessecary anymore
                 for tag in tags:
                     # Get tag pose                    
                     rot_matrix, trans_vector = detector.get_tag_pose(tag.corners, intrinsics, TAG_SIZE)
@@ -206,10 +202,10 @@ python3 -m jetbot.control_reciever
 
                         # Update jetbot pose, agent rk4 and alg
                         for i, jetbot in enumerate(jetbot_array):
-                            if (tag_id == jetbot.id):
+                            if (tag_id == jetbot.id):   # filter out bad tags
                                 t_meas = time.perf_counter()
-                                jetbot.update_meas(pose, t_meas)
-                                jetbot.visible = 1
+                                jetbot.update_meas(pose, t_meas)    # update jetbot
+                                jetbot.visible = 1                  # jetbot seen
                                 if(Jetbot_Setup.check_init(jetbot_array)) and (jetbot.role==0):   # check if all poses are initialized
                                     d_X, v_X, theta_X = jetbot.get_dist_theta(jetbot.X_lead) # [mm, mm/s, radians]
                                     d_Y, v_Y, theta_Y = jetbot.get_dist_theta(jetbot.Y_lead) # [mm, mm/s, radians]
@@ -218,12 +214,12 @@ python3 -m jetbot.control_reciever
                                     agent_array[i].update_edges(X_upd,Y_upd)
                                     agent_array[i].init_estimates() # only runs the first time
 
-                                    if isinstance(agent_array[i].controller, controller.SafeObstacleAvoidanceController):
+                                    if isinstance(agent_array[i].controller, controller.SafeObstacleAvoidanceController):   # checks controller type
                                         #UPDATE OBSTACLES:
-                                        agent_array[i].controller.obstacle_data = jetbot.get_obst_meas(jetbot_array)
+                                        agent_array[i].controller.obstacle_data = jetbot.get_obst_meas(jetbot_array)    # pass obstacle measurements to agent
 
                     # Reduce display output
-                    if (frame_count % 4) == 0:
+                    if (frame_count % 5) == 0:
                         detector.draw_tags(color_frame, tag)
                         corners = np.asarray(tag.corners, dtype=np.float32)  # (4,2)
 
@@ -301,7 +297,7 @@ python3 -m jetbot.control_reciever
             at_count += 1 # TESTING at frame count
 
             # Reduce display
-            if (frame_count % 4) == 0:
+            if (frame_count % 5) == 0:
                 # Show instruction
                 cv2.putText(color_frame, "Press 'q' to quit", 
                             (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
@@ -338,10 +334,10 @@ python3 -m jetbot.control_reciever
         # CLEANUP
         print("\n[STOP] Sending stop command and exiting...")
         for jetbot in jetbot_array:
-            UDP.Close(jetbot.IP)
-        UDP.Shutdown()
-        cap.release()
-        cv2.destroyAllWindows()
+            UDP.Close(jetbot.IP)    # disconnect from UDP
+        UDP.Shutdown()  # shutdown socket
+        cap.release()   # exit camera
+        cv2.destroyAllWindows() # close windows
         print(f"%Time Tag visible: {100*at_count/frame_count}%")
         print(f"%Time DT exceeded: {100*dt_break/frame_count}% {dt_break}")
 
@@ -415,7 +411,6 @@ def plots():
     # plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
     plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
     plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower1", "Follower2", "Follower3"], window=20)
-    
     plt.show()
 
 
