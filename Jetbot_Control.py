@@ -44,7 +44,7 @@ def main():
     np.set_printoptions(precision=4, suppress=True)
 
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720, 0, 30)
+    cap = Jetbot_Setup.camera_setup(1280, 720, 1, 30)
     frame_count = 0
 
     # AprilTag detector
@@ -94,7 +94,7 @@ python3 -m jetbot.control_reciever
     # Jetbots
     leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     obstacle1 = Jetbot_Setup.Jetbot(4,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
     obstacle2 = Jetbot_Setup.Jetbot(5,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
     obstacle3 = Jetbot_Setup.Jetbot(6,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
@@ -251,10 +251,6 @@ python3 -m jetbot.control_reciever
                         data_ang_vel_f[count, i] = jetbot.ang_vel_f      # Jetbot ang velocity [rad/s] (filtered)
                         data_lin_acc[count, i] = jetbot.lin_acc          # Jetbot lin acceleration [mm/s^2]
                         data_ang_acc[count, i] = jetbot.ang_acc          # Jetbot ang acceleration [rad/s^2]
-                        data_long_des[count, i] = agent_array[i].controller.ds_x
-                        data_lat_des[count, i] = agent_array[i].controller.ds_y
-                        data_long_safe_limit[count, i] = agent_array[i].controller.dsafe_x
-                        data_lat_safe_limit[count, i] = agent_array[i].controller.dsafe_y
                 count += 1
 
 
@@ -271,6 +267,11 @@ python3 -m jetbot.control_reciever
                     data_ang_vel_des[count-1, i] = W_GOAL
                     data_long_sb[count-1, i] = agent_array[i].controller.h1
                     data_lat_sb[count-1, i] = agent_array[i].controller.h2
+                    data_long_des[count-1, i] = agent_array[i].controller.ds_x
+                    data_lat_des[count-1, i] = agent_array[i].controller.ds_y
+                    data_long_safe_limit[count-1, i] = agent_array[i].controller.dsafe_x
+                    data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
+
                     t_now = time.perf_counter()
                     # UW controller
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f],[U_GOAL*1000, W_GOAL])

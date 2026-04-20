@@ -276,6 +276,7 @@ class SafeFormationController(SimpleController):
         observations = agent_metadata[1]
         v1x_hat = cluster_state[self.x_id, 1]
         v1y_hat = cluster_state[self.y_id, 3]
+
         v = state[2]
         dx = observations[self.x_id, 0] * cos(observations[self.x_id, 1])
         obs_dy = observations[self.y_id, 0]
@@ -332,6 +333,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
     def calc_control(self, state, agent_metadata):
         '''Compute the control inputs while avoiding obstacles.'''
         cluster_state = agent_metadata[0]  # Other agents' states
+        print(agent_metadata)
         observations = agent_metadata[1]  # Relative distances to other agents
 
         v = state[2]  # Robot's velocity
