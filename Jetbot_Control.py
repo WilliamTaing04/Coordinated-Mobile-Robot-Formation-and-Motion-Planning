@@ -39,7 +39,7 @@ def main():
 
     # Settings
     collect_data = True
-    control_freq = 20   # Hz
+    control_freq = 30   # Hz
     TAG_SIZE = 96       # mm
     np.set_printoptions(precision=4, suppress=True)
 
@@ -243,18 +243,18 @@ python3 -m jetbot.control_reciever
                 data_time[count] = t_meas - initial_time                 # Time [s]
                 for i, jetbot in enumerate(jetbot_array):
                     if jetbot.visible:
-                        data_pos[count, i, :] = jetbot.pose              # Jetbot pose [x,y,theta] [mm][rad]
-                        data_pos_f[count, i, :] = jetbot.pose_f          # Jetbot pose [x,y,theta] [mm][rad] (filtered)
-                        data_lin_vel[count, i] = jetbot.lin_vel          # Jetbot lin velocity [mm/s]
-                        data_ang_vel[count, i] = jetbot.ang_vel          # Jetbot ang velocity [rad/s]
-                        data_lin_vel_f[count, i] = jetbot.lin_vel_f      # Jetbot lin velocity [mm/s] (filtered)
-                        data_ang_vel_f[count, i] = jetbot.ang_vel_f      # Jetbot ang velocity [rad/s] (filtered)
-                        data_lin_acc[count, i] = jetbot.lin_acc          # Jetbot lin acceleration [mm/s^2]
-                        data_ang_acc[count, i] = jetbot.ang_acc          # Jetbot ang acceleration [rad/s^2]
-                        data_long_des[count, i] = agent_array[i].controller.ds_x
-                        data_lat_des[count, i] = agent_array[i].controller.ds_y
-                        data_long_safe_limit[count, i] = agent_array[i].controller.dsafe_x
-                        data_lat_safe_limit[count, i] = agent_array[i].controller.dsafe_y
+                        data_pos[count, i, :] = jetbot.pose                                 # Jetbot pose [x,y,theta] [mm][rad]
+                        data_pos_f[count, i, :] = jetbot.pose_f                             # Jetbot pose [x,y,theta] [mm][rad] (filtered)
+                        data_lin_vel[count, i] = jetbot.lin_vel                             # Jetbot lin velocity [mm/s]
+                        data_ang_vel[count, i] = jetbot.ang_vel                             # Jetbot ang velocity [rad/s]
+                        data_lin_vel_f[count, i] = jetbot.lin_vel_f                         # Jetbot lin velocity [mm/s] (filtered)
+                        data_ang_vel_f[count, i] = jetbot.ang_vel_f                         # Jetbot ang velocity [rad/s] (filtered)
+                        data_lin_acc[count, i] = jetbot.lin_acc                             # Jetbot lin acceleration [mm/s^2]
+                        data_ang_acc[count, i] = jetbot.ang_acc                             # Jetbot ang acceleration [rad/s^2]
+                        data_long_des[count, i] = agent_array[i].controller.ds_x            # Agent desired formation distance along motion(x axis) [m]
+                        data_lat_des[count, i] = agent_array[i].controller.ds_y             # Agent desired formation distance perpendicular to motion(y axis) [m]
+                        data_long_safe_limit[count, i] = agent_array[i].controller.dsafe_x  # Agent safety limit along motion(x axis) [m]
+                        data_lat_safe_limit[count, i] = agent_array[i].controller.dsafe_y   # Agent safety limit perpendicular to motion(y axis) [m]
                 count += 1
 
 
