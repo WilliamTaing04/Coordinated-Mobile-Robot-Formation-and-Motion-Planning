@@ -252,10 +252,10 @@ class SafeFormationController(SimpleController):
     def __init__(self, float_lst):
         x_id = int(float_lst[0])
         y_id = int(float_lst[1])
-        ds_x = float_lst[2]  # ds for x edge?
-        ds_y = float_lst[3]  # ds for y edge?
-        self.dsafe_x = DR  # dx star?
-        self.dsafe_y = float_lst[4]  # dy star?
+        ds_x = float_lst[2]  # dx star for x edge?
+        ds_y = float_lst[3]  # dy star for y edge?
+        self.dsafe_x = DR  # ds x edge?
+        self.dsafe_y = float_lst[4]  # ds y edge?
         gd = float_lst[5]
         self.controls = [0, 0]
         self.sgn_s = 1
@@ -319,6 +319,8 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         self.last_chosen = None
         self.last_switch_time = None
         self.f_cooldown = False
+        self.h1 = None
+        self.h2 = None
 
     def set_obstacles(self, obstacles):
         '''Store obstacles as a list of (x, y, r, v, heading) tuples.'''
@@ -345,9 +347,11 @@ class SafeObstacleAvoidanceController(SafeFormationController):
 
         # Compute formation-based angular velocity (w) and linear acceleration (u)
         h2 = (dy - self.dsafe_y) * self.sgn_s
+        self.h2 = h2
         w_predecessor = (cluster_state[self.y_id, 3] - self.gd * (dy - self.dsafe_y) - self.sgn_s * (self.yc + EW)) / dx
 
         h1 = dx - self.dsafe_x - T * v
+        self.h1 = h1
         alpha_h = -1 * self.gd * h1
         u_predecessor = (cluster_state[self.x_id, 1] - EU - self.xc - v + dy * w_predecessor + alpha_h) / T
 

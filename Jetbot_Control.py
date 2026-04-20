@@ -256,6 +256,7 @@ python3 -m jetbot.control_reciever
                     # Record desired UW
                     data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
                     data_ang_vel_des[count-1, i] = W_GOAL
+                    h1[count-1, i] = agent_array[i]
                     t_now = time.perf_counter()
                     # UW controller
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f],[U_GOAL*1000, W_GOAL])
