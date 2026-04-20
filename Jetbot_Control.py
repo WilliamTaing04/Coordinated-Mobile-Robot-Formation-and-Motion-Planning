@@ -39,12 +39,12 @@ def main():
 
     # Settings
     collect_data = True
-    control_freq = 30   # Hz
+    control_freq = 20   # Hz
     TAG_SIZE = 96       # mm
     np.set_printoptions(precision=4, suppress=True)
 
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720, 0)
+    cap = Jetbot_Setup.camera_setup(1280, 720, 0, 30)
     frame_count = 0
 
     # AprilTag detector
@@ -73,7 +73,7 @@ python3 -m jetbot.control_reciever
     '''
 
     # Controllers
-    pidvL = Motion_Control.PID(0.75,0.5,0) # PID for v
+    pidvL = Motion_Control.PID(0.5,0.5,0) # PID for v
     pidwL = Motion_Control.PID(1.0,2,0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0,0,0) # PID for w
@@ -92,12 +92,12 @@ python3 -m jetbot.control_reciever
     controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=0.95)
 
     # Jetbots
-    leader = Jetbot_Setup.Jetbot(0,"10.40.109.62",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    obstacle1 = Jetbot_Setup.Jetbot(4,"10.40.122.89",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
-    obstacle2 = Jetbot_Setup.Jetbot(5,"BAD",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
-    obstacle3 = Jetbot_Setup.Jetbot(6,"BAD",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+    obstacle1 = Jetbot_Setup.Jetbot(4,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+    obstacle2 = Jetbot_Setup.Jetbot(5,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
+    obstacle3 = Jetbot_Setup.Jetbot(6,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
 
     # 11 is 10 61 is 65 65 is 61. ID x_labeled is ID actual
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
@@ -116,7 +116,7 @@ python3 -m jetbot.control_reciever
     agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    leader_movement = [[0, 0.0, 20], #125
+    leader_movement = [[125.0, 0.0, 100], #125
                        [0.0, 0.0, 100]]
     
     obstacle1_movement = [[0.0, 0.0, 2]]
@@ -202,7 +202,6 @@ python3 -m jetbot.control_reciever
 
                         # convert rotation matrix to rpy (radians)
                         roll, pitch, yaw = Jetbot_Setup.rot_to_rpy(rot_workspace)
-                        print(f"{tag_id=}, {yaw=}")
 
                         # Get pose for data collection
                         pose = [float(pos_workspace[0]), float(pos_workspace[1]), float(yaw)]
@@ -267,8 +266,8 @@ python3 -m jetbot.control_reciever
                     if leader_move < len(leader_movement):
                         leader_v, leader_w, move_duration = leader_movement[leader_move]
                         if time.perf_counter() - leader_move_start < move_duration:
-                            data_lin_acc_des[count-1, i] = None # TODO: maybe record leader desired lin vel
-                            data_ang_vel_des[count-1, i] = leader_w
+                            # data_lin_acc_des[count-1, i] = None # TODO: maybe record leader desired lin vel
+                            # data_ang_vel_des[count-1, i] = leader_w
                             v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
                             # Convert Desired VW to LR motor speed
                             left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)

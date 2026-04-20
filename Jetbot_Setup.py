@@ -221,6 +221,7 @@ def camera_setup(width=1280, height=720, output=0, fps=100):
     # Initialize camera and detector
 
     cap = cv2.VideoCapture(output, cv2.CAP_DSHOW)   # switch to DirectShow
+
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)    # 1280 x 720
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -231,7 +232,7 @@ def camera_setup(width=1280, height=720, output=0, fps=100):
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
     cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
     # set a short exposure (value is camera/driver-dependent; try negative or small positive)
-    cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+    cap.set(cv2.CAP_PROP_EXPOSURE, -7)
     cap.set(cv2.CAP_PROP_GAIN, 0)
     if not cap.isOpened():
         print('Failed to open camera')

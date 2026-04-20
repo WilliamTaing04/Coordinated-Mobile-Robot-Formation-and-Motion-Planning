@@ -1,35 +1,39 @@
 import cv2
 import time
 import AprilTags
+import Jetbot_Setup
 
 def setup():
     detector = AprilTags.AprilTags()
-    # cap = cv2.VideoCapture(1, cv2.CAP_MSMF)    
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
+    # # cap = cv2.VideoCapture(1, cv2.CAP_MSMF)    
+    # cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
 
-    # Prefer MJPG for high FPS on Arducam UVC modules
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    # # Prefer MJPG for high FPS on Arducam UVC modules
+    # cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
 
-    # CHOSEN 1280, 720
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600) 
-    cap.set(cv2.CAP_PROP_FPS, 200)   # try 90 or 100 (module advertises ~90–100fps in MJPG)
+    # # CHOSEN 1280, 720
+    # # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    # # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1200)
+    # # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    # # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    # # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
+    # # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600) 
+    # cap.set(cv2.CAP_PROP_FPS, 200)   # try 90 or 100 (module advertises ~90–100fps in MJPG)
 
-    # Latency / buffering
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    # # Latency / buffering
+    # cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-    # Lock exposure/focus (DSHOW + this camera usually respect these)
-    cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
-    # set a short exposure (value is camera/driver-dependent; try negative or small positive)
-    cap.set(cv2.CAP_PROP_EXPOSURE, -6)
-    cap.set(cv2.CAP_PROP_GAIN, 0)
+    # # Lock exposure/focus (DSHOW + this camera usually respect these)
+    # cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+    # cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
+    # # set a short exposure (value is camera/driver-dependent; try negative or small positive)
+    # cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+    # cap.set(cv2.CAP_PROP_GAIN, 0)
+
+    cap = Jetbot_Setup.camera_setup(960, 600, 0, 30)
+
 
     # Immediately read back what the driver actually set
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
