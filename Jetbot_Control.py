@@ -249,6 +249,10 @@ python3 -m jetbot.control_reciever
                         data_ang_vel_f[count, i] = jetbot.ang_vel_f      # Jetbot ang velocity [rad/s] (filtered)
                         data_lin_acc[count, i] = jetbot.lin_acc          # Jetbot lin acceleration [mm/s^2]
                         data_ang_acc[count, i] = jetbot.ang_acc          # Jetbot ang acceleration [rad/s^2]
+                        data_long_des[count, i] = agent_array[i].controller.ds_x
+                        data_lat_des[count, i] = agent_array[i].controller.ds_y
+                        data_long_safe_limit[count, i] = agent_array[i].controller.dsafe_x
+                        data_lat_safe_limit[count, i] = agent_array[i].controller.dsafe_y
                 count += 1
 
 
@@ -263,7 +267,8 @@ python3 -m jetbot.control_reciever
                     # Record desired UW
                     data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
                     data_ang_vel_des[count-1, i] = W_GOAL
-                    h1[count-1, i] = agent_array[i]
+                    data_long_sb[count-1, i] = agent_array[i].controller.h1
+                    data_lat_sb[count-1, i] = agent_array[i].controller.h2
                     t_now = time.perf_counter()
                     # UW controller
                     v_cmd , w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f],[U_GOAL*1000, W_GOAL])
