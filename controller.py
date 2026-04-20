@@ -252,7 +252,7 @@ class SafeFormationController(SimpleController):
     def __init__(self, float_lst):
         x_id = int(float_lst[0])
         y_id = int(float_lst[1])
-        ds_x = float_lst[2]  # dx star for x edge?
+        ds_x = float_lst[2]  # dx star for x edge?  dx_star(desired lateral distance), dy_star (desired longitudinal distance)
         ds_y = float_lst[3]  # dy star for y edge?
         self.dsafe_x = DR  # ds x edge?
         self.dsafe_y = float_lst[4]  # ds y edge?
