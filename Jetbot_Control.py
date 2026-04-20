@@ -39,7 +39,7 @@ def main():
 
     # Settings
     collect_data = True
-    control_freq = 20   # Hz
+    control_freq = 30   # Hz
     TAG_SIZE = 96       # mm
     np.set_printoptions(precision=4, suppress=True)
 
