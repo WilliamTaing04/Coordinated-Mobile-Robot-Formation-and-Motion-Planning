@@ -449,7 +449,7 @@ def plots():
     data_lat_des = data["lat_des"]
     data_long_safe_limit = data["long_safe_limit"]
     data_lat_safe_limit = data["lat_safe_limit"]
-    data_leader_pos_est = data["leader_pos_es
+    data_leader_pos_est = data["leader_pos_est"]
     data_leader_vel_est = data["leader_vel_est"]
     data_form_dist_along = ['form_dist_along']
     data_form_dist_perp = ['form_dist_perp']
