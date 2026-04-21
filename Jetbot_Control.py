@@ -144,6 +144,8 @@ python3 -m jetbot.control_reciever
         data_ang_vel_des = np.zeros((max_samples, num_bots))                    # Agent ang velocity [rad/s] (desired)
         data_long_sb = np.zeros((max_samples, num_bots))                        # Agent longitudinal safety barrier [m]   (h1)
         data_lat_sb = np.zeros((max_samples, num_bots))                         # Agent latitudinal safety barrier [m]    (h2)
+        data_form_dist_along = np.zeros((max_samples, num_bots))                # Agent formation distance along motion [m]
+        data_form_dist_perp = np.zeros((max_samples, num_bots))                 # Agent formation distance perpendicular to motion [m]
         data_long_des = np.zeros((max_samples, num_bots))                       # Agent desired formation distance along motion(x axis) [m]   (ds_x = dx_star)
         data_lat_des = np.zeros((max_samples, num_bots))                        # Agent desired formation distance perpendicular to motion(y axis) [m]    (ds_y = dy_star)
         data_long_safe_limit = np.zeros((max_samples, num_bots))                # Agent safety limit along motion(x axis) [m]   (dsafe_x)
@@ -389,6 +391,9 @@ python3 -m jetbot.control_reciever
             data_lat_safe_limit = data_lat_safe_limit[:count]
             data_leader_pos_est = data_leader_pos_est[:count]
             data_leader_vel_est = data_leader_vel_est[:count]
+            data_form_dist_along = data_form_dist_along[:count]
+            data_form_dist_perp = data_form_dist_perp[:count]
+
 
             # Save all data to pickle file
             filename='Jetbot_Tracking.pkl'
@@ -413,7 +418,10 @@ python3 -m jetbot.control_reciever
             'long_safe_limit': data_long_safe_limit,
             'lat_safe_limit': data_lat_safe_limit,
             'leader_pos_est': data_leader_pos_est,
-            'leader_vel_est': data_leader_vel_est
+            'leader_vel_est': data_leader_vel_est,
+            'form_dist_along': data_form_dist_along,
+            'form_dist_perp': data_form_dist_perp
+
             }
 
             # Write dictionary to pickle file
@@ -439,10 +447,12 @@ def plots():
     data_lat_sb = data["lat_sb"]
     data_long_des = data["long_des"]
     data_lat_des = data["lat_des"]
-    data_long_safe_limit = data["long_safe_limt"]
+    data_long_safe_limit = data["long_safe_limit"]
     data_lat_safe_limit = data["lat_safe_limit"]
     data_leader_pos_est = data["leader_pos_est"]
     data_leader_vel_est = data["leader_vel_est"]
+    data_form_dist_along = ['form_dist_along']
+    data_form_dist_perp = ['form_dist_perp']
     num_bots = pose_f.shape[1]
 
     # Per agent individual plots
@@ -470,5 +480,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    main()
-    #plots()
+    # main()
+    plots()

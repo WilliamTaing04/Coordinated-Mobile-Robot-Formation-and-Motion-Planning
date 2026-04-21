@@ -34,7 +34,7 @@ def state_dynamics(state, control):
     return state_dot
 
 def estimator_dynamics(state, estimates, control, observation, gains):
-    v = state[2]
+    v = state[2] 
     w = control[1]
     gd = gains[0]
     gv = gains[1]
@@ -46,7 +46,7 @@ def estimator_dynamics(state, estimates, control, observation, gains):
     if d == 0:
         return state_dot
 
-    theta = observation[1] + observation[2] - state[3] # Relative + absolute - absolute?
+    theta = observation[1] + observation[2] - state[3] # TODO: Relative + absolute - absolute? state[3] term drifts! Print theta to test if it stays accurate enough 
     # print(estimates,d*cos(theta),d*sin(theta))
     dx_del = estimates[0] - d * cos(theta)
     dy_del = estimates[2] - d * sin(theta)
@@ -195,5 +195,5 @@ class Agent:
         self.observations[self.Y_id, 0] = Y_upd[0]  # Distance to y edge agent
         self.observations[self.Y_id, 1] = Y_upd[2]  # Relative angle to y edge agent
         #self.observations[Y_id, 2] = theta  # self heading angle
-        self.cluster_state[self.id, 2] = X_upd[1] # same as Y_upd[1]
+        self.cluster_state[self.id, 2] = X_upd[1] # V; same as Y_upd[1]
         self.agent_metadata[1] = self.observations[:, 0:2].copy()  # Store distance and relative angle
