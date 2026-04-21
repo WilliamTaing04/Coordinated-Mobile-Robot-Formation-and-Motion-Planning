@@ -376,6 +376,14 @@ python3 -m jetbot.control_reciever
             data_ang_acc = data_ang_acc[:count]
             data_lin_acc_des = data_lin_acc_des[:count]
             data_ang_vel_des = data_ang_vel_des[:count]
+            data_long_sb = data_long_sb[:count]
+            data_lat_sb = data_lat_sb[:count]
+            data_long_des = data_long_des[:count]
+            data_lat_des = data_lat_des[:count]
+            data_long_safe_limit = data_long_safe_limit[:count]
+            data_lat_safe_limit = data_lat_safe_limit[:count]
+            data_leader_pos_est = data_leader_pos_est[:count]
+            data_leader_vel_est = data_leader_vel_est[:count]
 
             # Save all data to pickle file
             filename='Jetbot_Tracking.pkl'
@@ -392,7 +400,15 @@ python3 -m jetbot.control_reciever
             'lin_acc': data_lin_acc,
             'ang_acc': data_ang_acc,
             'lin_acc_des': data_lin_acc_des,
-            'ang_vel_des': data_ang_vel_des
+            'ang_vel_des': data_ang_vel_des,
+            'long_sb': data_long_sb, 
+            'lat_sb': data_lat_sb,
+            'long_des': data_long_des,
+            'lat_des': data_lat_des,
+            'long_safe_limit': data_long_safe_limit,
+            'lat_safe_limit': data_lat_safe_limit,
+            'leader_pos_est': data_leader_pos_est,
+            'leader_vel_est': data_leader_vel_est
             }
 
             # Write dictionary to pickle file
@@ -414,6 +430,14 @@ def plots():
     ang_acc = data["ang_acc"]
     lin_acc_des = data["lin_acc_des"]
     ang_vel_des = data["ang_vel_des"]
+    data_long_sb = data["long_sb"]
+    data_lat_sb = data["lat_sb"]
+    data_long_des = data["long_des"]
+    data_lat_des = data["lat_des"]
+    data_long_safe_limit = data["long_safe_limt"]
+    data_lat_safe_limit = data["lat_safe_limit"]
+    data_leader_pos_est = data["leader_pos_est"]
+    data_leader_vel_est = data["leader_vel_est"]
     num_bots = pose_f.shape[1]
 
     # Per agent individual plots
