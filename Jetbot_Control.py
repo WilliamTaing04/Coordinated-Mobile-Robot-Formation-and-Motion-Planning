@@ -148,8 +148,8 @@ python3 -m jetbot.control_reciever
         data_lat_des = np.zeros((max_samples, num_bots))                        # Agent desired formation distance perpendicular to motion(y axis) [m]    (ds_y = dy_star)
         data_long_safe_limit = np.zeros((max_samples, num_bots))                # Agent safety limit along motion(x axis) [m]   (dsafe_x)
         data_lat_safe_limit = np.zeros((max_samples, num_bots))                 # Agent safety limit perpendicular to motion(y axis) [m]    (dsafe_y)
-        data_leader_pos_est = np.full((max_samples, num_bots, 2, 2), np.nan)    # Agent estimate of both leaders' pose(x,y) [m]
-        data_leader_vel_est = np.full((max_samples, num_bots, 2), np.nan)       # Agent estimate of both leaders' velocity [m/s]   
+        data_leader_pos_est = np.zeros((max_samples, num_bots))                 # Agent estimate of both leaders' pose(x,y) [m]
+        data_leader_vel_est = np.zeros((max_samples, num_bots))                 # Agent estimate of both leaders' velocity [m/s]   
         
         count = 0  # Sample counter
 
@@ -265,7 +265,7 @@ python3 -m jetbot.control_reciever
                     agent_array[i].RK4_step() # RK4 step good
                     U_GOAL, W_GOAL = agent_array[i].get_controls() # Get goal UW from alg
                     
-                    # Record desired UW
+                    # Record agent data
                     data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
                     data_ang_vel_des[count-1, i] = W_GOAL
                     data_long_sb[count-1, i] = agent_array[i].controller.h1
@@ -274,6 +274,8 @@ python3 -m jetbot.control_reciever
                     data_lat_des[count-1, i] = agent_array[i].controller.ds_y
                     data_long_safe_limit[count-1, i] = agent_array[i].controller.dsafe_x
                     data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
+                    data_leader_pos_est[count-1, i] = np.sqrt((agent_array[i].agent_metadata[0,0,0])^2+(agent_array[i].agent_metadata[0,0,2])^2) - agent_array[i].agent_metadata[1,0,0]
+                    data_leader_vel_est[count-1, i] = np.sqrt((agent_array[i].agent_metadata[0,0,1])^2+(agent_array[i].agent_metadata[0,0,3])^2) - (leader.lin_vel_f - jetbot.data_lin_vel_f)
 
                     t_now = time.perf_counter()
                     # UW controller
