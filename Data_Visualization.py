@@ -317,6 +317,23 @@ def analyze_dt_histogram(time_array, bins=30, title="dt Histogram"):
     plt.legend()
     plt.tight_layout()
 
+def basic_plot(
+    t,
+    data,
+    xtitle,
+    ytitle,
+    title
+):
+    plt.figure()
+    plt.plot(t, data)
+
+    plt.xlabel(xtitle)
+    plt.ylabel(ytitle)
+    plt.title(title)
+
+    plt.grid()
+    plt.tight_layout()
+
 def plot_accel_and_angvel(
     t,
     lin_acc_meas,
