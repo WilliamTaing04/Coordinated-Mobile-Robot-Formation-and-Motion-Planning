@@ -43,8 +43,9 @@ def main():
     TAG_SIZE = 96       # mm
     np.set_printoptions(precision=4, suppress=True)
 
+
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720, 1, 30)
+    cap = Jetbot_Setup.camera_setup(1280, 720, 0, 30)
     frame_count = 0
 
     # AprilTag detector
@@ -94,7 +95,9 @@ python3 -m jetbot.control_reciever
     # Jetbots
     leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower1_pred = [0,0] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
     follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2_pred = [0,1] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
     obstacle1 = Jetbot_Setup.Jetbot(4,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
     obstacle2 = Jetbot_Setup.Jetbot(5,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
     obstacle3 = Jetbot_Setup.Jetbot(6,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
@@ -104,8 +107,8 @@ python3 -m jetbot.control_reciever
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
     agentL = None
-    agent1 = agent.Agent([0,0,0,0], 1, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, -0.3, -0.05,-4])))
-    agent2 = agent.Agent([0,0,0,0], 2, 0, 0, 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([0, 0, 0.3, 0.3, 0.05,-4])))
+    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.05,-4])))
+    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3, 0.3, 0.05,-4])))
     agentobst1 = None
     agentobst2 = None
     agentobst3 = None
@@ -116,7 +119,7 @@ python3 -m jetbot.control_reciever
     agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    leader_movement = [[125.0, 0.0, 100], #125
+    leader_movement = [[0.0, 0.0, 100], #125
                        [0.0, 0.0, 100]]
     
     obstacle1_movement = [[0.0, 0.0, 2]]
