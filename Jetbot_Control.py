@@ -119,7 +119,14 @@ python3 -m jetbot.control_reciever
     agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    leader_movement = [[0.0, 0.0, 100], #125
+    # for disturbance test move leaders velocity in oscilatory to show it doesnt propagate through the agents(string stability)
+    # leader_time = np.arange(0, 8, 2/20) # start, stop, timestep(N loops at 20Hz)
+    # leader_movement = np.zeros((len(leader_time), 3))
+    # leader_movement[:,0] = np.sin(leader_time)
+    # leader_movement[:,1] = 0.0
+    # leader_movement[:,2] = leader_time
+
+    leader_movement = [[1.0, 0.0, 100], #125
                        [0.0, 0.0, 100]]
     
     obstacle1_movement = [[0.0, 0.0, 2]]
