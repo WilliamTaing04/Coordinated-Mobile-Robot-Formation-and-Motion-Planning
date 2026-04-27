@@ -443,8 +443,8 @@ python3 -m jetbot.control_reciever
 def plots():
     data = load_from_pickle('Jetbot_Tracking.pkl')
     t = data["time"]
-    pose = data["pos"]
-    pose_f = data["pos_f"]
+    pos = data["pos"]
+    pos_f = data["pos_f"]
     lin_vel = data["lin_vel"]
     ang_vel = data["ang_vel"]
     lin_vel_f = data["lin_vel_f"]
@@ -463,16 +463,16 @@ def plots():
     data_leader_vel_est = data["leader_vel_est"]
     data_form_dist_along = data['form_dist_along']
     data_form_dist_perp = data['form_dist_perp']
-    num_bots = pose_f.shape[1]
+    num_bots = pos_f.shape[1]
     
-    print(pose_f.shape)
-    print(pose_f[:, :, :2].shape)
+    print(pos_f.shape)
+    print(pos_f[:, :, :2].shape)
 
     # Per agent individual plots
     # for i in range(num_bots):
-    #     plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
-    #     # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
-    #     plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
+    #     plot.plot_xy_trajectory(pos_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
+    #     # plot.plot_pos_raw_vs_filtered(t, pos_raw=pos[:, i, :], pos_filt=pos_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
+    #     plot.plot_xy_vs_time(t, pos_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
     #     # plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
     #     plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
     #     plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
@@ -481,7 +481,7 @@ def plots():
 
     # Multiagent plots    
     # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
-    plot.plot_all_xy_trajectories(pose_f, title="All Agents XY Trajectories", labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
+    plot.plot_all_xy_trajectories(pos_f, title="All Agents XY Trajectories", labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
     plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
     plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
     plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower 1", "Follower 2"], window=20)
