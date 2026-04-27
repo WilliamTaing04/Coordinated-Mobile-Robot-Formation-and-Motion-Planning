@@ -141,24 +141,24 @@ python3 -m jetbot.control_reciever
         data_time = np.zeros(max_samples)                                       # Time [s]
         data_pos   = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad]
         data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad] (filtered)
-        data_lin_vel = np.zeros((max_samples, num_bots))                        # Jetbot lin velocity [m/s]
-        data_ang_vel = np.zeros((max_samples, num_bots))                        # Jetbot ang velocity [rad/s]
-        data_lin_vel_f = np.zeros((max_samples, num_bots))                      # Jetbot lin velocity [m/s] (filtered)
-        data_ang_vel_f = np.zeros((max_samples, num_bots))                      # Jetbot ang velocity [rad/s] (filtered)
-        data_lin_acc = np.zeros((max_samples, num_bots))                        # Jetbot lin acceleration [m/s^2]
-        data_ang_acc = np.zeros((max_samples, num_bots))                        # Jetbot ang acceleration [rad/s^2]
-        data_lin_acc_des = np.zeros((max_samples, num_bots))                    # Agent lin acceleration [m/s^2] (desired)
-        data_ang_vel_des = np.zeros((max_samples, num_bots))                    # Agent ang velocity [rad/s] (desired)
-        data_long_sb = np.zeros((max_samples, num_bots))                        # Agent longitudinal safety barrier [m]   (h1)
-        data_lat_sb = np.zeros((max_samples, num_bots))                         # Agent latitudinal safety barrier [m]    (h2)
-        data_form_dist_along = np.zeros((max_samples, num_bots))                # Agent formation distance along motion [m]
-        data_form_dist_perp = np.zeros((max_samples, num_bots))                 # Agent formation distance perpendicular to motion [m]
-        data_long_des = np.zeros((max_samples, num_bots))                       # Agent desired formation distance along motion(x axis) [m]   (ds_x = dx_star)
-        data_lat_des = np.zeros((max_samples, num_bots))                        # Agent desired formation distance perpendicular to motion(y axis) [m]    (ds_y = dy_star)
-        data_long_safe_limit = np.zeros((max_samples, num_bots))                # Agent safety limit along motion(x axis) [m]   (dsafe_x)
-        data_lat_safe_limit = np.zeros((max_samples, num_bots))                 # Agent safety limit perpendicular to motion(y axis) [m]    (dsafe_y)
-        data_leader_pos_est = np.zeros((max_samples, num_bots))                 # Agent estimate of both leaders' pose(x,y) [m]
-        data_leader_vel_est = np.zeros((max_samples, num_bots))                 # Agent estimate of both leaders' velocity [m/s]   
+        data_lin_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot lin velocity [m/s]
+        data_ang_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot ang velocity [rad/s]
+        data_lin_vel_f = np.full((max_samples, num_bots), np.nan)                      # Jetbot lin velocity [m/s] (filtered)
+        data_ang_vel_f = np.full((max_samples, num_bots), np.nan)                      # Jetbot ang velocity [rad/s] (filtered)
+        data_lin_acc = np.full((max_samples, num_bots), np.nan)                        # Jetbot lin acceleration [m/s^2]
+        data_ang_acc = np.full((max_samples, num_bots), np.nan)                        # Jetbot ang acceleration [rad/s^2]
+        data_lin_acc_des = np.full((max_samples, num_bots), np.nan)                    # Agent lin acceleration [m/s^2] (desired)
+        data_ang_vel_des = np.full((max_samples, num_bots), np.nan)                    # Agent ang velocity [rad/s] (desired)
+        data_long_sb = np.full((max_samples, num_bots), np.nan)                        # Agent longitudinal safety barrier [m]   (h1)
+        data_lat_sb = np.full((max_samples, num_bots), np.nan)                         # Agent latitudinal safety barrier [m]    (h2)
+        data_form_dist_along = np.full((max_samples, num_bots), np.nan)                # Agent formation distance along motion [m]
+        data_form_dist_perp = np.full((max_samples, num_bots), np.nan)                 # Agent formation distance perpendicular to motion [m]
+        data_long_des = np.full((max_samples, num_bots), np.nan)                       # Agent desired formation distance along motion(x axis) [m]   (ds_x = dx_star)
+        data_lat_des = np.full((max_samples, num_bots), np.nan)                        # Agent desired formation distance perpendicular to motion(y axis) [m]    (ds_y = dy_star)
+        data_long_safe_limit = np.full((max_samples, num_bots), np.nan)                # Agent safety limit along motion(x axis) [m]   (dsafe_x)
+        data_lat_safe_limit = np.full((max_samples, num_bots), np.nan)                 # Agent safety limit perpendicular to motion(y axis) [m]    (dsafe_y)
+        data_leader_pos_est = np.full((max_samples, num_bots), np.nan)                 # Agent estimate of both leaders' pose(x,y) [m]
+        data_leader_vel_est = np.full((max_samples, num_bots), np.nan)                 # Agent estimate of both leaders' velocity [m/s]   
         
         count = 0  # Sample counter
 
