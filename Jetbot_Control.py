@@ -139,26 +139,26 @@ python3 -m jetbot.control_reciever
         num_bots = len(jetbot_array)
         max_samples = 7200                              
         data_time = np.zeros(max_samples)                                       # Time [s]
-        data_pos   = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [mm][rad]
-        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [mm][rad] (filtered)
-        data_lin_vel = np.zeros((max_samples, num_bots))                        # Jetbot lin velocity [mm/s]
-        data_ang_vel = np.zeros((max_samples, num_bots))                        # Jetbot ang velocity [rad/s]
-        data_lin_vel_f = np.zeros((max_samples, num_bots))                      # Jetbot lin velocity [mm/s] (filtered)
-        data_ang_vel_f = np.zeros((max_samples, num_bots))                      # Jetbot ang velocity [rad/s] (filtered)
-        data_lin_acc = np.zeros((max_samples, num_bots))                        # Jetbot lin acceleration [mm/s^2]
-        data_ang_acc = np.zeros((max_samples, num_bots))                        # Jetbot ang acceleration [rad/s^2]
-        data_lin_acc_des = np.zeros((max_samples, num_bots))                    # Agent lin acceleration [mm/s^2] (desired)
-        data_ang_vel_des = np.zeros((max_samples, num_bots))                    # Agent ang velocity [rad/s] (desired)
-        data_long_sb = np.zeros((max_samples, num_bots))                        # Agent longitudinal safety barrier [m]   (h1)
-        data_lat_sb = np.zeros((max_samples, num_bots))                         # Agent latitudinal safety barrier [m]    (h2)
-        data_form_dist_along = np.zeros((max_samples, num_bots))                # Agent formation distance along motion [m]
-        data_form_dist_perp = np.zeros((max_samples, num_bots))                 # Agent formation distance perpendicular to motion [m]
-        data_long_des = np.zeros((max_samples, num_bots))                       # Agent desired formation distance along motion(x axis) [m]   (ds_x = dx_star)
-        data_lat_des = np.zeros((max_samples, num_bots))                        # Agent desired formation distance perpendicular to motion(y axis) [m]    (ds_y = dy_star)
-        data_long_safe_limit = np.zeros((max_samples, num_bots))                # Agent safety limit along motion(x axis) [m]   (dsafe_x)
-        data_lat_safe_limit = np.zeros((max_samples, num_bots))                 # Agent safety limit perpendicular to motion(y axis) [m]    (dsafe_y)
-        data_leader_pos_est = np.zeros((max_samples, num_bots))                 # Agent estimate of both leaders' pose(x,y) [m]
-        data_leader_vel_est = np.zeros((max_samples, num_bots))                 # Agent estimate of both leaders' velocity [m/s]   
+        data_pos   = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad]
+        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad] (filtered)
+        data_lin_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot lin velocity [m/s]
+        data_ang_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot ang velocity [rad/s]
+        data_lin_vel_f = np.full((max_samples, num_bots), np.nan)                      # Jetbot lin velocity [m/s] (filtered)
+        data_ang_vel_f = np.full((max_samples, num_bots), np.nan)                      # Jetbot ang velocity [rad/s] (filtered)
+        data_lin_acc = np.full((max_samples, num_bots), np.nan)                        # Jetbot lin acceleration [m/s^2]
+        data_ang_acc = np.full((max_samples, num_bots), np.nan)                        # Jetbot ang acceleration [rad/s^2]
+        data_lin_acc_des = np.full((max_samples, num_bots), np.nan)                    # Agent lin acceleration [m/s^2] (desired)
+        data_ang_vel_des = np.full((max_samples, num_bots), np.nan)                    # Agent ang velocity [rad/s] (desired)
+        data_long_sb = np.full((max_samples, num_bots), np.nan)                        # Agent longitudinal safety barrier [m]   (h1)
+        data_lat_sb = np.full((max_samples, num_bots), np.nan)                         # Agent latitudinal safety barrier [m]    (h2)
+        data_form_dist_along = np.full((max_samples, num_bots), np.nan)                # Agent formation distance along motion [m]
+        data_form_dist_perp = np.full((max_samples, num_bots), np.nan)                 # Agent formation distance perpendicular to motion [m]
+        data_long_des = np.full((max_samples, num_bots), np.nan)                       # Agent desired formation distance along motion(x axis) [m]   (ds_x = dx_star)
+        data_lat_des = np.full((max_samples, num_bots), np.nan)                        # Agent desired formation distance perpendicular to motion(y axis) [m]    (ds_y = dy_star)
+        data_long_safe_limit = np.full((max_samples, num_bots), np.nan)                # Agent safety limit along motion(x axis) [m]   (dsafe_x)
+        data_lat_safe_limit = np.full((max_samples, num_bots), np.nan)                 # Agent safety limit perpendicular to motion(y axis) [m]    (dsafe_y)
+        data_leader_pos_est = np.full((max_samples, num_bots), np.nan)                 # Agent estimate of both leaders' pose(x,y) [m]
+        data_leader_vel_est = np.full((max_samples, num_bots), np.nan)                 # Agent estimate of both leaders' velocity [m/s]   
         
         count = 0  # Sample counter
 
@@ -275,7 +275,7 @@ python3 -m jetbot.control_reciever
                     U_GOAL, W_GOAL = agent_array[i].get_controls() # Get goal UW from alg
                     
                     # Record agent data
-                    data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
+                    data_lin_acc_des[count-1, i] = U_GOAL
                     data_ang_vel_des[count-1, i] = W_GOAL
                     data_long_sb[count-1, i] = agent_array[i].controller.h1
                     data_lat_sb[count-1, i] = agent_array[i].controller.h2
@@ -284,7 +284,7 @@ python3 -m jetbot.control_reciever
                     data_long_safe_limit[count-1, i] = agent_array[i].controller.dsafe_x
                     data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
                     data_leader_pos_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][0], agent_array[i].agent_metadata[0][0][2]) - agent_array[i].agent_metadata[1][0][0]
-                    data_leader_vel_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][1], agent_array[i].agent_metadata[0][0][3]) - (leader.lin_vel_f - jetbot.lin_vel_f)
+                    data_leader_vel_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][1], agent_array[i].agent_metadata[0][0][3]) - (leader.lin_vel_f - jetbot.lin_vel_f) / 1000 # mm to m
                     data_form_dist_along[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.cos(agent_array[i].agent_metadata[1][0][1])
                     data_form_dist_perp[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.sin(agent_array[i].agent_metadata[1][0][1])
 
@@ -383,12 +383,14 @@ python3 -m jetbot.control_reciever
             # Trim unused portions of pre-allocated arrays
             data_time = data_time[:count]
             data_pos = data_pos[:count]
+            data_pos[:, :, :2] /= 1000  # mm to m
             data_pos_f = data_pos_f[:count]
-            data_lin_vel = data_lin_vel[:count]
+            data_pos_f[:, :, :2] /= 1000  # mm to m
+            data_lin_vel = data_lin_vel[:count] / 1000  # mm to m
             data_ang_vel = data_ang_vel[:count]
-            data_lin_vel_f = data_lin_vel_f[:count]
+            data_lin_vel_f = data_lin_vel_f[:count] / 1000  # mm to m
             data_ang_vel_f = data_ang_vel_f[:count]
-            data_lin_acc = data_lin_acc[:count]
+            data_lin_acc = data_lin_acc[:count] / 1000  # mm to m
             data_ang_acc = data_ang_acc[:count]
             data_lin_acc_des = data_lin_acc_des[:count]
             data_ang_vel_des = data_ang_vel_des[:count]
@@ -441,8 +443,8 @@ python3 -m jetbot.control_reciever
 def plots():
     data = load_from_pickle('Jetbot_Tracking.pkl')
     t = data["time"]
-    pose = data["pos"]
-    pose_f = data["pos_f"]
+    pos = data["pos"]
+    pos_f = data["pos_f"]
     lin_vel = data["lin_vel"]
     ang_vel = data["ang_vel"]
     lin_vel_f = data["lin_vel_f"]
@@ -461,15 +463,16 @@ def plots():
     data_leader_vel_est = data["leader_vel_est"]
     data_form_dist_along = data['form_dist_along']
     data_form_dist_perp = data['form_dist_perp']
-    num_bots = pose_f.shape[1]
+    num_bots = pos_f.shape[1]
     
-
+    print(pos_f.shape)
+    print(pos_f[:, :, :2].shape)
 
     # Per agent individual plots
     # for i in range(num_bots):
-    #     plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
-    #     # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
-    #     plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
+    #     plot.plot_xy_trajectory(pos_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
+    #     # plot.plot_pos_raw_vs_filtered(t, pos_raw=pos[:, i, :], pos_filt=pos_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
+    #     plot.plot_xy_vs_time(t, pos_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
     #     # plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
     #     plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
     #     plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
@@ -478,7 +481,7 @@ def plots():
 
     # Multiagent plots    
     # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
-    plot.plot_all_xy_trajectories(pose_f, title="All Agents XY Trajectories", labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
+    plot.plot_all_xy_trajectories(pos_f, title="All Agents XY Trajectories", labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
     plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
     plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
     plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower 1", "Follower 2"], window=20)
