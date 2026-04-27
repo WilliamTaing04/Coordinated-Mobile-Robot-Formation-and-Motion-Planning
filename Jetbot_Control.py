@@ -274,8 +274,8 @@ python3 -m jetbot.control_reciever
                     data_lat_des[count-1, i] = agent_array[i].controller.ds_y
                     data_long_safe_limit[count-1, i] = agent_array[i].controller.dsafe_x
                     data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
-                    data_leader_pos_est[count-1, i] = np.sqrt((agent_array[i].agent_metadata[0,0,0])^2+(agent_array[i].agent_metadata[0,0,2])^2) - agent_array[i].agent_metadata[1,0,0]
-                    data_leader_vel_est[count-1, i] = np.sqrt((agent_array[i].agent_metadata[0,0,1])^2+(agent_array[i].agent_metadata[0,0,3])^2) - (leader.lin_vel_f - jetbot.data_lin_vel_f)
+                    data_leader_pos_est[count-1, i] = np.sqrt((agent_array[i].agent_metadata[0,0,0])**2+(agent_array[i].agent_metadata[0,0,2])**2) - agent_array[i].agent_metadata[1,0,0]
+                    data_leader_vel_est[count-1, i] = np.sqrt((agent_array[i].agent_metadata[0,0,1])**2+(agent_array[i].agent_metadata[0,0,3])**2) - (leader.lin_vel_f - jetbot.data_lin_vel_f)
 
                     t_now = time.perf_counter()
                     # UW controller
