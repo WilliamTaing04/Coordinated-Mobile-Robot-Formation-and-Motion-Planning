@@ -139,15 +139,15 @@ python3 -m jetbot.control_reciever
         num_bots = len(jetbot_array)
         max_samples = 7200                              
         data_time = np.zeros(max_samples)                                       # Time [s]
-        data_pos   = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [mm][rad]
-        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [mm][rad] (filtered)
-        data_lin_vel = np.zeros((max_samples, num_bots))                        # Jetbot lin velocity [mm/s]
+        data_pos   = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad]
+        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad] (filtered)
+        data_lin_vel = np.zeros((max_samples, num_bots))                        # Jetbot lin velocity [m/s]
         data_ang_vel = np.zeros((max_samples, num_bots))                        # Jetbot ang velocity [rad/s]
-        data_lin_vel_f = np.zeros((max_samples, num_bots))                      # Jetbot lin velocity [mm/s] (filtered)
+        data_lin_vel_f = np.zeros((max_samples, num_bots))                      # Jetbot lin velocity [m/s] (filtered)
         data_ang_vel_f = np.zeros((max_samples, num_bots))                      # Jetbot ang velocity [rad/s] (filtered)
-        data_lin_acc = np.zeros((max_samples, num_bots))                        # Jetbot lin acceleration [mm/s^2]
+        data_lin_acc = np.zeros((max_samples, num_bots))                        # Jetbot lin acceleration [m/s^2]
         data_ang_acc = np.zeros((max_samples, num_bots))                        # Jetbot ang acceleration [rad/s^2]
-        data_lin_acc_des = np.zeros((max_samples, num_bots))                    # Agent lin acceleration [mm/s^2] (desired)
+        data_lin_acc_des = np.zeros((max_samples, num_bots))                    # Agent lin acceleration [m/s^2] (desired)
         data_ang_vel_des = np.zeros((max_samples, num_bots))                    # Agent ang velocity [rad/s] (desired)
         data_long_sb = np.zeros((max_samples, num_bots))                        # Agent longitudinal safety barrier [m]   (h1)
         data_lat_sb = np.zeros((max_samples, num_bots))                         # Agent latitudinal safety barrier [m]    (h2)
@@ -275,7 +275,7 @@ python3 -m jetbot.control_reciever
                     U_GOAL, W_GOAL = agent_array[i].get_controls() # Get goal UW from alg
                     
                     # Record agent data
-                    data_lin_acc_des[count-1, i] = U_GOAL * 1000  # m/s^2 -> mm/s^2
+                    data_lin_acc_des[count-1, i] = U_GOAL
                     data_ang_vel_des[count-1, i] = W_GOAL
                     data_long_sb[count-1, i] = agent_array[i].controller.h1
                     data_lat_sb[count-1, i] = agent_array[i].controller.h2
@@ -284,7 +284,7 @@ python3 -m jetbot.control_reciever
                     data_long_safe_limit[count-1, i] = agent_array[i].controller.dsafe_x
                     data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
                     data_leader_pos_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][0], agent_array[i].agent_metadata[0][0][2]) - agent_array[i].agent_metadata[1][0][0]
-                    data_leader_vel_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][1], agent_array[i].agent_metadata[0][0][3]) - (leader.lin_vel_f - jetbot.lin_vel_f)
+                    data_leader_vel_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][1], agent_array[i].agent_metadata[0][0][3]) - (leader.lin_vel_f - jetbot.lin_vel_f) / 1000 # mm to m
                     data_form_dist_along[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.cos(agent_array[i].agent_metadata[1][0][1])
                     data_form_dist_perp[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.sin(agent_array[i].agent_metadata[1][0][1])
 
@@ -383,12 +383,14 @@ python3 -m jetbot.control_reciever
             # Trim unused portions of pre-allocated arrays
             data_time = data_time[:count]
             data_pos = data_pos[:count]
+            data_pos[:, :, :2] /= 1000  # mm to m
             data_pos_f = data_pos_f[:count]
-            data_lin_vel = data_lin_vel[:count]
+            data_pos_f[:, :, :2] /= 1000  # mm to m
+            data_lin_vel = data_lin_vel[:count] / 1000  # mm to m
             data_ang_vel = data_ang_vel[:count]
-            data_lin_vel_f = data_lin_vel_f[:count]
+            data_lin_vel_f = data_lin_vel_f[:count] / 1000  # mm to m
             data_ang_vel_f = data_ang_vel_f[:count]
-            data_lin_acc = data_lin_acc[:count]
+            data_lin_acc = data_lin_acc[:count] / 1000  # mm to m
             data_ang_acc = data_ang_acc[:count]
             data_lin_acc_des = data_lin_acc_des[:count]
             data_ang_vel_des = data_ang_vel_des[:count]
@@ -463,7 +465,8 @@ def plots():
     data_form_dist_perp = data['form_dist_perp']
     num_bots = pose_f.shape[1]
     
-
+    print(pose_f.shape)
+    print(pose_f[:, :, :2].shape)
 
     # Per agent individual plots
     # for i in range(num_bots):
@@ -486,9 +489,9 @@ def plots():
     plot.basic_plot(t, data_leader_pos_est,"Time (s)", "Estimation vs Absolute (m)","Leader Position Estimation vs Absolute Error")
     plot.basic_plot(t, data_leader_vel_est,"Time (s)", "Estimation vs Absolute (m/s)","Leader Velocity Estimation vs Absolute Error")
 
-    plt.show()
+    # plt.show()
 
 
 if __name__ == "__main__":
-    main()
-    #plots()
+    # main()
+    plots()
