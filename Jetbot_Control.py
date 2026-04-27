@@ -307,9 +307,9 @@ python3 -m jetbot.control_reciever
                     else:
                         left = right = 0.0
 
-                # TODO: obstacle movement:
+                # obstacle movement:
                 elif jetbot.visible and jetbot.role==2: # For obstacles
-                    if jetbot.id == 61:   # TODO: change with obstacle id
+                    if jetbot.id == 999:   # TODO: change with obstacle id
                         if obstacle1_move < len(obstacle1_movement):
                             obstacle_v, obstacle_w, move_duration = obstacle1_movement[obstacle1_move]
                             if time.perf_counter() - obstacle1_move_start < move_duration:
