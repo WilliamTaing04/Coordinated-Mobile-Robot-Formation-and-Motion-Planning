@@ -285,6 +285,8 @@ python3 -m jetbot.control_reciever
                     data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
                     data_leader_pos_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][0], agent_array[i].agent_metadata[0][0][2]) - agent_array[i].agent_metadata[1][0][0]
                     data_leader_vel_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][1], agent_array[i].agent_metadata[0][0][3]) - (leader.lin_vel_f - jetbot.lin_vel_f)
+                    data_form_dist_along[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.cos(agent_array[i].agent_metadata[1][0][1])
+                    data_form_dist_perp[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.sin(agent_array[i].agent_metadata[1][0][1])
 
                     t_now = time.perf_counter()
                     # UW controller
@@ -428,7 +430,6 @@ python3 -m jetbot.control_reciever
             'leader_vel_est': data_leader_vel_est,
             'form_dist_along': data_form_dist_along,
             'form_dist_perp': data_form_dist_perp
-
             }
 
             # Write dictionary to pickle file
@@ -458,9 +459,10 @@ def plots():
     data_lat_safe_limit = data["lat_safe_limit"]
     data_leader_pos_est = data["leader_pos_est"]
     data_leader_vel_est = data["leader_vel_est"]
-    data_form_dist_along = ['form_dist_along']
-    data_form_dist_perp = ['form_dist_perp']
+    data_form_dist_along = data['form_dist_along']
+    data_form_dist_perp = data['form_dist_perp']
     num_bots = pose_f.shape[1]
+    
 
     # Per agent individual plots
     # for i in range(num_bots):
@@ -474,11 +476,11 @@ def plots():
     # plt.show()
 
     # Multiagent plots    
-    plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
+    # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
     plot.plot_all_xy_trajectories(pose_f, title="All Agents XY Trajectories", labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
-    plot.plot_all_linear_velocity(t, lin_vel_f[0:3], labels=["Leader", "Follower 1", "Follower 2"])
-    plot.plot_all_angular_velocity(t, ang_vel_f[0:3], labels=["Leader", "Follower 1", "Follower 2"])
-    plot.plot_all_linear_acceleration(t, lin_acc[0:3], labels=["Leader", "Follower 1", "Follower 2"], window=20)
+    plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
+    plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
+    plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower 1", "Follower 2"], window=20)
 
     plot.basic_plot(t, data_leader_pos_est,"Time (s)", "Estimation vs Absolute (m)","Leader Position Estimation vs Absolute Error")
     plot.basic_plot(t, data_leader_vel_est,"Time (s)", "Estimation vs Absolute (m/s)","Leader Velocity Estimation vs Absolute Error")
@@ -487,5 +489,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    main()
-    # plots()
+    # main()
+    plots()
