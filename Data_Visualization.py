@@ -322,7 +322,9 @@ def basic_plot(
     data,
     xtitle,
     ytitle,
-    title
+    title,
+    l1 = None,
+    l2 = None
 ):
     plt.figure()
     plt.plot(t, data)
@@ -330,6 +332,34 @@ def basic_plot(
     plt.xlabel(xtitle)
     plt.ylabel(ytitle)
     plt.title(title)
+
+    plt.legend([l1,l2])
+
+    plt.grid()
+    plt.tight_layout()
+
+def basic_plot_2(
+    t,
+    data,
+    data2,
+    data3,
+    xtitle,
+    ytitle,
+    l1,
+    l2,
+    l3,
+    l4,
+    l5
+):
+    plt.figure()
+    plt.plot(t, data)
+    plt.plot(t, data2)
+    plt.plot(t, data3)
+
+    plt.xlabel(xtitle)
+    plt.ylabel(ytitle)
+
+    plt.legend([l1,l2,l3,l4,l5])
 
     plt.grid()
     plt.tight_layout()

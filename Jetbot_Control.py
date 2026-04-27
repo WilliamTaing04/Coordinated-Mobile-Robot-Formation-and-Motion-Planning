@@ -483,12 +483,18 @@ def plots():
     plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
     plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower 1", "Follower 2"], window=20)
 
-    plot.basic_plot(t, data_leader_pos_est,"Time (s)", "Estimation vs Absolute (m)","Leader Position Estimation vs Absolute Error")
+    plot.basic_plot(t, data_leader_pos_est, "Time (s)", "Estimation vs Absolute (m)","Leader Position Estimation vs Absolute Error")
     plot.basic_plot(t, data_leader_vel_est,"Time (s)", "Estimation vs Absolute (m/s)","Leader Velocity Estimation vs Absolute Error")
+
+    plot.basic_plot_2(t, data_form_dist_along[:,1:3],data_long_des[:,1],data_long_safe_limit[:,1],"Time (s)", "Formation distance along motion (m)","Follower 1","Follower 2", "Desired distance", "Safety limit", None)
+    plot.basic_plot_2(t, data_form_dist_perp[:,1:3],data_lat_des[:,1:3],data_lat_safe_limit[:,1],"Time (s)", "Formation distance perp to motion (m)","Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit")
+    
+    plot.basic_plot(t, data_long_sb[:,1:3] ,"Time (s)", "Safety along motion","h1 plot","Follower 1", "Follower 2")
+    plot.basic_plot(t, data_lat_sb[:,1:3] ,"Time (s)", "Safety perpendicular to motion","h2 plot", "Follower 1", "Follower 2")
 
     plt.show()
 
 
 if __name__ == "__main__":
-    main()
-    #plots()
+    #main()
+    plots()
