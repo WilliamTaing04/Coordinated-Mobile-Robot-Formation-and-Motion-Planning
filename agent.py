@@ -46,7 +46,7 @@ def estimator_dynamics(state, estimates, control, observation, gains):
     if d == 0:
         return state_dot
 
-    theta = observation[1] + observation[2] - state[3] # TODO: Relative(cam) + absolute(cam) - absolute(rk4)? state[3] term drifts! Print theta to test if it stays accurate enough 
+    theta = observation[1]  # + observation[2] - state[3] # TODO: Relative + absolute - absolute? state[3] term drifts! Print theta to test if it stays accurate enough 
     # print(estimates,d*cos(theta),d*sin(theta))
     dx_del = estimates[0] - d * cos(theta)
     dy_del = estimates[2] - d * sin(theta)

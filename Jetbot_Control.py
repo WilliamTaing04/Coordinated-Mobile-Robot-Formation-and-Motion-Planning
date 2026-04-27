@@ -119,7 +119,14 @@ python3 -m jetbot.control_reciever
     agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
-    leader_movement = [[0.0, 0.0, 100], #125
+    # for disturbance test move leaders velocity in oscilatory to show it doesnt propagate through the agents(string stability)
+    # leader_time = np.arange(0, 8, 2/20) # start, stop, timestep(N loops at 20Hz)
+    # leader_movement = np.zeros((len(leader_time), 3))
+    # leader_movement[:,0] = np.sin(leader_time)
+    # leader_movement[:,1] = 0.0
+    # leader_movement[:,2] = leader_time
+
+    leader_movement = [[1.0, 0.0, 100], #125
                        [0.0, 0.0, 100]]
     
     obstacle1_movement = [[0.0, 0.0, 2]]
@@ -144,6 +151,8 @@ python3 -m jetbot.control_reciever
         data_ang_vel_des = np.zeros((max_samples, num_bots))                    # Agent ang velocity [rad/s] (desired)
         data_long_sb = np.zeros((max_samples, num_bots))                        # Agent longitudinal safety barrier [m]   (h1)
         data_lat_sb = np.zeros((max_samples, num_bots))                         # Agent latitudinal safety barrier [m]    (h2)
+        data_form_dist_along = np.zeros((max_samples, num_bots))                # Agent formation distance along motion [m]
+        data_form_dist_perp = np.zeros((max_samples, num_bots))                 # Agent formation distance perpendicular to motion [m]
         data_long_des = np.zeros((max_samples, num_bots))                       # Agent desired formation distance along motion(x axis) [m]   (ds_x = dx_star)
         data_lat_des = np.zeros((max_samples, num_bots))                        # Agent desired formation distance perpendicular to motion(y axis) [m]    (ds_y = dy_star)
         data_long_safe_limit = np.zeros((max_samples, num_bots))                # Agent safety limit along motion(x axis) [m]   (dsafe_x)
@@ -298,9 +307,9 @@ python3 -m jetbot.control_reciever
                     else:
                         left = right = 0.0
 
-                # TODO: obstacle movement:
+                # obstacle movement:
                 elif jetbot.visible and jetbot.role==2: # For obstacles
-                    if jetbot.id == 61:   # TODO: change with obstacle id
+                    if jetbot.id == 999:   # TODO: change with obstacle id
                         if obstacle1_move < len(obstacle1_movement):
                             obstacle_v, obstacle_w, move_duration = obstacle1_movement[obstacle1_move]
                             if time.perf_counter() - obstacle1_move_start < move_duration:
@@ -389,6 +398,9 @@ python3 -m jetbot.control_reciever
             data_lat_safe_limit = data_lat_safe_limit[:count]
             data_leader_pos_est = data_leader_pos_est[:count]
             data_leader_vel_est = data_leader_vel_est[:count]
+            data_form_dist_along = data_form_dist_along[:count]
+            data_form_dist_perp = data_form_dist_perp[:count]
+
 
             # Save all data to pickle file
             filename='Jetbot_Tracking.pkl'
@@ -413,7 +425,10 @@ python3 -m jetbot.control_reciever
             'long_safe_limit': data_long_safe_limit,
             'lat_safe_limit': data_lat_safe_limit,
             'leader_pos_est': data_leader_pos_est,
-            'leader_vel_est': data_leader_vel_est
+            'leader_vel_est': data_leader_vel_est,
+            'form_dist_along': data_form_dist_along,
+            'form_dist_perp': data_form_dist_perp
+
             }
 
             # Write dictionary to pickle file
@@ -439,32 +454,38 @@ def plots():
     data_lat_sb = data["lat_sb"]
     data_long_des = data["long_des"]
     data_lat_des = data["lat_des"]
-    data_long_safe_limit = data["long_safe_limt"]
+    data_long_safe_limit = data["long_safe_limit"]
     data_lat_safe_limit = data["lat_safe_limit"]
     data_leader_pos_est = data["leader_pos_est"]
     data_leader_vel_est = data["leader_vel_est"]
+    data_form_dist_along = ['form_dist_along']
+    data_form_dist_perp = ['form_dist_perp']
     num_bots = pose_f.shape[1]
 
     # Per agent individual plots
-    for i in range(num_bots):
-        plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
-        # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
-        plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
-        # plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
-        plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
-        plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
-        plot.plot_accel_and_angvel(t, lin_acc[:, i], ang_vel_f[:, i], lin_acc_des[:, i], ang_vel_des[:, i], title=f"Robot {i} UW actual vs desired")
-    plt.show()
+    # for i in range(num_bots):
+    #     plot.plot_xy_trajectory(pose_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
+    #     # plot.plot_pose_raw_vs_filtered(t, pose_raw=pose[:, i, :], pose_filt=pose_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
+    #     plot.plot_xy_vs_time(t, pose_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
+    #     # plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
+    #     plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
+    #     plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
+    #     plot.plot_accel_and_angvel(t, lin_acc[:, i], ang_vel_f[:, i], lin_acc_des[:, i], ang_vel_des[:, i], title=f"Robot {i} UW actual vs desired")
+    # plt.show()
 
     # Multiagent plots    
     plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
-    plot.plot_all_xy_trajectories(pose_f, title="All Agents XY Trajectories", labels=["Leader", "Follower1", "Follower2", "Follower3"], show_start_end=True)
-    # plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
-    plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower1", "Follower2", "Follower3"])
-    plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower1", "Follower2", "Follower3"], window=20)
+    plot.plot_all_xy_trajectories(pose_f, title="All Agents XY Trajectories", labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
+    plot.plot_all_linear_velocity(t, lin_vel_f[0:3], labels=["Leader", "Follower 1", "Follower 2"])
+    plot.plot_all_angular_velocity(t, ang_vel_f[0:3], labels=["Leader", "Follower 1", "Follower 2"])
+    plot.plot_all_linear_acceleration(t, lin_acc[0:3], labels=["Leader", "Follower 1", "Follower 2"], window=20)
+
+    plot.basic_plot(t, data_leader_pos_est,"Time (s)", "Estimation vs Absolute (m)","Leader Position Estimation vs Absolute Error")
+    plot.basic_plot(t, data_leader_vel_est,"Time (s)", "Estimation vs Absolute (m/s)","Leader Velocity Estimation vs Absolute Error")
+
     plt.show()
 
 
 if __name__ == "__main__":
-    main()
-    #plots()
+    # main()
+    plots()
