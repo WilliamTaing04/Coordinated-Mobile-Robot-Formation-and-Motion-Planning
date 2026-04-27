@@ -96,8 +96,8 @@ python3 -m jetbot.control_reciever
     leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
     follower1_pred = [0,0] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
-    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, follower1, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    follower2_pred = [0,1] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
+    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2_pred = [0,0] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
     obstacle1 = Jetbot_Setup.Jetbot(4,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
     obstacle2 = Jetbot_Setup.Jetbot(5,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
     obstacle3 = Jetbot_Setup.Jetbot(6,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.0075,tau_vel=0.0075, radius=0.1)
@@ -126,7 +126,7 @@ python3 -m jetbot.control_reciever
     # leader_movement[:,1] = 0.0
     # leader_movement[:,2] = leader_time
 
-    leader_movement = [[1.0, 0.0, 100], #125
+    leader_movement = [[100.0, 0.0, 100], #125
                        [0.0, 0.0, 100]]
     
     obstacle1_movement = [[0.0, 0.0, 2]]
@@ -283,8 +283,8 @@ python3 -m jetbot.control_reciever
                     data_lat_des[count-1, i] = agent_array[i].controller.ds_y
                     data_long_safe_limit[count-1, i] = agent_array[i].controller.dsafe_x
                     data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
-                    data_leader_pos_est[count-1, i] = np.sqrt((agent_array[i].agent_metadata[0,0,0])**2+(agent_array[i].agent_metadata[0,0,2])**2) - agent_array[i].agent_metadata[1,0,0]
-                    data_leader_vel_est[count-1, i] = np.sqrt((agent_array[i].agent_metadata[0,0,1])**2+(agent_array[i].agent_metadata[0,0,3])**2) - (leader.lin_vel_f - jetbot.data_lin_vel_f)
+                    data_leader_pos_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][0], agent_array[i].agent_metadata[0][0][2]) - agent_array[i].agent_metadata[1][0][0]
+                    data_leader_vel_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][1], agent_array[i].agent_metadata[0][0][3]) - (leader.lin_vel_f - jetbot.lin_vel_f)
 
                     t_now = time.perf_counter()
                     # UW controller
@@ -487,5 +487,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    # main()
-    plots()
+    main()
+    # plots()

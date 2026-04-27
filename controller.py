@@ -333,7 +333,6 @@ class SafeObstacleAvoidanceController(SafeFormationController):
     def calc_control(self, state, agent_metadata):
         '''Compute the control inputs while avoiding obstacles.'''
         cluster_state = agent_metadata[0]  # Other agents' states
-        print(agent_metadata)
         observations = agent_metadata[1]  # Relative distances to other agents
 
         v = state[2]  # Robot's velocity
