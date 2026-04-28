@@ -444,8 +444,8 @@ class SafeObstacleAvoidanceController(SafeFormationController):
 
         if u_obstacle is not None:
             if (u_choice_d_edge < D_OBS_R_THRESHOLD):
-                v_max = 0.3
-                v_scale = 1 if v > v_max else 0 #(v_max - v) / v_max #TODO: TUNE THIS!
+                v_max = 0.25
+                v_scale = 0.95 if v > v_max else 0 #(v_max - v) / v_max #TODO: TUNE THIS!
                 u = v_scale*u_obstacle + (1-v_scale)*u_predecessor #scale_avg[0]*u_obstacle + (1-scale_avg[0])*u_predecessor
             else:
                 u = u_predecessor

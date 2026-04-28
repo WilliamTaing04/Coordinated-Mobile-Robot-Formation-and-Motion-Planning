@@ -126,7 +126,7 @@ python3 -m jetbot.control_reciever
     # leader_movement[:,1] = 0.0
     # leader_movement[:,2] = leader_time
 
-    leader_movement = [[100.0, 0.0, 100], #125
+    leader_movement = [[150.0, 0.0, 100], #125
                        [0.0, 0.0, 100]]
     
     obstacle1_movement = [[0.0, 0.0, 2]]
@@ -274,19 +274,20 @@ python3 -m jetbot.control_reciever
                     agent_array[i].RK4_step() # RK4 step good
                     U_GOAL, W_GOAL = agent_array[i].get_controls() # Get goal UW from alg
                     
-                    # Record agent data
-                    data_lin_acc_des[count-1, i] = U_GOAL
-                    data_ang_vel_des[count-1, i] = W_GOAL
-                    data_long_sb[count-1, i] = agent_array[i].controller.h1
-                    data_lat_sb[count-1, i] = agent_array[i].controller.h2
-                    data_long_des[count-1, i] = agent_array[i].controller.ds_x
-                    data_lat_des[count-1, i] = agent_array[i].controller.ds_y
-                    data_long_safe_limit[count-1, i] = agent_array[i].controller.dsafe_x
-                    data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
-                    data_leader_pos_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][0], agent_array[i].agent_metadata[0][0][2]) - agent_array[i].agent_metadata[1][0][0]
-                    data_leader_vel_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][1], agent_array[i].agent_metadata[0][0][3]) - (leader.lin_vel_f - jetbot.lin_vel_f) / 1000 # mm to m
-                    data_form_dist_along[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.cos(agent_array[i].agent_metadata[1][0][1])
-                    data_form_dist_perp[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.sin(agent_array[i].agent_metadata[1][0][1])
+                    if(collect_data):
+                        # Record agent data
+                        data_lin_acc_des[count-1, i] = U_GOAL
+                        data_ang_vel_des[count-1, i] = W_GOAL
+                        data_long_sb[count-1, i] = agent_array[i].controller.h1
+                        data_lat_sb[count-1, i] = agent_array[i].controller.h2
+                        data_long_des[count-1, i] = agent_array[i].controller.ds_x
+                        data_lat_des[count-1, i] = agent_array[i].controller.ds_y
+                        data_long_safe_limit[count-1, i] = agent_array[i].controller.dsafe_x
+                        data_lat_safe_limit[count-1, i] = agent_array[i].controller.dsafe_y
+                        data_leader_pos_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][0], agent_array[i].agent_metadata[0][0][2]) - agent_array[i].agent_metadata[1][0][0]
+                        data_leader_vel_est[count-1, i] = math.hypot(agent_array[i].agent_metadata[0][0][1], agent_array[i].agent_metadata[0][0][3]) - (leader.lin_vel_f - jetbot.lin_vel_f) / 1000 # mm to m
+                        data_form_dist_along[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.cos(agent_array[i].agent_metadata[1][0][1])
+                        data_form_dist_perp[count-1, i] = agent_array[i].agent_metadata[1][0][0] * np.sin(agent_array[i].agent_metadata[1][0][1])
 
                     t_now = time.perf_counter()
                     # UW controller
@@ -315,8 +316,8 @@ python3 -m jetbot.control_reciever
                         if obstacle1_move < len(obstacle1_movement):
                             obstacle_v, obstacle_w, move_duration = obstacle1_movement[obstacle1_move]
                             if time.perf_counter() - obstacle1_move_start < move_duration:
-                                data_lin_acc_des[count-1, i] = None
-                                data_ang_vel_des[count-1, i] = None
+                                # data_lin_acc_des[count-1, i] = None
+                                # data_ang_vel_des[count-1, i] = None
                                 v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [obstacle_v, obstacle_w])
                                 # Convert Desired VW to LR motor speed
                                 left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
@@ -464,9 +465,6 @@ def plots():
     data_form_dist_along = data['form_dist_along']
     data_form_dist_perp = data['form_dist_perp']
     num_bots = pos_f.shape[1]
-    
-    print(pos_f.shape)
-    print(pos_f[:, :, :2].shape)
 
     # Per agent individual plots
     # for i in range(num_bots):
@@ -482,9 +480,9 @@ def plots():
     # Multiagent plots    
     # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
     plot.plot_all_xy_trajectories(pos_f, title="All Agents XY Trajectories", labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
-    plot.plot_all_linear_velocity(t, lin_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
-    plot.plot_all_angular_velocity(t, ang_vel_f, labels=["Leader", "Follower 1", "Follower 2"])
-    plot.plot_all_linear_acceleration(t, lin_acc, labels=["Leader", "Follower 1", "Follower 2"], window=20)
+    plot.plot_all_linear_velocity(t, lin_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
+    plot.plot_all_angular_velocity(t, ang_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
+    plot.plot_all_linear_acceleration(t, lin_acc[:, :3], labels=["Leader", "Follower 1", "Follower 2"], window=20)
 
     plot.basic_plot(t, data_leader_pos_est, "Time (s)", "Estimation vs Absolute (m)","Leader Position Estimation vs Absolute Error")
     plot.basic_plot(t, data_leader_vel_est,"Time (s)", "Estimation vs Absolute (m/s)","Leader Velocity Estimation vs Absolute Error")
@@ -499,5 +497,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    #main()
-    plots()
+    main()
+    # plots()
