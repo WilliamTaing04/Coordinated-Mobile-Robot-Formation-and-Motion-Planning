@@ -128,9 +128,9 @@ python3 -m jetbot.control_reciever
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     # for disturbance test move leaders velocity in oscilatory to show it doesnt propagate through the agents(string stability)
-    leader_time = np.arange(0, 8, 2/20) # start, stop, timestep(N loops at 20Hz)
+    leader_time = np.arange(0, 15, 1/20) # start, stop, timestep(N loops at 20Hz)
     leader_movement = np.zeros((len(leader_time), 3))
-    leader_movement[:,0] = 100 * np.sin(leader_time*4*np.pi) + 200
+    leader_movement[:,0] = 50 * np.sin(leader_time*1*np.pi) + 50
     leader_movement[:,1] = 0.0
     leader_movement[:,2] = leader_time
 
@@ -349,20 +349,20 @@ python3 -m jetbot.control_reciever
             at_count += 1 # TESTING at frame count
 
             # Reduce display
-            # if (frame_count % 10) == 0:
-            #     # Show instruction
-            #     cv2.putText(color_frame, "Press 'q' to quit", 
-            #                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
-            #                 0.7, (0, 255, 0), 2)
+            if (frame_count % 10) == 0:
+                # Show instruction
+                cv2.putText(color_frame, "Press 'q' to quit", 
+                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+                            0.7, (0, 255, 0), 2)
                 
-            #     # Display frame
-            #     cv2.imshow('Camera', color_frame)
+                # Display frame
+                cv2.imshow('Camera', color_frame)
 
-            # key = cv2.waitKey(1)
-            # # Check for quit key press ('q' or ESC)
-            # if key & 0xFF == ord('q') or key == 27:
-            #     print("\nQuitting...")
-            #     break
+            key = cv2.waitKey(1)
+            # Check for quit key press ('q' or ESC)
+            if key & 0xFF == ord('q') or key == 27:
+                print("\nQuitting...")
+                break
 
             # MAINTAIN FIXED TIMESTEP
             elapsed = time.perf_counter() - start_time
