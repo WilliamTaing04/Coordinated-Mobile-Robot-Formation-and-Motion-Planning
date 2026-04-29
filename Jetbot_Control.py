@@ -45,7 +45,7 @@ def main():
 
 
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720, 0, 30)
+    cap = Jetbot_Setup.camera_setup(1280, 720, output=0, fps=30, exposure=-7)
     frame_count = 0
 
     # AprilTag detector
@@ -151,8 +151,8 @@ python3 -m jetbot.control_reciever
         num_bots = len(jetbot_array)
         max_samples = 7200                              
         data_time = np.zeros(max_samples)                                       # Time [s]
-        data_pos   = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad]
-        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad] (filtered)
+        data_pos   = np.full((max_samples, num_bots, 3), np.nan)                       # Jetbot pose [x,y,theta] [m][rad]
+        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                       # Jetbot pose [x,y,theta] [m][rad] (filtered)
         data_lin_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot lin velocity [m/s]
         data_ang_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot ang velocity [rad/s]
         data_lin_vel_f = np.full((max_samples, num_bots), np.nan)                      # Jetbot lin velocity [m/s] (filtered)
@@ -455,7 +455,11 @@ python3 -m jetbot.control_reciever
         print("Done!")
     
 def plots():
-    data = load_from_pickle('Jetbot_Tracking.pkl')
+    data_new = "Jetbot_Tracking.pkl"
+    data_circle = Path("TestingData") / "Safe_Formation_Controller_Circle.pkl"
+
+    data = load_from_pickle(data_new)
+
     t = data["time"]
     pos = data["pos"]
     pos_f = data["pos_f"]
@@ -491,12 +495,12 @@ def plots():
     # plt.show()
 
     # Multiagent plots    
-    # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
-    plot.plot_all_xy_trajectories(pos_f, labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
     # plot.plot_all_linear_velocity(t, lin_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
     # plot.plot_all_angular_velocity(t, ang_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
     # plot.plot_all_linear_acceleration(t, lin_acc[:, :3], labels=["Leader", "Follower 1", "Follower 2"], window=20)
 
+    # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
+    plot.plot_all_xy_trajectories(pos_f, labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
     plot.basic_plot(t, lin_vel_f[:,:3], "Time (s)", "Linear Velocity (m/s)", ["Leader", "Follower 1", "Follower 2"]) 
     plot.basic_plot(t, ang_vel_f[:,:3], "Time (s)", "Angular Velocity (rad/s)", ["Leader", "Follower 1", "Follower 2"]) 
     plot.basic_plot(t, lin_acc[:,:3], "Time (s)", "Linear Accelertaion (m/s^2)", ["Leader", "Follower 1", "Follower 2"]) 
@@ -511,12 +515,12 @@ def plots():
     
     # (c) Longitudinal safety barrier function evolution
     plot.basic_plot(t, data_long_sb[:,1:3], "Time (s)", "Safety along motion (m)", ["Follower 1", "Follower 2"])
-    # (d) Lateral safety barrier function evolution for dynamic obstacles
+    # (d) Lateral safety barrier function evolution for static/dynamic obstacles
     plot.basic_plot(t, data_lat_sb[:,1:3], "Time (s)", "Safety perpendicular to motion (m)", ["Follower 1", "Follower 2"])
 
     plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    # main()
     plots()
