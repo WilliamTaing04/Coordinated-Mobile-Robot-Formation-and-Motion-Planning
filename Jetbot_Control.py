@@ -479,23 +479,31 @@ def plots():
 
     # Multiagent plots    
     # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
-    plot.plot_all_xy_trajectories(pos_f, title="All Agents XY Trajectories", labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
-    plot.plot_all_linear_velocity(t, lin_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
-    plot.plot_all_angular_velocity(t, ang_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
-    plot.plot_all_linear_acceleration(t, lin_acc[:, :3], labels=["Leader", "Follower 1", "Follower 2"], window=20)
+    plot.plot_all_xy_trajectories(pos_f, labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
+    # plot.plot_all_linear_velocity(t, lin_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
+    # plot.plot_all_angular_velocity(t, ang_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
+    # plot.plot_all_linear_acceleration(t, lin_acc[:, :3], labels=["Leader", "Follower 1", "Follower 2"], window=20)
 
-    plot.basic_plot(t, data_leader_pos_est, "Time (s)", "Estimation vs Absolute (m)","Leader Position Estimation vs Absolute Error")
-    plot.basic_plot(t, data_leader_vel_est,"Time (s)", "Estimation vs Absolute (m/s)","Leader Velocity Estimation vs Absolute Error")
+    plot.basic_plot(t, lin_vel_f[:,:3], "Time (s)", "Linear Velocity (m/s)", ["Leader", "Follower 1", "Follower 2"]) 
+    plot.basic_plot(t, ang_vel_f[:,:3], "Time (s)", "Angular Velocity (rad/s)", ["Leader", "Follower 1", "Follower 2"]) 
+    plot.basic_plot(t, lin_acc[:,:3], "Time (s)", "Linear Accelertaion (m/s^2)", ["Leader", "Follower 1", "Follower 2"]) 
 
-    plot.basic_plot_2(t, data_form_dist_along[:,1:3],data_long_des[:,1],data_long_safe_limit[:,1],"Time (s)", "Formation distance along motion (m)","Follower 1","Follower 2", "Desired distance", "Safety limit", None)
-    plot.basic_plot_2(t, data_form_dist_perp[:,1:3],data_lat_des[:,1:3],data_lat_safe_limit[:,1],"Time (s)", "Formation distance perp to motion (m)","Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit")
+    # Leader’s position (left) and velocity (right) estimation error when estimated by follower agents
+    plot.basic_plot(t, data_leader_pos_est, "Time (s)", "Position Estimate Error (m)", ["Estimate of Leader by Follower1", "Estimate of Leader by Follower2"])
+    plot.basic_plot(t, data_leader_vel_est, "Time (s)", "Velocity Estimate Error (m/s^2)", ["Estimate of Leader by Follower1", "Estimate of Leader by Follower2"])
+
+    # (d) Distance along the motion, (e) Distance perpendicular to the motion
+    plot.basic_plot(t, [data_form_dist_along[:,1], data_form_dist_along[:,2], data_long_des[:,1], data_long_safe_limit[:,1]], "Time (s)", "Formation distance along motion (m)", ["Follower 1","Follower 2", "Desired distance", "Safety limit"])
+    plot.basic_plot(t, [data_form_dist_perp[:,1], data_form_dist_perp[:,2], data_lat_des[:,1], data_lat_des[:,2], data_lat_safe_limit[:,1]], "Time (s)", "Formation distance perpendicular to motion (m)", ["Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit"])
     
-    plot.basic_plot(t, data_long_sb[:,1:3] ,"Time (s)", "Safety along motion","h1 plot","Follower 1", "Follower 2")
-    plot.basic_plot(t, data_lat_sb[:,1:3] ,"Time (s)", "Safety perpendicular to motion","h2 plot", "Follower 1", "Follower 2")
+    # (c) Longitudinal safety barrier function evolution
+    plot.basic_plot(t, data_long_sb[:,1:3], "Time (s)", "Safety along motion (m)", ["Follower 1", "Follower 2"])
+    # (d) Lateral safety barrier function evolution for dynamic obstacles
+    plot.basic_plot(t, data_lat_sb[:,1:3], "Time (s)", "Safety perpendicular to motion (m)", ["Follower 1", "Follower 2"])
 
     plt.show()
 
 
 if __name__ == "__main__":
-    main()
-    # plots()
+    # main()
+    plots()

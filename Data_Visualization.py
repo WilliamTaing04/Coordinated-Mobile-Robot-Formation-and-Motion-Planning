@@ -1,6 +1,57 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+def basic_plot(t, data, xtitle, ytitle, labels = None):
+    plt.figure()
+
+    if isinstance(data, (list, tuple)):
+        for y in data:
+            plt.plot(t, y)
+    else:
+        data = np.asarray(data)
+
+        if data.ndim == 1:
+            plt.plot(t, data)
+        elif data.ndim == 2:
+            for i in range(data.shape[1]):
+                plt.plot(t, data[:, i])
+        else:
+            raise ValueError("data must be 1D, 2D, or a list of 1D arrays")
+
+
+    plt.xlabel(xtitle)
+    plt.ylabel(ytitle)
+
+    if labels is not None:
+            plt.legend(labels)
+
+    plt.grid()
+    plt.tight_layout()
+
+# -------------------------------
+# XY Trajectory
+# -------------------------------
+def plot_xy_trajectory(pose, title="X vs Y Trajectory", label=None, show_start_end=True,):
+    pose = np.asarray(pose)
+    x = pose[:, 0]
+    y = pose[:, 1]
+
+    plt.figure(figsize=(6, 6))
+    plt.plot(x, y, label=label)
+
+    if show_start_end and len(x) > 0:
+        plt.scatter(x[0], y[0], marker="o", label="Start")
+        plt.scatter(x[-1], y[-1], marker="x", label="End")
+
+    plt.title(title)
+    plt.xlabel("X [mm]")
+    plt.ylabel("Y [mm]")
+    plt.axis("equal")
+    plt.grid(True)
+    if label is not None or show_start_end:
+        plt.legend()
+    plt.tight_layout()
+
 def _as_desired_array(desired, t):
     """
     Convert desired input (None | scalar | array-like | callable) to an array aligned with t.
@@ -37,34 +88,6 @@ def rolling_average(x, window):
     return np.convolve(x, kernel, mode="same")
 
 
-# -------------------------------
-# XY Trajectory
-# -------------------------------
-def plot_xy_trajectory(
-    pose,
-    title="X vs Y Trajectory",
-    label=None,
-    show_start_end=True,
-):
-    pose = np.asarray(pose)
-    x = pose[:, 0]
-    y = pose[:, 1]
-
-    plt.figure(figsize=(6, 6))
-    plt.plot(x, y, label=label)
-
-    if show_start_end and len(x) > 0:
-        plt.scatter(x[0], y[0], marker="o", label="Start")
-        plt.scatter(x[-1], y[-1], marker="x", label="End")
-
-    plt.title(title)
-    plt.xlabel("X [mm]")
-    plt.ylabel("Y [mm]")
-    plt.axis("equal")
-    plt.grid(True)
-    if label is not None or show_start_end:
-        plt.legend()
-    plt.tight_layout()
 
 
 # -------------------------------
@@ -317,52 +340,6 @@ def analyze_dt_histogram(time_array, bins=30, title="dt Histogram"):
     plt.legend()
     plt.tight_layout()
 
-def basic_plot(
-    t,
-    data,
-    xtitle,
-    ytitle,
-    title,
-    l1 = None,
-    l2 = None
-):
-    plt.figure()
-    plt.plot(t, data)
-
-    plt.xlabel(xtitle)
-    plt.ylabel(ytitle)
-    plt.title(title)
-
-    plt.legend([l1,l2])
-
-    plt.grid()
-    plt.tight_layout()
-
-def basic_plot_2(
-    t,
-    data,
-    data2,
-    data3,
-    xtitle,
-    ytitle,
-    l1,
-    l2,
-    l3,
-    l4,
-    l5
-):
-    plt.figure()
-    plt.plot(t, data)
-    plt.plot(t, data2)
-    plt.plot(t, data3)
-
-    plt.xlabel(xtitle)
-    plt.ylabel(ytitle)
-
-    plt.legend([l1,l2,l3,l4,l5])
-
-    plt.grid()
-    plt.tight_layout()
 
 def plot_accel_and_angvel(
     t,
@@ -408,7 +385,7 @@ def plot_accel_and_angvel(
         fig.suptitle(title)
         fig.tight_layout()
 
-def plot_all_xy_trajectories(pose_f, title="All Robots XY Trajectories", labels=None, show_start_end=True):
+def plot_all_xy_trajectories(pose_f, labels=None, show_start_end=True):
     """
     pose_f: array of shape (T, N, 3)
     labels: optional list of robot names (length N)
@@ -438,15 +415,14 @@ def plot_all_xy_trajectories(pose_f, title="All Robots XY Trajectories", labels=
             plt.scatter(x[first], y[first], marker="o")
             plt.scatter(x[last], y[last], marker="x")
 
-    plt.title(title)
-    plt.xlabel("X [mm]")
-    plt.ylabel("Y [mm]")
+    plt.xlabel("X Position (m)")
+    plt.ylabel("Y Position (m)")
     plt.axis("equal")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
 
-def plot_all_linear_velocity(t, lin_vel_f, title="All Robots Linear Velocity vs Time", labels=None):
+def plot_all_linear_velocity(t, lin_vel_f, labels=None):
     """
     t: (T,)
     lin_vel_f: (T, N)
@@ -465,14 +441,13 @@ def plot_all_linear_velocity(t, lin_vel_f, title="All Robots Linear Velocity vs 
         label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
         plt.plot(t[mask], v[mask], label=label)
 
-    plt.title(title)
     plt.xlabel("Time [s]")
     plt.ylabel("Linear Velocity [mm/s]")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
 
-def plot_all_angular_velocity(t, ang_vel_f, title="All Robots Angular Velocity vs Time", labels=None):
+def plot_all_angular_velocity(t, ang_vel_f, labels=None):
     """
     t: (T,)
     ang_vel_f: (T, N)
@@ -491,40 +466,14 @@ def plot_all_angular_velocity(t, ang_vel_f, title="All Robots Angular Velocity v
         label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
         plt.plot(t[mask], w[mask], label=label)
 
-    plt.title(title)
     plt.xlabel("Time [s]")
     plt.ylabel("Angular Velocity [rad/s]")
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
 
-def plot_all_angular_velocity(t, ang_vel_f, title="All Robots Angular Velocity vs Time", labels=None):
-    """
-    t: (T,)
-    ang_vel_f: (T, N)
-    """
 
-    t = np.asarray(t)
-    ang_vel_f = np.asarray(ang_vel_f)
-    num_bots = ang_vel_f.shape[1]
-
-    plt.figure(figsize=(9, 5))
-
-    for i in range(num_bots):
-        w = ang_vel_f[:, i]
-        mask = ~np.isnan(w)
-
-        label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
-        plt.plot(t[mask], w[mask], label=label)
-
-    plt.title(title)
-    plt.xlabel("Time [s]")
-    plt.ylabel("Angular Velocity [rad/s]")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-
-def plot_all_linear_acceleration(t, lin_acc, title="All Robots Linear Acceleration vs Time", labels=None, window=1):
+def plot_all_linear_acceleration(t, lin_acc, labels=None, window=1):
     """
     t: (T,)
     lin_acc: (T, N)
@@ -547,7 +496,6 @@ def plot_all_linear_acceleration(t, lin_acc, title="All Robots Linear Accelerati
         label = labels[i] if labels is not None and i < len(labels) else f"Robot {i}"
         plt.plot(t[mask], a[mask], label=label)
 
-    plt.title(title)
     plt.xlabel("Time [s]")
     plt.ylabel("Linear Acceleration [mm/s²]")
     plt.grid(True)
