@@ -128,14 +128,18 @@ python3 -m jetbot.control_reciever
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     # for disturbance test move leaders velocity in oscilatory to show it doesnt propagate through the agents(string stability)
-    # leader_time = np.arange(0, 8, 2/20) # start, stop, timestep(N loops at 20Hz)
-    # leader_movement = np.zeros((len(leader_time), 3))
-    # leader_movement[:,0] = np.sin(leader_time)
-    # leader_movement[:,1] = 0.0
-    # leader_movement[:,2] = leader_time
+    leader_time = np.arange(0, 15, 1/20) # start, stop, timestep(N loops at 20Hz)
+    leader_movement = np.zeros((len(leader_time), 3))
+    leader_movement[:,0] = 50 * np.sin(leader_time*1*np.pi) + 50
+    leader_movement[:,1] = 0.0
+    leader_movement[:,2] = leader_time
 
-    leader_movement = [[200.0, 0.3, 100], #125
-                       [200, 0.4, 100]]
+    plt.plot(leader_movement[:,2],leader_movement[:,0])
+    plt.show()
+
+    # Safe Formation Controller Circle
+    # leader_movement = [[200.0, 0.3, 100], #125
+    #                    [0.0, 0.0, 100]]
     
     # obstacle1_movement = [[0.0, 0.0, 2]]
     
@@ -277,6 +281,7 @@ python3 -m jetbot.control_reciever
             # STEP 4: CONTROLLER AND COMMUNICATION
             # Jetbot Motion Control and Algorithm
             for i, jetbot in enumerate(jetbot_array):
+                left = 0.0; right = 0.0
                 # Follower Control
                 if jetbot.visible and jetbot.role==0: # For followers
                     agent_array[i].RK4_step() # RK4 step good
@@ -344,20 +349,20 @@ python3 -m jetbot.control_reciever
             at_count += 1 # TESTING at frame count
 
             # Reduce display
-            # if (frame_count % 10) == 0:
-            #     # Show instruction
-            #     cv2.putText(color_frame, "Press 'q' to quit", 
-            #                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
-            #                 0.7, (0, 255, 0), 2)
+            if (frame_count % 10) == 0:
+                # Show instruction
+                cv2.putText(color_frame, "Press 'q' to quit", 
+                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+                            0.7, (0, 255, 0), 2)
                 
-            #     # Display frame
-            #     cv2.imshow('Camera', color_frame)
+                # Display frame
+                cv2.imshow('Camera', color_frame)
 
-            # key = cv2.waitKey(1)
-            # # Check for quit key press ('q' or ESC)
-            # if key & 0xFF == ord('q') or key == 27:
-            #     print("\nQuitting...")
-            #     break
+            key = cv2.waitKey(1)
+            # Check for quit key press ('q' or ESC)
+            if key & 0xFF == ord('q') or key == 27:
+                print("\nQuitting...")
+                break
 
             # MAINTAIN FIXED TIMESTEP
             elapsed = time.perf_counter() - start_time
