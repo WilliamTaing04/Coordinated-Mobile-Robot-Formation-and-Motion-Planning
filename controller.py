@@ -270,6 +270,8 @@ class SafeFormationController(SimpleController):
         self.ds_y = ds_y
         self.x_id = x_id
         self.y_id = y_id
+        self.h1 = None
+        self.h2 = None
 
     def calc_control(self, state, agent_metadata):
         cluster_state = agent_metadata[0]
@@ -285,10 +287,12 @@ class SafeFormationController(SimpleController):
         dy = obs_dy * sin(observations[self.y_id, 1])
 
         h2 = (dy - self.dsafe_y) * self.sgn_s
+        self.h2 = h2
 
         w = (v1y_hat - self.gd * (dy - self.dsafe_y) - self.sgn_s * (self.yc + EW)) / dx
 
         h1 = dx - self.dsafe_x - T * v
+        self.h1 = h1
         alpha_h = -1 * self.gd * h1
         u = (v1x_hat - EU - self.xc - v + dy * w + alpha_h) / T
 

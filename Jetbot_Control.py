@@ -108,19 +108,23 @@ python3 -m jetbot.control_reciever
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
     agentL = None
     # Safe Obstacle Avoidance Controller
-    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.05,-4])))
-    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3, 0.3, 0.05,-4])))
+    # agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.05,-4])))
+    # agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.3,  0.05,-4])))
     # Safe Formation Controller
-    # agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3, 0.3, 0.05,-4])))
-    # agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3, 0.3, 0.05,-4])))
+    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3, -0.2, -0.05,-4])))
+    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.2,  0.05,-4])))
     agentobst1 = None
     agentobst2 = None
     agentobst3 = None
     #agent params: state, id, xid, yid, cluster size, estimator gains (gd, gv, p), controller,
 
     # Jetbot/Agent Arrays
-    jetbot_array = [leader, follower1, follower2, obstacle1, obstacle2, obstacle3]
-    agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
+    # Safe Obstacle Avoidance Controller
+    # agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
+    # jetbot_array = [leader, follower1, follower2, obstacle1, obstacle2, obstacle3]
+    # Safe Formation Controller
+    agent_array = [agentL, agent1, agent2]
+    jetbot_array = [leader, follower1, follower2]
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     # for disturbance test move leaders velocity in oscilatory to show it doesnt propagate through the agents(string stability)
@@ -130,10 +134,10 @@ python3 -m jetbot.control_reciever
     # leader_movement[:,1] = 0.0
     # leader_movement[:,2] = leader_time
 
-    leader_movement = [[150.0, 0.0, 100], #125
-                       [0.0, 0.0, 100]]
+    leader_movement = [[200.0, 0.3, 100], #125
+                       [200, 0.4, 100]]
     
-    obstacle1_movement = [[0.0, 0.0, 2]]
+    # obstacle1_movement = [[0.0, 0.0, 2]]
     
     leader_move = 0
     obstacle1_move = 0
@@ -340,20 +344,20 @@ python3 -m jetbot.control_reciever
             at_count += 1 # TESTING at frame count
 
             # Reduce display
-            if (frame_count % 5) == 0:
-                # Show instruction
-                cv2.putText(color_frame, "Press 'q' to quit", 
-                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.7, (0, 255, 0), 2)
+            # if (frame_count % 10) == 0:
+            #     # Show instruction
+            #     cv2.putText(color_frame, "Press 'q' to quit", 
+            #                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+            #                 0.7, (0, 255, 0), 2)
                 
-                # Display frame
-                cv2.imshow('Camera', color_frame)
+            #     # Display frame
+            #     cv2.imshow('Camera', color_frame)
 
-            key = cv2.waitKey(1)
-            # Check for quit key press ('q' or ESC)
-            if key & 0xFF == ord('q') or key == 27:
-                print("\nQuitting...")
-                break
+            # key = cv2.waitKey(1)
+            # # Check for quit key press ('q' or ESC)
+            # if key & 0xFF == ord('q') or key == 27:
+            #     print("\nQuitting...")
+            #     break
 
             # MAINTAIN FIXED TIMESTEP
             elapsed = time.perf_counter() - start_time
@@ -494,7 +498,7 @@ def plots():
 
     # Leader’s position (left) and velocity (right) estimation error when estimated by follower agents
     plot.basic_plot(t, data_leader_pos_est, "Time (s)", "Position Estimate Error (m)", ["Estimate of Leader by Follower1", "Estimate of Leader by Follower2"])
-    plot.basic_plot(t, data_leader_vel_est, "Time (s)", "Velocity Estimate Error (m/s^2)", ["Estimate of Leader by Follower1", "Estimate of Leader by Follower2"])
+    plot.basic_plot(t, data_leader_vel_est, "Time (s)", "Velocity Estimate Error (m/s)", ["Estimate of Leader by Follower1", "Estimate of Leader by Follower2"])
 
     # (d) Distance along the motion, (e) Distance perpendicular to the motion
     plot.basic_plot(t, [data_form_dist_along[:,1], data_form_dist_along[:,2], data_long_des[:,1], data_long_safe_limit[:,1]], "Time (s)", "Formation distance along motion (m)", ["Follower 1","Follower 2", "Desired distance", "Safety limit"])
@@ -509,5 +513,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    # main()
+    main()
     plots()
