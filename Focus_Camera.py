@@ -32,7 +32,8 @@ def setup():
     # cap.set(cv2.CAP_PROP_EXPOSURE, -6)
     # cap.set(cv2.CAP_PROP_GAIN, 0)
 
-    cap = Jetbot_Setup.camera_setup(960, 600, 0, 30)
+    cap = Jetbot_Setup.camera_setup(1280, 720, 0, 30)
+
 
 
     # Immediately read back what the driver actually set

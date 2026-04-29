@@ -7,7 +7,7 @@ EE 471: Vision-Based Robotic Manipulation
 import numpy as np
 import cv2
 from time import time
-
+import Jetbot_Setup
 from AprilTags import AprilTags
 
 
@@ -25,19 +25,22 @@ def main():
     
     print("\nInitializing camera and detector...")
     # Initialize camera and detector
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 1280/720
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    cap.set(cv2.CAP_PROP_FPS, 100)   # Max FPS
-    # Latency / buffering
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-    # Lock exposure/focus (DSHOW + this camera usually respect these)
-    cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
-    # set a short exposure (value is camera/driver-dependent; try negative or small positive)
-    cap.set(cv2.CAP_PROP_EXPOSURE, -6)
-    cap.set(cv2.CAP_PROP_GAIN, 0)
+    # cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
+    # cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 1280/720
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    # cap.set(cv2.CAP_PROP_FPS, 100)   # Max FPS
+    # # Latency / buffering
+    # cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    # # Lock exposure/focus (DSHOW + this camera usually respect these)
+    # cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+    # cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
+    # # set a short exposure (value is camera/driver-dependent; try negative or small positive)
+    # cap.set(cv2.CAP_PROP_EXPOSURE, -6)
+    # cap.set(cv2.CAP_PROP_GAIN, 0)
+
+    cap = Jetbot_Setup.camera_setup(1280, 720, 0, 30)
+
 
     if not cap.isOpened():
         raise RuntimeError("Failed to open camera (DSHOW)")

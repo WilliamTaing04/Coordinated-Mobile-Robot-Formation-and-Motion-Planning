@@ -45,7 +45,7 @@ def main():
 
 
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720, 0, 30)
+    cap = Jetbot_Setup.camera_setup(1280, 720, output=0, fps=30, exposure=-7)
     frame_count = 0
 
     # AprilTag detector
@@ -147,8 +147,8 @@ python3 -m jetbot.control_reciever
         num_bots = len(jetbot_array)
         max_samples = 7200                              
         data_time = np.zeros(max_samples)                                       # Time [s]
-        data_pos   = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad]
-        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                # Jetbot pose [x,y,theta] [m][rad] (filtered)
+        data_pos   = np.full((max_samples, num_bots, 3), np.nan)                       # Jetbot pose [x,y,theta] [m][rad]
+        data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                       # Jetbot pose [x,y,theta] [m][rad] (filtered)
         data_lin_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot lin velocity [m/s]
         data_ang_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot ang velocity [rad/s]
         data_lin_vel_f = np.full((max_samples, num_bots), np.nan)                      # Jetbot lin velocity [m/s] (filtered)
