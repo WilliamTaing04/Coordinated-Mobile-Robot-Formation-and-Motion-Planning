@@ -107,8 +107,12 @@ python3 -m jetbot.control_reciever
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
     agentL = None
+    # Safe Obstacle Avoidance Controller
     agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.05,-4])))
     agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3, 0.3, 0.05,-4])))
+    # Safe Formation Controller
+    # agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3, 0.3, 0.05,-4])))
+    # agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3, 0.3, 0.05,-4])))
     agentobst1 = None
     agentobst2 = None
     agentobst3 = None
