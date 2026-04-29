@@ -128,14 +128,18 @@ python3 -m jetbot.control_reciever
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     # for disturbance test move leaders velocity in oscilatory to show it doesnt propagate through the agents(string stability)
-    # leader_time = np.arange(0, 8, 2/20) # start, stop, timestep(N loops at 20Hz)
-    # leader_movement = np.zeros((len(leader_time), 3))
-    # leader_movement[:,0] = np.sin(leader_time)
-    # leader_movement[:,1] = 0.0
-    # leader_movement[:,2] = leader_time
+    leader_time = np.arange(0, 8, 2/20) # start, stop, timestep(N loops at 20Hz)
+    leader_movement = np.zeros((len(leader_time), 3))
+    leader_movement[:,0] = 100 * np.sin(leader_time*4*np.pi) + 200
+    leader_movement[:,1] = 0.0
+    leader_movement[:,2] = leader_time
 
-    leader_movement = [[200.0, 0.3, 100], #125
-                       [200, 0.4, 100]]
+    plt.plot(leader_movement[:,2],leader_movement[:,0])
+    plt.show()
+
+    # Safe Formation Controller Circle
+    # leader_movement = [[200.0, 0.3, 100], #125
+    #                    [0.0, 0.0, 100]]
     
     # obstacle1_movement = [[0.0, 0.0, 2]]
     
@@ -277,6 +281,7 @@ python3 -m jetbot.control_reciever
             # STEP 4: CONTROLLER AND COMMUNICATION
             # Jetbot Motion Control and Algorithm
             for i, jetbot in enumerate(jetbot_array):
+                left = 0.0; right = 0.0
                 # Follower Control
                 if jetbot.visible and jetbot.role==0: # For followers
                     agent_array[i].RK4_step() # RK4 step good
@@ -318,22 +323,22 @@ python3 -m jetbot.control_reciever
                     else:
                         left = right = 0.0
 
-                # obstacle movement:
-                elif jetbot.visible and jetbot.role==2: # For obstacles
-                    if jetbot.id == 999:   # TODO: change with obstacle id
-                        if obstacle1_move < len(obstacle1_movement):
-                            obstacle_v, obstacle_w, move_duration = obstacle1_movement[obstacle1_move]
-                            if time.perf_counter() - obstacle1_move_start < move_duration:
-                                # data_lin_acc_des[count-1, i] = None
-                                # data_ang_vel_des[count-1, i] = None
-                                v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [obstacle_v, obstacle_w])
-                                # Convert Desired VW to LR motor speed
-                                left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
-                            else:
-                                obstacle1_move += 1
-                                obstacle1_move_start = time.perf_counter()
-                        else:
-                            left = right = 0.0
+                # # obstacle movement:
+                # elif jetbot.visible and jetbot.role==2: # For obstacles
+                #     if jetbot.id == 999:   # TODO: change with obstacle id
+                #         if obstacle1_move < len(obstacle1_movement):
+                #             obstacle_v, obstacle_w, move_duration = obstacle1_movement[obstacle1_move]
+                #             if time.perf_counter() - obstacle1_move_start < move_duration:
+                #                 # data_lin_acc_des[count-1, i] = None
+                #                 # data_ang_vel_des[count-1, i] = None
+                #                 v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [obstacle_v, obstacle_w])
+                #                 # Convert Desired VW to LR motor speed
+                #                 left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
+                #             else:
+                #                 obstacle1_move += 1
+                #                 obstacle1_move_start = time.perf_counter()
+                #         else:
+                #             left = right = 0.0
 
                 else:   # If jetbot is not visible then stop movement
                     left = right = 0.0
