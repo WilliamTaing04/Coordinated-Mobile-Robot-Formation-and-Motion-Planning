@@ -86,11 +86,11 @@ python3 -m jetbot.control_reciever
     pidwobs = Motion_Control.PID(1.75,2,0) # PID for w
 
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.95)
-    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.95)
-    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.95)
+    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=1.0)
+    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=1.0)
+    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=1.0)
     #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.95)
-    controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=0.95)
+    controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=1.0)
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
@@ -458,7 +458,7 @@ def plots():
     data_new = "Jetbot_Tracking.pkl"
     data_circle = Path("TestingData") / "Safe_Formation_Controller_Circle.pkl"
 
-    data = load_from_pickle(data_new)
+    data = load_from_pickle(data_circle)
 
     t = data["time"]
     pos = data["pos"]
