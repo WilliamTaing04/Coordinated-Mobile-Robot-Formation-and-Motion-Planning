@@ -13,6 +13,7 @@ from pathlib import Path
 import Data_Visualization as plot
 import controller
 import agent
+import threading
 
 # Directory where this file lives
 HERE = Path(__file__).parent
@@ -39,13 +40,13 @@ def main():
 
     # Settings
     collect_data = True
-    control_freq = 30   # Hz
+    control_freq = 20   # Hz
     TAG_SIZE = 96       # mm
     np.set_printoptions(precision=4, suppress=True)
 
 
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(960, 600, output=0, fps=30, exposure=-6)
+    cap = Jetbot_Setup.camera_setup(960, 600, output=1, fps=30, exposure=-6)
     # cap = Jetbot_Setup.camera_setup(1280, 720, output=0, fps=30, exposure=-7)
     frame_count = 0
 
@@ -126,6 +127,21 @@ python3 -m jetbot.control_reciever
     # Safe Formation Controller
     # agent_array = [agentL, agent1, agent2]
     # jetbot_array = [leader, follower1, follower2]
+
+    last_commands = {jetbot.IP: (0.0, 0.0) for jetbot in jetbot_array}
+    cmd_lock = threading.Lock()
+    running = True
+
+    def sender_loop():
+        while running:
+            with cmd_lock:
+                for jetbot in jetbot_array:
+                    left, right = last_commands[jetbot.IP]
+                    UDP.Send(jetbot.IP, left, right)
+            time.sleep(1.0 / control_freq)
+
+    sender_thread = threading.Thread(target=sender_loop, daemon=True)
+    sender_thread.start()
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     
@@ -353,7 +369,8 @@ python3 -m jetbot.control_reciever
                     left = right = 0.0
                 
                 # Send command to jetbot
-                UDP.Send(jetbot.IP, left, right)
+                with cmd_lock:
+                    last_commands[jetbot.IP] = (left, right)
 
 
             # Reduce display
@@ -392,6 +409,10 @@ python3 -m jetbot.control_reciever
     
     finally:
         # CLEANUP
+        running = False          # ADD: signal thread to exit
+        sender_thread.join(timeout=0.5)  # ADD: wait for it to finish
+
+
         print("\n[STOP] Sending stop command and exiting...")
         for jetbot in jetbot_array:
             UDP.Close(jetbot.IP)    # disconnect from UDP
