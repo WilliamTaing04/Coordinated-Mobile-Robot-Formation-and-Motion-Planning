@@ -87,11 +87,11 @@ python3 -m jetbot.control_reciever
     pidwobs = Motion_Control.PID(1.75,2,0) # PID for w
 
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=0.95)
-    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=0.95)
-    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=0.95)
+    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=1.0)
+    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=1.0)
+    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=1.0)
     #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.95)
-    controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=0.95)
+    controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=1.0)
 
     # Jetbots
     leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
@@ -112,7 +112,7 @@ python3 -m jetbot.control_reciever
     # agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.05,-4])))
     # agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.3,  0.05,-4])))
     # Safe Formation Controller
-    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3, -0.2, -0.05,-4])))
+    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.2, -0.05,-4])))
     agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.2,  0.05,-4])))
     agentobst1 = None
     agentobst2 = None
@@ -150,7 +150,7 @@ python3 -m jetbot.control_reciever
         # Pre-allocate arrays for data collection (over-allocate for safety)
         num_bots = len(jetbot_array)
         max_samples = 7200                              
-        data_time = np.zeros(max_samples)                                       # Time [s]
+        data_time = np.zeros(max_samples)                                              # Time [s]
         data_pos   = np.full((max_samples, num_bots, 3), np.nan)                       # Jetbot pose [x,y,theta] [m][rad]
         data_pos_f = np.full((max_samples, num_bots, 3), np.nan)                       # Jetbot pose [x,y,theta] [m][rad] (filtered)
         data_lin_vel = np.full((max_samples, num_bots), np.nan)                        # Jetbot lin velocity [m/s]
@@ -325,7 +325,7 @@ python3 -m jetbot.control_reciever
                     else:
                         left = right = 0.0
 
-                # # obstacle movement:
+                # obstacle movement:
                 # elif jetbot.visible and jetbot.role==2: # For obstacles
                 #     if jetbot.id == 999:   # TODO: change with obstacle id
                 #         if obstacle1_move < len(obstacle1_movement):
@@ -459,7 +459,7 @@ def plots():
     data_new = "Jetbot_Tracking.pkl"
     data_circle = Path("TestingData") / "Safe_Formation_Controller_Circle.pkl"
 
-    data = load_from_pickle(data_new)
+    data = load_from_pickle(data_circle)
 
     t = data["time"]
     pos = data["pos"]
@@ -512,7 +512,7 @@ def plots():
 
     # (d) Distance along the motion, (e) Distance perpendicular to the motion
     plot.basic_plot(t, [data_form_dist_along[:,1], data_form_dist_along[:,2], data_long_des[:,1], data_long_safe_limit[:,1]], "Time (s)", "Formation distance along motion (m)", ["Follower 1","Follower 2", "Desired distance", "Safety limit"])
-    plot.basic_plot(t, [data_form_dist_perp[:,1], data_form_dist_perp[:,2], data_lat_des[:,1], data_lat_des[:,2], data_lat_safe_limit[:,1]], "Time (s)", "Formation distance perpendicular to motion (m)", ["Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit"])
+    plot.basic_plot(t, [data_form_dist_perp[:,1], data_form_dist_perp[:,2], data_lat_des[:,1], data_lat_des[:,2], data_lat_safe_limit[:,1], data_long_safe_limit[:,2]], "Time (s)", "Formation distance perpendicular to motion (m)", ["Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit1", "Safety limit2"])
     
     # (c) Longitudinal safety barrier function evolution
     plot.basic_plot(t, data_long_sb[:,1:3], "Time (s)", "Safety along motion (m)", ["Follower 1", "Follower 2"])
