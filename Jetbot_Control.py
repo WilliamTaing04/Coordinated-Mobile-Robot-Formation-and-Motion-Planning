@@ -511,7 +511,7 @@ def plots():
 
     # (d) Distance along the motion, (e) Distance perpendicular to the motion
     plot.basic_plot(t, [data_form_dist_along[:,1], data_form_dist_along[:,2], data_long_des[:,1], data_long_safe_limit[:,1]], "Time (s)", "Formation distance along motion (m)", ["Follower 1","Follower 2", "Desired distance", "Safety limit"])
-    plot.basic_plot(t, [data_form_dist_perp[:,1], data_form_dist_perp[:,2], data_lat_des[:,1], data_lat_des[:,2], data_lat_safe_limit[:,1]], "Time (s)", "Formation distance perpendicular to motion (m)", ["Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit"])
+    plot.basic_plot(t, [data_form_dist_perp[:,1], data_form_dist_perp[:,2], data_lat_des[:,1], data_lat_des[:,2], data_lat_safe_limit[:,1], data_long_safe_limit[:,2]], "Time (s)", "Formation distance perpendicular to motion (m)", ["Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit1", "Safety limit2"])
     
     # (c) Longitudinal safety barrier function evolution
     plot.basic_plot(t, data_long_sb[:,1:3], "Time (s)", "Safety along motion (m)", ["Follower 1", "Follower 2"])
