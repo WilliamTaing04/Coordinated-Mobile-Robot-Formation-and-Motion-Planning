@@ -331,8 +331,6 @@ python3 -m jetbot.control_reciever
                     else:
                         left = right = 0.0
                     
-                    print(f"left:{left} right:{right}")
-
 
                 # obstacle movement:
                 # elif jetbot.visible and jetbot.role==2: # For obstacles
