@@ -1,6 +1,7 @@
 
 import cv2
 import numpy as np
+import Jetbot_Setup
 
 def setup():
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)   # switch to DirectShow
@@ -38,7 +39,8 @@ cameraIndex = 0
 
 def main():
     images = []
-    cap = setup()
+    # cap = setup()
+    cap = Jetbot_Setup.camera_setup(960, 600, output=0, fps=30, exposure=-6)
     # Get images
     count = 0
     while count < 20:

@@ -227,13 +227,13 @@ def camera_setup(width=1280, height=720, output=0, fps=100, exposure=-6):
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     cap.set(cv2.CAP_PROP_FPS, fps)
     # Latency / buffering
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
     # Lock exposure/focus (DSHOW + this camera usually respect these)
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
     cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # often 0.25 = manual, 0.75 = auto (driver-dependent)
     # set a short exposure (value is camera/driver-dependent; try negative or small positive)
     cap.set(cv2.CAP_PROP_EXPOSURE, exposure)
-    cap.set(cv2.CAP_PROP_GAIN, 0)
+    cap.set(cv2.CAP_PROP_GAIN, 20)
     if not cap.isOpened():
         print('Failed to open camera')
         exit()

@@ -45,7 +45,8 @@ def main():
 
 
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(1280, 720, output=0, fps=30, exposure=-7)
+    cap = Jetbot_Setup.camera_setup(960, 600, output=0, fps=30, exposure=-6)
+    # cap = Jetbot_Setup.camera_setup(1280, 720, output=0, fps=30, exposure=-7)
     frame_count = 0
 
     # AprilTag detector
@@ -128,18 +129,17 @@ python3 -m jetbot.control_reciever
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     # for disturbance test move leaders velocity in oscilatory to show it doesnt propagate through the agents(string stability)
-    leader_time = np.arange(0, 15, 1/20) # start, stop, timestep(N loops at 20Hz)
-    leader_movement = np.zeros((len(leader_time), 3))
-    leader_movement[:,0] = 50 * np.sin(leader_time*1*np.pi) + 50
-    leader_movement[:,1] = 0.0
-    leader_movement[:,2] = leader_time
-
-    plt.plot(leader_movement[:,2],leader_movement[:,0])
-    plt.show()
+    # leader_time = np.arange(0, 15, 1/20) # start, stop, timestep(N loops at 20Hz)
+    # leader_movement = np.zeros((len(leader_time), 3))
+    # leader_movement[:,0] = 50 * np.sin(leader_time*1*np.pi) + 50
+    # leader_movement[:,1] = 0.0
+    # leader_movement[:,2] = leader_time
+    # plt.plot(leader_movement[:,2],leader_movement[:,0])
+    # plt.show()
 
     # Safe Formation Controller Circle
-    # leader_movement = [[200.0, 0.3, 100], #125
-    #                    [0.0, 0.0, 100]]
+    leader_movement = [[200.0, 0.3, 100], #125
+                       [0.0, 0.0, 100]]
     
     # obstacle1_movement = [[0.0, 0.0, 2]]
     
@@ -208,6 +208,8 @@ python3 -m jetbot.control_reciever
 
             else: 
                 tags.sort(reverse=True) # Sort tags to match jetbot array TODO: may not be nessecary anymore
+                at_count += 1 # TESTING at frame count
+
                 for tag in tags:
                     # Get tag pose                    
                     rot_matrix, trans_vector = detector.get_tag_pose(tag.corners, intrinsics, TAG_SIZE)
@@ -346,7 +348,6 @@ python3 -m jetbot.control_reciever
                 # Send command to jetbot
                 UDP.Send(jetbot.IP, left, right)
 
-            at_count += 1 # TESTING at frame count
 
             # Reduce display
             if (frame_count % 10) == 0:
@@ -522,5 +523,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    # main()
-    plots()
+    main()
+    # plots()
