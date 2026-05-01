@@ -5,7 +5,7 @@ import time
 
 EW = 0.07
 EU = 0.07
-DR = 0.3 #0.1
+DR = 0.2 #0.1
 T = 1.0
 ALPHA = 5.0
 INF = 100
@@ -369,7 +369,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         u_choice_d_edge = None
 
         # Define threshold distance [m]
-        D_OBS_R_THRESHOLD = 0.2
+        D_OBS_R_THRESHOLD = 0.4
         D_OBS_X_THRESHOLD = 0.7
         D_OBS_Y_THRESHOLD = 0.5
 
@@ -440,7 +440,8 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         #     w = w_predecessor
         if w_obstacle is not None:
             if (w_choice_d_edge < D_OBS_R_THRESHOLD):
-                w = scale_avg[1]*w_obstacle + (1-scale_avg[1])*w_predecessor
+                w_scale = 0.3 * scale_avg[1] ** 0.5
+                w = w_scale*w_obstacle + (1-w_scale)*w_predecessor
             else:
                 w = w_predecessor
         else:
@@ -448,9 +449,8 @@ class SafeObstacleAvoidanceController(SafeFormationController):
 
         if u_obstacle is not None:
             if (u_choice_d_edge < D_OBS_R_THRESHOLD):
-                v_max = 0.3
-                v_scale = 0.95 if v > v_max else 0 #(v_max - v) / v_max #TODO: TUNE THIS!
-                u = v_scale*u_obstacle + (1-v_scale)*u_predecessor #scale_avg[0]*u_obstacle + (1-scale_avg[0])*u_predecessor
+                u_scale = 0.25 * scale_avg[0] ** 0.5
+                u = u_scale*u_obstacle + (1-u_scale)*u_predecessor #scale_avg[0]*u_obstacle + (1-scale_avg[0])*u_predecessor
             else:
                 u = u_predecessor
         else:
