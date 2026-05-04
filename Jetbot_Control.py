@@ -76,7 +76,7 @@ python3 -m jetbot.control_reciever
     '''
 
     # Controllers
-    pidvL = Motion_Control.PID(0.0,0.0,0.0) # PID for v
+    pidvL = Motion_Control.PID(0.75,0.75,0.1) # PID for v
     pidwL = Motion_Control.PID(0.5,2.0,0.0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0.0,0.0,0.0) # PID for w
@@ -95,10 +95,10 @@ python3 -m jetbot.control_reciever
     controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=1.0)
 
     # Jetbots
-    leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
-    follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.4,tau_vel=0.4)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.2,tau_vel=0.2)   # TagID, 0-follower
     follower1_pred = [0,0] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
-    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.2,tau_vel=0.2)   # TagID, 0-follower
     follower2_pred = [0,0] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
     obstacle1 = Jetbot_Setup.Jetbot(4,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.2)
     obstacle2 = Jetbot_Setup.Jetbot(5,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.2)
@@ -110,11 +110,11 @@ python3 -m jetbot.control_reciever
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
     agentL = None
     # Safe Obstacle Avoidance Controller
-    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.45, -0.3, -4])))
-    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.45,  0.3, -4])))
+    # agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.45, -0.3, -4])))
+    # agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.45,  0.3, -4])))
     # Safe Formation Controller
-    # agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.3, -4])))
-    # agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.3,  0.3, -4])))
+    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-0.6, -0.5, -0.2], controller.SafeFormationController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.3, -0.6])))
+    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-0.6, -0.5, -0.2], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.3,  0.3, -0.6])))
     agentobst1 = None
     agentobst2 = None
     agentobst3 = None
@@ -122,32 +122,50 @@ python3 -m jetbot.control_reciever
 
     # Jetbot/Agent Arrays
     # Safe Obstacle Avoidance Controller
-    agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
-    jetbot_array = [leader, follower1, follower2, obstacle1, obstacle2, obstacle3]
+    # agent_array = [agentL, agent1, agent2, agentobst1, agentobst2, agentobst3]
+    # jetbot_array = [leader, follower1, follower2, obstacle1, obstacle2, obstacle3]
     # Safe Formation Controller
-    # agent_array = [agentL, agent1, agent2]
-    # jetbot_array = [leader, follower1, follower2]
+    agent_array = [agentL, agent1, agent2]
+    jetbot_array = [leader, follower1, follower2]
 
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     
-    # TODO: for disturbance test move leaders velocity in oscilatory to show it doesnt propagate through the agents(string stability)
-    # leader_time = np.arange(0, 15, 1/20) # start, stop, timestep(N loops at 20Hz)
-    # leader_movement = np.zeros((len(leader_time), 3))
-    # leader_movement[:,0] = 50 * np.sin(leader_time*1*np.pi) + 50
-    # leader_movement[:,1] = 0.0
-    # leader_movement[:,2] = leader_time
-    # plt.plot(leader_movement[:,2],leader_movement[:,0])
-    # plt.show()
+    # Safe Formation Controller Disturbance Velocity
+    # [mm/s^2] [rad/s] [s]
+
+    # Safe Formation Controller Disturbance Acceleration
+    # [mm/s^2] [rad/s] [s]
+
+    leader_movement = [[ 150, 0.0, 1.5],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [ 150, 0.0, 1],
+                       [-150, 0.0, 1],
+                       [0.0, 0.0, 0]]
+
 
     # Safe Formation Controller Circle
+    # [mm/s] [rad/s] [s]
     # leader_movement = [[200.0, 0.3, 100],
     #                    [0.0, 0.0, 100]]
 
-    leader_movement = [[200.0, 0.0, 15],
-                       [0.0, 0.0, 300],
-                       [150, 0.0, 3],
-                       [0.0, 0.0, 100]]
+
 
     
     obstacle1_movement = [[0.0, 0.0, 2]]
@@ -339,7 +357,8 @@ python3 -m jetbot.control_reciever
                         if time.perf_counter() - leader_move_start < move_duration:
                             # data_lin_acc_des[count-1, i] = None # TODO: maybe record leader desired lin vel
                             # data_ang_vel_des[count-1, i] = leader_w
-                            v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
+                            v_cmd, w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
+                            # v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
                             # Convert Desired VW to LR motor speed
                             left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                         else:
@@ -487,6 +506,7 @@ python3 -m jetbot.control_reciever
 def plots():
     data_new = "Jetbot_Tracking.pkl"
     data_circle = Path("TestingData") / "Safe_Formation_Controller_Circle.pkl"
+    data_disturb = Path("TestingData") / "Safe_Formation_Controller_Disturbance.pkl"
 
     data = load_from_pickle(data_new)
 
