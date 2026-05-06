@@ -76,8 +76,8 @@ python3 -m jetbot.control_reciever
     '''
 
     # Controllers
-    pidvL = Motion_Control.PID(0.75,0.75,0.1) # PID for v
-    pidwL = Motion_Control.PID(0.5,2.0,0.0) # PID for w
+    pidvL = Motion_Control.PID(0.1,0.5,0.05) # PID for v
+    pidwL = Motion_Control.PID(0.1,2.0,0.05) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0.0,0.0,0.0) # PID for w
     pidv2 = Motion_Control.PID(0,0,0) # PID for v
@@ -113,8 +113,8 @@ python3 -m jetbot.control_reciever
     # agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.45, -0.3, -4])))
     # agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.45,  0.3, -4])))
     # Safe Formation Controller
-    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-0.6, -0.5, -0.2], controller.SafeFormationController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.3, -0.6])))
-    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-0.6, -0.5, -0.2], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.3,  0.3, -0.6])))
+    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.3, -4])))
+    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-4, -0.5, -0.5], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.3,  0.3, -4])))
     agentobst1 = None
     agentobst2 = None
     agentobst3 = None
@@ -131,40 +131,19 @@ python3 -m jetbot.control_reciever
 
     # Desired Leader Movement [m/s] [rad/s] [s]
     
-    # Safe Formation Controller Disturbance Velocity
+    # Safe Formation Controller Disturbance Velocity ********
     # [mm/s^2] [rad/s] [s]
+    # leader_movement = [[ 150, 0.0, 1.5], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [0.0, 0.0, 0]]
 
-    # Safe Formation Controller Disturbance Acceleration
-    # [mm/s^2] [rad/s] [s]
-
-    leader_movement = [[ 150, 0.0, 1.5],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [ 150, 0.0, 1],
-                       [-150, 0.0, 1],
-                       [0.0, 0.0, 0]]
-
-
-    # Safe Formation Controller Circle
+    # Safe Formation Controller Circle ********
     # [mm/s] [rad/s] [s]
     # leader_movement = [[200.0, 0.3, 100],
     #                    [0.0, 0.0, 100]]
 
+    # Safe Formation Controller Snake
+    # [mm/s] [rad/s] [s]
+    leader_movement = [[200.0, 0.5, 60],
+                       [0.0, 0.0, 100]]
 
 
     
@@ -357,8 +336,8 @@ python3 -m jetbot.control_reciever
                         if time.perf_counter() - leader_move_start < move_duration:
                             # data_lin_acc_des[count-1, i] = None # TODO: maybe record leader desired lin vel
                             # data_ang_vel_des[count-1, i] = leader_w
-                            v_cmd, w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
-                            # v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
+                            # v_cmd, w_cmd = jetbot.controller.controller_uw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
+                            v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [leader_v, leader_w])
                             # Convert Desired VW to LR motor speed
                             left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
                         else:
@@ -577,5 +556,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    # main()
+    main()
     plots()
