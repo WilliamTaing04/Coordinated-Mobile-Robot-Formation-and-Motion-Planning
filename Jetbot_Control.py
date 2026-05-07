@@ -131,22 +131,25 @@ python3 -m jetbot.control_reciever
 
     # Desired Leader Movement [m/s] [rad/s] [s] (TUNE)
     
+    # Safe Formation Controller Circle
+    # [mm/s] [rad/s] [s]
+    # leader_movement = [[200.0, 0.3, 100],
+    #                    [0.0, 0.0, 100]]
+    
     # Safe Formation Controller Disturbance
     # [mm/s^2] [rad/s] [s]
     # leader_movement = [[ 150, 0.0, 1.5], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [ 150, 0.0, 1], [-150, 0.0, 1], [0.0, 0.0, 0]]
 
-    # Safe Formation Controller Circle ********
-    # [mm/s] [rad/s] [s]
-    # leader_movement = [[200.0, 0.3, 100],
-    #                    [0.0, 0.0, 100]]
-
     # Safe Formation Controller Snake
     # [mm/s] [rad/s] [s]
-    leader_movement = [[200.0, 0.0, 4],
-                       [200.0, 0.3, 2.6],
-                       [200.0, -0.3, 2.7],
-                       [200.0, 0.0, 3.5]]
+    # leader_movement = [[200.0, 0.0, 4],
+    #                    [200.0, 0.3, 2.6],
+    #                    [200.0, -0.3, 2.7],
+    #                    [200.0, 0.0, 3.5]]
 
+    # Safe Obstacle Avoidance Controller
+    # [mm/s] [rad/s] [s]
+    leader_movement = [[200.0, 0.0, 5]]
 
     
     obstacle1_movement = [[0.0, 0.0, 2]]
@@ -483,13 +486,14 @@ python3 -m jetbot.control_reciever
 
         print("Done!")
     
+
 def plots():
     data_new = "Jetbot_Tracking.pkl"
     data_circle = Path("TestingData") / "Safe_Formation_Controller_Circle.pkl"
     data_disturb = Path("TestingData") / "Safe_Formation_Controller_Disturbance.pkl"
     data_snake = Path("TestingData") / "Safe_Formation_Controller_Snake.pkl"
 
-    data = load_from_pickle(data_new)
+    data = load_from_pickle(data_snake)
 
     t = data["time"]
     pos = data["pos"]
@@ -516,6 +520,7 @@ def plots():
 
     # Per agent individual plots
     # for i in range(num_bots):
+    # for i in range(3):
         # plot.plot_xy_trajectory(pos_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
         # plot.plot_pose_raw_vs_filtered(t, pose_raw=pos[:, i, :], pose_filt=pos_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
         # plot.plot_xy_vs_time(t, pos_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
@@ -523,17 +528,9 @@ def plots():
         # plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
         # plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
         # plot.plot_accel_and_angvel(t, lin_acc[:, i], ang_vel_f[:, i], lin_acc_des[:, i], ang_vel_des[:, i], title=f"Robot {i} UW actual vs desired")
-    # for i in range(3):
-    #     plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
-    #     plot.plot_pose_raw_vs_filtered(t, pose_raw=pos[:, i, :], pose_filt=pos_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
-    #     plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
-
     # plt.show()
 
     # Multiagent plots    
-    # plot.plot_all_linear_velocity(t, lin_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
-    # plot.plot_all_angular_velocity(t, ang_vel_f[:, :3], labels=["Leader", "Follower 1", "Follower 2"])
-    # plot.plot_all_linear_acceleration(t, lin_acc[:, :3], labels=["Leader", "Follower 1", "Follower 2"], window=20)
 
     # # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
     plot.plot_all_xy_trajectories(pos_f, labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
@@ -558,5 +555,5 @@ def plots():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
     plots()
