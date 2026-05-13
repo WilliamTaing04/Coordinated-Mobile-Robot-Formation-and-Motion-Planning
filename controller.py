@@ -440,7 +440,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         #     w = w_predecessor
         if w_obstacle is not None:
             if (w_choice_d_edge < D_OBS_R_THRESHOLD):
-                w_scale = 0.2 * (scale_avg[1] ** 0.5)
+                w_scale = 0.35 * (scale_avg[1] ** 0.5)
                 w = w_scale*w_obstacle + (1-w_scale)*w_predecessor
             else:
                 w = w_predecessor
@@ -449,7 +449,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
 
         if u_obstacle is not None:
             if (u_choice_d_edge < D_OBS_R_THRESHOLD):
-                u_scale = 0.20 * (scale_avg[0] ** 0.5)
+                u_scale = 0.07 * (scale_avg[0] ** 0.5)
                 u = u_scale*u_obstacle + (1-u_scale)*u_predecessor #scale_avg[0]*u_obstacle + (1-scale_avg[0])*u_predecessor
             else:
                 u = u_predecessor
