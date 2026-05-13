@@ -104,7 +104,7 @@ python3 -m jetbot.control_reciever
     obstacle2 = Jetbot_Setup.Jetbot(5,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.2)
     obstacle3 = Jetbot_Setup.Jetbot(6,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.2)
 
-    # 11 is 10 61 is 65 65 is 61. ID x_labeled is ID actual
+    # 11 is 10 61 is 65 65 is 61. ID x_labeled is ID actual (possibly using the wrong AT library?)
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
 
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
