@@ -497,7 +497,7 @@ def plots():
     data_static_obs1 = Path("TestingData") / "ObstacleAvoidance1.pkl"
     data_static_obs2 = Path("TestingData") / "ObstacleAvoidance2.pkl"
 
-    data = load_from_pickle(data_static_obs1)
+    data = load_from_pickle(data_snake)
 
     t = data["time"]
     pos = data["pos"]
@@ -543,12 +543,13 @@ def plots():
     plot.basic_plot(t, lin_acc[:,:3], "Time (s)", "Linear Accelertaion (m/s^2)", ["Leader", "Follower 1", "Follower 2"]) 
 
     # Leader’s position (left) and velocity (right) estimation error when estimated by follower agents
-    plot.basic_plot(t, data_leader_pos_est, "Time (s)", "Position Estimate Error (m)", ["Estimate of Leader by Follower1", "Estimate of Leader by Follower2"])
-    plot.basic_plot(t, data_leader_vel_est, "Time (s)", "Velocity Estimate Error (m/s)", ["Estimate of Leader by Follower1", "Estimate of Leader by Follower2"])
+    plot.basic_plot(t, data_leader_pos_est, "Time (s)", "Position Estimate Error (m)", ["Estimate of Leader by Follower 1", "Estimate of Leader by Follower 2"])
+    plot.basic_plot(t, data_leader_vel_est, "Time (s)", "Velocity Estimate Error (m/s)", ["Estimate of Leader by Follower 1", "Estimate of Leader by Follower 2"])
 
     # (d) Distance along the motion, (e) Distance perpendicular to the motion
     plot.basic_plot(t, [data_form_dist_along[:,1], data_form_dist_along[:,2], data_long_des[:,1], data_long_safe_limit[:,1]], "Time (s)", "Formation distance along motion (m)", ["Follower 1","Follower 2", "Desired distance", "Safety limit"])
-    plot.basic_plot(t, [data_form_dist_perp[:,1], data_form_dist_perp[:,2], data_lat_des[:,1], data_lat_des[:,2], data_lat_safe_limit[:,1], data_long_safe_limit[:,2]], "Time (s)", "Formation distance perpendicular to motion (m)", ["Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit1", "Safety limit2"])
+    # plot.basic_plot(t, [data_form_dist_perp[:,1], data_form_dist_perp[:,2], data_lat_des[:,1], data_lat_des[:,2], data_lat_safe_limit[:,1], data_lat_safe_limit[:,2]], "Time (s)", "Formation distance perpendicular to motion (m)", ["Follower 1","Follower 2", "Desired distance 1","Desired distance 2", "Safety limit1", "Safety limit2"])
+    plot.basic_plot(t, [abs(data_form_dist_perp[:,1]), data_form_dist_perp[:,2], data_lat_des[:,2],data_lat_safe_limit[:,2],], "Time (s)", "Formation distance perpendicular to motion (m)", ["Follower 1","Follower 2","Desired distance", "Safety limit"])
     
     # (c) Longitudinal safety barrier function evolution
     plot.basic_plot(t, data_long_sb[:,1:3], "Time (s)", "Safety along motion (m)", ["Follower 1", "Follower 2"])
