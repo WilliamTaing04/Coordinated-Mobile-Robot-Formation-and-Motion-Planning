@@ -369,7 +369,7 @@ class SafeObstacleAvoidanceController(SafeFormationController):
         u_choice_d_edge = None
 
         # Define threshold distance [m]
-        D_OBS_R_THRESHOLD = 0.4
+        D_OBS_R_THRESHOLD = 0.3
         D_OBS_X_THRESHOLD = 0.7
         D_OBS_Y_THRESHOLD = 0.5
 

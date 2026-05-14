@@ -46,7 +46,7 @@ def main():
 
 
     # Setup camera
-    cap = Jetbot_Setup.camera_setup(960, 600, output=0, fps=30, exposure=-6)
+    cap = Jetbot_Setup.camera_setup(960, 600, output=0, fps=30, exposure=-7)
     # cap = Jetbot_Setup.camera_setup(1280, 720, output=0, fps=30, exposure=-7)
     frame_count = 0
 
@@ -76,9 +76,9 @@ python3 -m jetbot.control_reciever
     '''
 
     # Controllers   (Tune)
-    pidvL = Motion_Control.PID(0.05,0.5,0.01) # PID for v
-    pidwL = Motion_Control.PID(0.2,2.0,0.0) # PID for w
-    # pidvL = Motion_Control.PID(0.0,0.0,0.0) # PID for v
+    # pidvL = Motion_Control.PID(0.05,0.5,0.01) # PID for v
+    pidvL = Motion_Control.PID(0.4,1.0,0.0) # PID for v
+    pidwL = Motion_Control.PID(0.45,2.5,0.0) # PID for w
     # pidwL = Motion_Control.PID(0.0,0.0,0.0) # PID for w
     pidv1 = Motion_Control.PID(0,0,0) # PID for v
     pidw1 = Motion_Control.PID(0.0,0.0,0.0) # PID for w
@@ -86,25 +86,24 @@ python3 -m jetbot.control_reciever
     pidw2 = Motion_Control.PID(0.0,0.0,0.0) # PID for w
     #pidv3 = Motion_Control.PID(0,0,0) # PID for v
     #pidw3 = Motion_Control.PID(0,0,0) # PID for w
-    pidvobs = Motion_Control.PID(0.75,0.5,0) # PID for v
-    pidwobs = Motion_Control.PID(1.75,2,0) # PID for w
+    pidvobs = Motion_Control.PID(0.4,1.0,0) # PID for v
+    pidwobs = Motion_Control.PID(.45,2.5,0) # PID for w
 
     # max vel[mm/s], max angvel[rad/s], linmax acc[mm/s^2], send freq, pids
-    controllerL = Motion_Control.control(500, 8, 800, control_freq, pidvL, pidwL, alpha=1.0)
-    controller1 = Motion_Control.control(500, 8, 800, control_freq, pidv1, pidw1, alpha=1.0-0.1)
-    controller2 = Motion_Control.control(500, 8, 800, control_freq, pidv2, pidw2, alpha=1.0-0.1)
-    #controller3 = Motion_Control.control(500, 8, 800, control_freq, pidv3, pidw3, alpha=0.95)
-    controllerobs= Motion_Control.control(500, 8, 800, control_freq, pidvobs, pidwobs, alpha=1.0)
+    controllerL = Motion_Control.control(400, 4, 800, control_freq, pidvL, pidwL, alpha=1.0-0.1)
+    controller1 = Motion_Control.control(400, 4, 800, control_freq, pidv1, pidw1, alpha=1.0-0.1)
+    controller2 = Motion_Control.control(400, 4, 800, control_freq, pidv2, pidw2, alpha=1.0-0.1)
+    controllerobs= Motion_Control.control(400, 4, 800, control_freq, pidvobs, pidwobs, alpha=1.0-0.1)
 
     # Jetbots   (TUNE)
-    leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
-    follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    leader = Jetbot_Setup.Jetbot(3,"10.40.122.89",controllerL, None, None, role=1,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
+    follower1 = Jetbot_Setup.Jetbot(1,"10.40.101.192",controller1, leader, leader, role=0,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower1_pred = [0,0] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
-    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.0075,tau_vel=0.0075)   # TagID, 0-follower
+    follower2 = Jetbot_Setup.Jetbot(2,"10.40.122.94",controller2, leader, leader, role=0,tau_pose=0.01,tau_vel=0.01)   # TagID, 0-follower
     follower2_pred = [0,0] # X, Y edge predecessors. CHANGE HERE AND ABOVE ^ ^ ^ 
-    obstacle1 = Jetbot_Setup.Jetbot(4,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.2)
-    obstacle2 = Jetbot_Setup.Jetbot(5,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.2)
-    obstacle3 = Jetbot_Setup.Jetbot(6,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.2)
+    obstacle1 = Jetbot_Setup.Jetbot(0,"10.40.109.62",controllerobs, None, None, role=2,tau_pose=0.01,tau_vel=0.01, radius=0.5)
+    obstacle2 = Jetbot_Setup.Jetbot(4,"10.40.109.00",None, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.3)
+    obstacle3 = Jetbot_Setup.Jetbot(6,"10.40.109.00",None, None, None, role=2,tau_pose=0.1,tau_vel=0.1, radius=0.3)
 
     # 11 is 10 61 is 65 65 is 61. ID x_labeled is ID actual (possibly using the wrong AT library?)
     # follower3 = Jetbot_Setup.Jetbot(9994,"10.40.122.89",controller4,role=0,tau_pose=0.1,tau_vel=0.1)   # TagID, 0-follower
@@ -112,8 +111,8 @@ python3 -m jetbot.control_reciever
     # Controller params: x_id, y_id, ds_x, ds_y, dsafe_y, gd TODO: state may have to be measured at init
     agentL = None
     # Safe Obstacle Avoidance Controller    (TUNE)
-    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-3, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.45, -0.3, -3])))
-    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-3, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.45,  0.3, -3])))
+    agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-3, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.2, -3])))
+    agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-3, -0.5, -0.5], controller.SafeObstacleAvoidanceController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.3,  0.2, -3])))
     # Safe Formation Controller (TUNE)
     # agent1 = agent.Agent([0,0,0,0], 1, follower1_pred[0], follower1_pred[1], 3, [-1.5, -0.5, -0.2], controller.SafeFormationController(np.array([follower1_pred[0], follower1_pred[1], 0.3, -0.3, -0.3, -1.5])))
     # agent2 = agent.Agent([0,0,0,0], 2, follower2_pred[0], follower2_pred[1], 3, [-1.5, -0.5, -0.2], controller.SafeFormationController(np.array([follower2_pred[0], follower2_pred[1], 0.3,  0.3,  0.3, -1.5])))
@@ -151,10 +150,10 @@ python3 -m jetbot.control_reciever
 
     # Safe Obstacle Avoidance Controller
     # [mm/s] [rad/s] [s]
-    leader_movement = [[225.0, 0.0, 12]]
+    leader_movement = [[200.0, 0.0, 11.5]]
 
     
-    obstacle1_movement = [[0.0, 0.0, 2]]
+    obstacle1_movement = [[75, 0.0, 15]]
     
     leader_move = 0
     obstacle1_move = 0
@@ -165,8 +164,10 @@ python3 -m jetbot.control_reciever
     def sender_loop():
         while running:
             with cmd_lock:
-                for jetbot in jetbot_array:
+                # for jetbot in jetbot_array:
+                for jetbot in jetbot_array[:4]:
                     left, right = last_commands[jetbot.IP]
+                    # print(f"{jetbot.IP}: {left, right}")
                     UDP.Send(jetbot.IP, left, right)
             time.sleep(1.0 / control_freq)
 
@@ -355,21 +356,21 @@ python3 -m jetbot.control_reciever
                     
 
                 # obstacle movement:
-                # elif jetbot.visible and jetbot.role==2: # For obstacles
-                #     if jetbot.id == 999:   # TODO: change with obstacle role
-                #         if obstacle1_move < len(obstacle1_movement):
-                #             obstacle_v, obstacle_w, move_duration = obstacle1_movement[obstacle1_move]
-                #             if time.perf_counter() - obstacle1_move_start < move_duration:
-                #                 # data_lin_acc_des[count-1, i] = None
-                #                 # data_ang_vel_des[count-1, i] = None
-                #                 v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [obstacle_v, obstacle_w])
-                #                 # Convert Desired VW to LR motor speed
-                #                 left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
-                #             else:
-                #                 obstacle1_move += 1
-                #                 obstacle1_move_start = time.perf_counter()
-                #         else:
-                #             left = right = 0.0
+                elif jetbot.visible and jetbot.role==2: # For obstacles
+                    if jetbot.id == 0:
+                        if obstacle1_move < len(obstacle1_movement):
+                            obstacle_v, obstacle_w, move_duration = obstacle1_movement[obstacle1_move]
+                            if time.perf_counter() - obstacle1_move_start < move_duration:
+                                # data_lin_acc_des[count-1, i] = None
+                                # data_ang_vel_des[count-1, i] = None
+                                v_cmd, w_cmd = jetbot.controller.controller_vw([jetbot.lin_vel_f, jetbot.ang_vel_f], [obstacle_v, obstacle_w])
+                                # Convert Desired VW to LR motor speed
+                                left, right = jetbot.controller.motor_controller(v_cmd, w_cmd)
+                            else:
+                                obstacle1_move += 1
+                                obstacle1_move_start = time.perf_counter()
+                        else:
+                            left = right = 0.0
 
                 else:   # If jetbot is not visible then stop movement
                     left = right = 0.0
@@ -419,7 +420,7 @@ python3 -m jetbot.control_reciever
         sender_thread.join(timeout=0.5)  # ADD: wait for it to finish
 
         print("\n[STOP] Sending stop command and exiting...")
-        for jetbot in jetbot_array:
+        for jetbot in jetbot_array[:4]:
             UDP.Close(jetbot.IP)    # disconnect from UDP
         UDP.Shutdown()  # shutdown socket
         cap.release()   # exit camera
@@ -494,10 +495,12 @@ def plots():
     data_circle = Path("TestingData") / "Safe_Formation_Controller_Circle.pkl"
     data_disturb = Path("TestingData") / "Safe_Formation_Controller_Disturbance.pkl"
     data_snake = Path("TestingData") / "Safe_Formation_Controller_Snake.pkl"
-    data_static_obs1 = Path("TestingData") / "ObstacleAvoidance1.pkl"
-    data_static_obs2 = Path("TestingData") / "ObstacleAvoidance2.pkl"
+    data_static_obs1 = Path("TestingData") / "Obstacle_Avoidance1.pkl"
+    data_static_obs2 = Path("TestingData") / "Obstacle_Avoidance2.pkl"
+    data_dynamic_obs1 = Path("TestingData") / "Dynamic_Obstacle_Avoidance1.pkl"
+    data_dynamic_obs2 = Path("TestingData") / "Dynamic_Obstacle_Avoidance2.pkl"
 
-    data = load_from_pickle(data_snake)
+    data = load_from_pickle(data_new)
 
     t = data["time"]
     pos = data["pos"]
@@ -522,19 +525,8 @@ def plots():
     data_form_dist_perp = data['form_dist_perp']
     num_bots = pos_f.shape[1]
 
-    # Per agent individual plots
-    # for i in range(num_bots):
-    # for i in range(3):
-        # plot.plot_xy_trajectory(pos_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
-        # plot.plot_pose_raw_vs_filtered(t, pose_raw=pos[:, i, :], pose_filt=pos_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
-        # plot.plot_xy_vs_time(t, pos_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
-        # plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
-        # plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
-        # plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
-        # plot.plot_accel_and_angvel(t, lin_acc[:, i], ang_vel_f[:, i], lin_acc_des[:, i], ang_vel_des[:, i], title=f"Robot {i} UW actual vs desired")
-    # plt.show()
 
-    # Multiagent plots    
+    # Multiagent plots:
 
     # # plot.analyze_dt_histogram(t, bins=30, title="dt Histogram")
     plot.plot_all_xy_trajectories(pos_f, labels=["Leader", "Follower 1", "Follower 2", "Obstable 1", "Obstable 2", "Obstable 3"], show_start_end=True)
@@ -557,6 +549,18 @@ def plots():
     plot.basic_plot(t, data_lat_sb[:,1:3], "Time (s)", "Safety perpendicular to motion (m)", ["Follower 1", "Follower 2"])
 
     plt.show()
+
+
+    # Per agent individual plots
+    # for i in range(3):
+        # plot.plot_xy_trajectory(pos_f[:, i, :], title=f"Robot {i} XY Trajectory", show_start_end=True)
+        # plot.plot_pose_raw_vs_filtered(t, pose_raw=pos[:, i, :], pose_filt=pos_f[:, i, :], title=f"Robot {i} Pose: Raw vs Filtered")
+        # plot.plot_xy_vs_time(t, pos_f[:, i, :], title=f"Robot {i} Position vs Time (Filtered)")
+        # plot.plot_velocity_raw_vs_filtered(t, lin_vel[:, i], ang_vel[:, i], lin_vel_f[:, i], ang_vel_f[:, i], title=f"Robot {i} Velocities: Raw vs Filtered")
+        # plot.plot_velocities(t, lin_vel_f[:, i], ang_vel_f[:, i], v_des=None, w_des=ang_vel_des[:, i], title=f"Robot {i} Velocities vs Time (Filtered)")
+        # plot.plot_accelerations(t, lin_acc[:, i], ang_acc[:, i], a_des=lin_acc_des[:, i], title=f"Robot {i} Accelerations vs Time", window=30, plot_raw=True)
+        # plot.plot_accel_and_angvel(t, lin_acc[:, i], ang_vel_f[:, i], lin_acc_des[:, i], ang_vel_des[:, i], title=f"Robot {i} UW actual vs desired")
+    # plt.show()
 
 
 if __name__ == "__main__":
